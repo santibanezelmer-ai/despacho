@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Siren, AlertTriangle, Volume2 } from 'lucide-react';
+import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import DispatchForm from '@/components/dispatch/DispatchForm';
 import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
@@ -52,9 +52,9 @@ export default function DispatchConsole() {
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard title="Emergencias Activas" value={activeCount} icon={Siren} color="hsl(0, 85%, 55%)" />
-        <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${vehicles.length} total`} icon={({ className, ...p }) => <svg className={className} {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>} color="hsl(145, 65%, 42%)" />
-        <StatsCard title="Personal en Servicio" value={24} subtitle="de 85 activos" icon={({ className, ...p }) => <svg className={className} {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>} color="hsl(35, 95%, 55%)" />
-        <StatsCard title="Tiempo Resp. Prom." value="4:32" subtitle="últimas 24h" icon={({ className, ...p }) => <svg className={className} {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} color="hsl(210, 85%, 55%)" />
+        <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${vehicles.length} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
+        <StatsCard title="Personal en Servicio" value={24} subtitle="de 85 activos" icon={Users} color="hsl(35, 95%, 55%)" />
+        <StatsCard title="Tiempo Resp. Prom." value="4:32" subtitle="últimas 24h" icon={Clock} color="hsl(210, 85%, 55%)" />
       </div>
 
       {/* Emergency Keys */}
