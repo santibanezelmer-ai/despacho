@@ -93,13 +93,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center border-t border-border py-2.5 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
+        {/* User info */}
+        <div className="border-t border-border px-3 py-2">
+          {!collapsed && user && (
+            <div className="mb-1">
+              <p className="truncate text-xs font-medium text-foreground">{user.email}</p>
+              <p className="text-[10px] text-muted-foreground uppercase">{roles.join(', ') || 'sin rol'}</p>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex-1 flex items-center justify-center py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-emergency transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </aside>
 
       {/* Main content */}
