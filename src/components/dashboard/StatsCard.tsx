@@ -8,13 +8,6 @@ interface Props {
   color: string;
   trend?: { value: string; positive: boolean };
 }
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: LucideIcon;
-  color: string;
-  trend?: { value: string; positive: boolean };
-}
 
 export default function StatsCard({ title, value, subtitle, icon: Icon, color, trend }: Props) {
   return (
