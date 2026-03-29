@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
-  Bell, FileDown, Wifi, Play, ChevronLeft, ChevronRight, Activity
+  Bell, FileDown, Wifi, Play, ChevronLeft, ChevronRight, Activity, LogOut
 } from 'lucide-react';
 
 const navItems = [
