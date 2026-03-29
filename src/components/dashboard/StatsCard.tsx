@@ -1,6 +1,13 @@
-import { LucideIcon } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 
 interface Props {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: LucideIcon;
+  color: string;
+  trend?: { value: string; positive: boolean };
+}
   title: string;
   value: string | number;
   subtitle?: string;
