@@ -52,6 +52,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
     setType('');
     setDescription('');
     setLastCoords(null);
+    setLastEditing(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
