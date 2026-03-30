@@ -81,7 +81,7 @@ export default function ExportsPage() {
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });
 
-      if (emergencyStatus !== 'all') q = q.eq('status', emergencyStatus);
+      if (emergencyStatus !== 'all') q = q.eq('status', emergencyStatus as any);
       if (dateFrom) q = q.gte('created_at', dateFrom);
       if (dateTo) q = q.lte('created_at', dateTo + 'T23:59:59');
 
