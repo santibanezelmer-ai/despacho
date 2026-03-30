@@ -194,6 +194,27 @@ export default function LeafletMapCanvas({
     };
   }, [onCompatibilityModeChange, onBoundsChange]);
 
+  // Handle click mode for placing hydrants
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const container = map.getContainer();
+    if (clickMode) {
+      container.style.cursor = 'crosshair';
+      const handleClick = (e: L.LeafletMouseEvent) => {
+        onMapClick?.({ lat: e.latlng.lat, lng: e.latlng.lng });
+      };
+      map.on('click', handleClick);
+      return () => {
+        container.style.cursor = '';
+        map.off('click', handleClick);
+      };
+    } else {
+      container.style.cursor = '';
+    }
+  }, [clickMode, onMapClick]);
+
   const positions = useMemo<[number, number][]>(() => {
     const points: [number, number][] = [];
     if (showEmergencies) emergencies.forEach((e) => points.push([e.latitude, e.longitude]));
