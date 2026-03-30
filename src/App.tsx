@@ -18,6 +18,8 @@ import AdminPanel from "@/pages/AdminPanel";
 import OperativeMap from "@/pages/OperativeMap";
 import EquipmentPage from "@/pages/Equipment";
 import CentralScreen from "@/pages/CentralScreen";
+import AlertsPage from "@/pages/AlertsPage";
+import SimulationPage from "@/pages/SimulationPage";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
