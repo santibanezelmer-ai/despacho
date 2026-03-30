@@ -75,11 +75,11 @@ const hydrantIcon = L.divIcon({
 
 const escapeHtml = (value: string) =>
   value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 const buildEmergencyPopup = (emergency: MapEmergency) => {
   const vehicles = emergency.vehicleCodes.length > 0 ? emergency.vehicleCodes.join(', ') : 'Ninguno';
@@ -90,7 +90,7 @@ const buildEmergencyPopup = (emergency: MapEmergency) => {
       <div style="font-size:12px;">${escapeHtml(emergency.folio)}</div>
       <div style="font-size:12px;">${escapeHtml(emergency.address)}</div>
       <div style="font-size:12px;font-weight:700;color:${emergency.statusColor};margin-top:2px;">${escapeHtml(emergency.statusLabel)}</div>
-      <div style="font-size:12px;color:#6b7280;">Móviles: ${escapeHtml(vehicles)}</div>
+      <div style="font-size:12px;color:hsl(var(--muted-foreground));">Móviles: ${escapeHtml(vehicles)}</div>
     </div>
   `;
 };
