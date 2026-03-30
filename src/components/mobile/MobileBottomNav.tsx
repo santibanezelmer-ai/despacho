@@ -6,7 +6,7 @@ const tabs = [
   { path: '/mobile/feed', icon: Flame, label: 'En vivo' },
   { path: '/mobile/feed?filter=finished', icon: Clock, label: 'Historial' },
   { path: '/mobile/map', icon: Map, label: 'Mapa' },
-  { path: '/perfil', icon: User, label: 'Perfil' },
+  { path: '/mobile/profile', icon: User, label: 'Perfil' },
 ];
 
 export default function MobileBottomNav() {
@@ -21,7 +21,7 @@ export default function MobileBottomNav() {
             (tab.path === '/mobile/feed' && location.pathname === '/mobile/feed' && !location.search.includes('filter=finished')) ||
             (tab.path === '/mobile/feed?filter=finished' && location.search.includes('filter=finished')) ||
             (tab.path === '/mobile/map' && location.pathname === '/mobile/map') ||
-            (tab.path === '/perfil' && location.pathname === '/perfil');
+            (tab.path === '/mobile/profile' && location.pathname === '/mobile/profile');
 
           return (
             <button
