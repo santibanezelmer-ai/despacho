@@ -37,6 +37,7 @@ export type MapHydrant = {
   name: string;
   type: string | null;
   description: string | null;
+  isOwn?: boolean;
 };
 
 type LeafletMapCanvasProps = {
