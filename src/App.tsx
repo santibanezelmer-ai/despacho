@@ -37,6 +37,7 @@ import NotFound from "./pages/NotFound";
 import MobileLayout from "@/components/mobile/MobileLayout";
 import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
 import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
+import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -117,6 +118,7 @@ function AppRoutes() {
           <Route path="/mobile" element={<MobileFeedPage />} />
           <Route path="/mobile/feed" element={<MobileFeedPage />} />
           <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
+          <Route path="/mobile/profile" element={<MobileProfilePage />} />
           <Route path="*" element={<MobileFeedPage />} />
         </Routes>
       </MobileLayout>
