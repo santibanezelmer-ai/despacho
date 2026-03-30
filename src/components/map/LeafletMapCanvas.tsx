@@ -133,6 +133,21 @@ export default function LeafletMapCanvas({
     });
     mapRef.current = map;
 
+    const reportBounds = () => {
+      if (!onBoundsChange) return;
+      const b = map.getBounds();
+      onBoundsChange({
+        north: b.getNorth(),
+        south: b.getSouth(),
+        east: b.getEast(),
+        west: b.getWest(),
+      });
+    };
+
+    map.on('moveend', reportBounds);
+    // Report initial bounds after map is ready
+    window.setTimeout(reportBounds, 200);
+
     const emergencyLayer = L.layerGroup().addTo(map);
     const hydrantLayer = L.layerGroup().addTo(map);
     emergencyLayerRef.current = emergencyLayer;
