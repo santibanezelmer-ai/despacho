@@ -15,6 +15,9 @@ import Companies from "@/pages/Companies";
 import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
 import AdminPanel from "@/pages/AdminPanel";
+import OperativeMap from "@/pages/OperativeMap";
+import EquipmentPage from "@/pages/Equipment";
+import CentralScreen from "@/pages/CentralScreen";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
