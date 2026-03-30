@@ -28,6 +28,7 @@ export default function SimulationPage() {
   const { data: keys } = useEmergencyKeys();
   const { data: vehicles } = useVehicles();
   const { user } = useAuth();
+  const { orgId } = useOrganization();
   const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const [loading, setLoading] = useState(false);
