@@ -1,15 +1,25 @@
-import { vehicles, vehicleStatusConfig } from '@/data/mock-data';
-import { Truck, Plus, Search } from 'lucide-react';
+import { useVehicles } from '@/hooks/useVehicles';
+import { Truck, Plus, Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
+
+const vehicleStatusConfig: Record<string, { label: string; color: string }> = {
+  disponible: { label: 'Disponible', color: 'hsl(145, 65%, 42%)' },
+  en_servicio: { label: 'En Servicio', color: 'hsl(0, 85%, 55%)' },
+  mantencion: { label: 'Mantención', color: 'hsl(35, 95%, 55%)' },
+  fuera_servicio: { label: 'Fuera de Servicio', color: 'hsl(0, 0%, 50%)' },
+};
 
 export default function Vehicles() {
   const [search, setSearch] = useState('');
-  const filtered = vehicles.filter(v =>
+  const { data: vehicles, isLoading } = useVehicles();
+
+  const filtered = (vehicles ?? []).filter(v =>
     v.code.toLowerCase().includes(search.toLowerCase()) ||
     v.type.toLowerCase().includes(search.toLowerCase()) ||
-    v.company.toLowerCase().includes(search.toLowerCase())
+    (v.companies?.name ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -29,35 +39,35 @@ export default function Vehicles() {
         <Input placeholder="Buscar por código, tipo, compañía..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-muted/50" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {filtered.map(v => {
-          const st = vehicleStatusConfig[v.status];
-          return (
-            <div key={v.id} className="console-panel p-4 hover:border-foreground/20 transition-colors cursor-pointer">
-              <div className="flex items-start justify-between">
-                <span className="text-lg font-mono font-bold text-foreground">{v.code}</span>
-                <span className="status-badge" style={{ backgroundColor: `${st.color}20`, color: st.color }}>
-                  {st.label}
-                </span>
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {filtered.map(v => {
+            const st = vehicleStatusConfig[v.status] ?? vehicleStatusConfig.disponible;
+            return (
+              <div key={v.id} className="console-panel p-4 hover:border-foreground/20 transition-colors cursor-pointer">
+                <div className="flex items-start justify-between">
+                  <span className="text-lg font-mono font-bold text-foreground">{v.code}</span>
+                  <span className="status-badge" style={{ backgroundColor: `${st.color}20`, color: st.color }}>
+                    {st.label}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{v.type}</p>
+                <p className="text-xs text-muted-foreground">{v.companies?.name ?? '—'}</p>
+                <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  <span>Cap. {v.capacity}</span>
+                </div>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">{v.type}</p>
-              <p className="text-xs text-muted-foreground">{v.company}</p>
-              <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
-                <Users className="h-3 w-3" />
-                <span>Cap. {v.capacity}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
-  );
-}
-
-function Users(props: React.SVGProps<SVGSVGElement> & { className?: string }) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-    </svg>
   );
 }

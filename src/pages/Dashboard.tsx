@@ -1,35 +1,57 @@
-import { BarChart3, Siren, Truck, Users, Clock, Activity } from 'lucide-react';
+import { BarChart3, Siren, Truck, Users, Clock } from 'lucide-react';
 import StatsCard from '@/components/dashboard/StatsCard';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-
-const monthlyData = [
-  { month: 'Ene', emergencias: 42 },
-  { month: 'Feb', emergencias: 38 },
-  { month: 'Mar', emergencias: 55 },
-  { month: 'Abr', emergencias: 47 },
-  { month: 'May', emergencias: 61 },
-  { month: 'Jun', emergencias: 53 },
-];
-
-const typeData = [
-  { name: 'Incendio', value: 35, color: 'hsl(0, 85%, 55%)' },
-  { name: 'Rescate', value: 25, color: 'hsl(210, 85%, 55%)' },
-  { name: 'HazMat', value: 10, color: 'hsl(55, 90%, 50%)' },
-  { name: 'Médico', value: 20, color: 'hsl(145, 65%, 42%)' },
-  { name: 'Otros', value: 10, color: 'hsl(220, 14%, 40%)' },
-];
-
-const responseTimeData = [
-  { day: 'Lun', tiempo: 4.2 },
-  { day: 'Mar', tiempo: 3.8 },
-  { day: 'Mié', tiempo: 5.1 },
-  { day: 'Jue', tiempo: 4.5 },
-  { day: 'Vie', tiempo: 3.9 },
-  { day: 'Sáb', tiempo: 4.8 },
-  { day: 'Dom', tiempo: 5.5 },
-];
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [emergenciesRes, vehiclesRes, volunteersRes, activeRes] = await Promise.all([
+        supabase.from('emergencies').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),
+        supabase.from('vehicles').select('id, status'),
+        supabase.from('volunteers').select('id', { count: 'exact', head: true }).eq('status', 'activo'),
+        supabase.from('emergencies').select('id', { count: 'exact', head: true }).neq('status', 'finalizada'),
+      ]);
+
+      const vehicleData = vehiclesRes.data ?? [];
+      const activeVehicles = vehicleData.filter(v => v.status === 'en_servicio').length;
+
+      return {
+        monthEmergencies: emergenciesRes.count ?? 0,
+        activeVehicles,
+        totalVehicles: vehicleData.length,
+        activeVolunteers: volunteersRes.count ?? 0,
+        activeEmergencies: activeRes.count ?? 0,
+      };
+    },
+  });
+
+  // Fetch emergency type breakdown
+  const { data: typeData } = useQuery({
+    queryKey: ['dashboard-types'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('emergencies')
+        .select('emergency_key_id, emergency_keys(name, color)')
+        .gte('created_at', new Date(new Date().getFullYear(), 0, 1).toISOString());
+
+      const counts: Record<string, { name: string; value: number; color: string }> = {};
+      (data ?? []).forEach((e: any) => {
+        const name = e.emergency_keys?.name ?? 'Otro';
+        const color = e.emergency_keys?.color ?? 'hsl(220, 14%, 40%)';
+        if (!counts[name]) counts[name] = { name, value: 0, color };
+        counts[name].value++;
+      });
+      return Object.values(counts);
+    },
+  });
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -38,66 +60,67 @@ export default function Dashboard() {
       </h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard title="Emergencias (Mes)" value={53} icon={Siren} color="hsl(0, 85%, 55%)" trend={{ value: '12%', positive: false }} />
-        <StatsCard title="Móviles Activos" value={7} subtitle="de 10 total" icon={Truck} color="hsl(145, 65%, 42%)" />
-        <StatsCard title="Voluntarios Activos" value={85} icon={Users} color="hsl(35, 95%, 55%)" trend={{ value: '5%', positive: true }} />
-        <StatsCard title="T. Respuesta Prom." value="4:32" subtitle="min:seg" icon={Clock} color="hsl(210, 85%, 55%)" trend={{ value: '8%', positive: true }} />
+        <StatsCard title="Emergencias (Mes)" value={stats?.monthEmergencies ?? 0} icon={Siren} color="hsl(0, 85%, 55%)" />
+        <StatsCard title="Móviles Activos" value={stats?.activeVehicles ?? 0} subtitle={`de ${stats?.totalVehicles ?? 0} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
+        <StatsCard title="Voluntarios Activos" value={stats?.activeVolunteers ?? 0} icon={Users} color="hsl(35, 95%, 55%)" />
+        <StatsCard title="Emergencias Activas" value={stats?.activeEmergencies ?? 0} icon={Clock} color="hsl(210, 85%, 55%)" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Bar chart */}
+        {/* Pie chart - types */}
         <div className="console-panel p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Emergencias por Mes</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyData}>
-              <XAxis dataKey="month" tick={{ fill: 'hsl(215, 12%, 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'hsl(215, 12%, 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 14%, 22%)', borderRadius: '8px', color: '#fff' }}
-              />
-              <Bar dataKey="emergencias" fill="hsl(0, 85%, 55%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Pie chart */}
-        <div className="console-panel p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Tipos de Emergencia</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={typeData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" stroke="none">
-                {typeData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
+          <h3 className="text-sm font-semibold text-foreground mb-4">Tipos de Emergencia (Año)</h3>
+          {(typeData ?? []).length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={typeData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" stroke="none">
+                    {(typeData ?? []).map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 14%, 22%)', borderRadius: '8px', color: '#fff' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-2 flex flex-wrap justify-center gap-3">
+                {(typeData ?? []).map(t => (
+                  <div key={t.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+                    {t.name} ({t.value})
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 14%, 22%)', borderRadius: '8px', color: '#fff' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="mt-2 flex flex-wrap justify-center gap-3">
-            {typeData.map(t => (
-              <div key={t.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
-                {t.name}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
+              Sin datos de emergencias aún
+            </div>
+          )}
         </div>
 
-        {/* Line chart */}
-        <div className="console-panel p-4 lg:col-span-2">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Tiempo de Respuesta (min) — Última Semana</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={responseTimeData}>
-              <XAxis dataKey="day" tick={{ fill: 'hsl(215, 12%, 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'hsl(215, 12%, 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 14%, 22%)', borderRadius: '8px', color: '#fff' }}
-              />
-              <Line type="monotone" dataKey="tiempo" stroke="hsl(210, 85%, 55%)" strokeWidth={2} dot={{ fill: 'hsl(210, 85%, 55%)' }} />
-            </LineChart>
-          </ResponsiveContainer>
+        {/* Stats summary */}
+        <div className="console-panel p-4">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Resumen Operativo</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Emergencias este mes</span>
+              <span className="text-lg font-mono font-bold text-foreground">{stats?.monthEmergencies ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Móviles en servicio</span>
+              <span className="text-lg font-mono font-bold text-emergency">{stats?.activeVehicles ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Voluntarios activos</span>
+              <span className="text-lg font-mono font-bold text-success">{stats?.activeVolunteers ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Emergencias activas ahora</span>
+              <span className="text-lg font-mono font-bold text-warning">{stats?.activeEmergencies ?? 0}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

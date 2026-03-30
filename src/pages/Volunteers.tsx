@@ -1,15 +1,18 @@
-import { volunteers } from '@/data/mock-data';
+import { useVolunteers } from '@/hooks/useVolunteers';
 import { Users, Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
 
 export default function Volunteers() {
   const [search, setSearch] = useState('');
-  const filtered = volunteers.filter(v =>
+  const { data: volunteers, isLoading } = useVolunteers();
+
+  const filtered = (volunteers ?? []).filter(v =>
     v.name.toLowerCase().includes(search.toLowerCase()) ||
-    v.company.toLowerCase().includes(search.toLowerCase()) ||
-    v.rank.toLowerCase().includes(search.toLowerCase())
+    (v.companies?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (v.ranks?.name ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -47,22 +50,28 @@ export default function Volunteers() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(v => (
-              <tr key={v.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer">
-                <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{v.rut}</td>
-                <td className="px-4 py-3 text-muted-foreground">{v.rank}</td>
-                <td className="px-4 py-3 text-muted-foreground">{v.company}</td>
-                <td className="px-4 py-3">
-                  <span className={`status-badge ${v.status === 'activo' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
-                    {v.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`h-2.5 w-2.5 rounded-full inline-block ${v.available ? 'bg-success' : 'bg-muted-foreground'}`} />
-                </td>
-              </tr>
-            ))}
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}><td colSpan={6} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+              ))
+            ) : (
+              filtered.map(v => (
+                <tr key={v.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                  <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{v.rut ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{v.ranks?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className={`status-badge ${v.status === 'activo' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+                      {v.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`h-2.5 w-2.5 rounded-full inline-block ${v.available ? 'bg-success' : 'bg-muted-foreground'}`} />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
