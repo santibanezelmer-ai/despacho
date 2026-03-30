@@ -62,6 +62,13 @@ export default function OperativeMap() {
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+
+  const { data: sharedHydrants } = useSharedHydrants(mapBounds);
+
+  const handleBoundsChange = useCallback((bounds: { north: number; south: number; east: number; west: number }) => {
+    setMapBounds(bounds);
+  }, []);
 
   const mapEmergencies = useMemo<MapEmergency[]>(
     () =>
@@ -83,18 +90,25 @@ export default function OperativeMap() {
     [emergencies]
   );
 
-  const mapHydrants = useMemo<MapHydrant[]>(
-    () =>
-      (hydrants ?? []).map((h) => ({
-        id: h.id,
-        latitude: h.latitude,
-        longitude: h.longitude,
-        name: h.name ?? 'Grifo',
-        type: h.type,
-        description: h.description,
-      })),
-    [hydrants]
-  );
+  const mapHydrants = useMemo<MapHydrant[]>(() => {
+    const orgHydrants = (hydrants ?? []).map((h) => ({
+      id: h.id,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      name: h.name ?? 'Grifo',
+      type: h.type,
+      description: h.description,
+    }));
+    const nationalHydrants = (sharedHydrants ?? []).map((h) => ({
+      id: h.id,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      name: h.ubicacion ?? 'Grifo',
+      type: h.modelo ?? null,
+      description: h.anio ? `Año: ${h.anio}` + (h.diam_grifo ? ` | Diám. grifo: ${h.diam_grifo}mm` : '') + (h.diam_tub ? ` | Diám. tubo: ${h.diam_tub}mm` : '') : null,
+    }));
+    return [...orgHydrants, ...nationalHydrants];
+  }, [hydrants, sharedHydrants]);
 
   return (
     <div className="flex w-full flex-col h-full" style={{ width: '100%' }}>
