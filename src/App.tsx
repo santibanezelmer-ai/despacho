@@ -18,6 +18,8 @@ import AdminPanel from "@/pages/AdminPanel";
 import OperativeMap from "@/pages/OperativeMap";
 import EquipmentPage from "@/pages/Equipment";
 import CentralScreen from "@/pages/CentralScreen";
+import AlertsPage from "@/pages/AlertsPage";
+import SimulationPage from "@/pages/SimulationPage";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
@@ -52,8 +54,8 @@ function ProtectedRoutes() {
         <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
         <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
         <Route path="/pantalla-central" element={<CentralScreen />} />
-        <Route path="/simulacion" element={<PlaceholderPage title="Modo Simulación" description="Crear emergencias ficticias para entrenamiento." />} />
-        <Route path="/alertas" element={<PlaceholderPage title="Alertas Internas" description="Alertas de falta de personal, móviles y tiempos." />} />
+        <Route path="/simulacion" element={<SimulationPage />} />
+        <Route path="/alertas" element={<AlertsPage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -75,6 +75,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 .filter((item) => item.section === section)
                 .map((item) => {
                   const isActive = location.pathname === item.path;
+
+                  // Special case: Central Screen opens in a new window
+                  if (item.path === '/pantalla-central') {
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => {
+                          window.open(
+                            '/pantalla-central',
+                            'central-screen',
+                            'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no'
+                          );
+                        }}
+                        className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        title={collapsed ? item.label : undefined}
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span className="truncate">{item.label}</span>}
+                      </button>
+                    );
+                  }
+
                   return (
                     <Link
                       key={item.path}

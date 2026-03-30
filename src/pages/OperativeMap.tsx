@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
+import { useVehicles } from '@/hooks/useVehicles';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Map, Flame, Droplets, Layers } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Map, Flame, Droplets, Layers, Truck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
@@ -21,17 +21,17 @@ L.Icon.Default.mergeOptions({
 const emergencyIcon = (color: string) =>
   L.divIcon({
     className: '',
-    html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M12 2L2 22h20L12 2z"/></svg>
+    html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M12 2L2 22h20L12 2z"/></svg>
     </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 
 const hydrantIcon = L.divIcon({
   className: '',
-  html: `<div style="background:hsl(210,85%,55%);width:22px;height:22px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="8"/></svg>
+  html: `<div style="background:#3b82f6;width:22px;height:22px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="6"/></svg>
   </div>`,
   iconSize: [22, 22],
   iconAnchor: [11, 11],
@@ -43,21 +43,31 @@ function useHydrants() {
     queryFn: async () => {
       const { data, error } = await supabase.from('hydrants').select('*').eq('active', true);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 }
 
-const DEFAULT_CENTER: [number, number] = [-33.4489, -70.6693]; // Santiago, Chile
+const DEFAULT_CENTER: [number, number] = [-33.4489, -70.6693];
 
-function FitBounds({ positions }: { positions: [number, number][] }) {
+function MapController({ positions }: { positions: [number, number][] }) {
   const map = useMap();
+
+  useEffect(() => {
+    // Invalidate map size after mount to fix grey tiles
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+
   useEffect(() => {
     if (positions.length > 0) {
       const bounds = L.latLngBounds(positions.map(p => L.latLng(p[0], p[1])));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
-  }, [positions.length]);
+  }, [positions.length, map]);
+
   return null;
 }
 
@@ -74,14 +84,21 @@ export default function OperativeMap() {
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
 
-  const emergenciesWithCoords = (emergencies ?? []).filter(
-    e => e.latitude != null && e.longitude != null
+  const emergenciesWithCoords = useMemo(
+    () => (emergencies ?? []).filter(e => e.latitude != null && e.longitude != null),
+    [emergencies]
   );
 
-  const allPositions: [number, number][] = [
-    ...emergenciesWithCoords.map(e => [e.latitude!, e.longitude!] as [number, number]),
-    ...(showHydrants ? (hydrants ?? []).map(h => [h.latitude, h.longitude] as [number, number]) : []),
-  ];
+  const allPositions = useMemo<[number, number][]>(() => {
+    const pts: [number, number][] = [];
+    if (showEmergencies) {
+      emergenciesWithCoords.forEach(e => pts.push([e.latitude!, e.longitude!]));
+    }
+    if (showHydrants) {
+      (hydrants ?? []).forEach(h => pts.push([h.latitude, h.longitude]));
+    }
+    return pts;
+  }, [emergenciesWithCoords, hydrants, showEmergencies, showHydrants]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
@@ -105,19 +122,19 @@ export default function OperativeMap() {
         </div>
       </div>
 
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" style={{ minHeight: '400px' }}>
         <MapContainer
           center={DEFAULT_CENTER}
           zoom={13}
           className="h-full w-full"
-          style={{ background: 'hsl(220, 20%, 7%)' }}
+          style={{ background: 'hsl(220, 20%, 7%)', height: '100%', width: '100%' }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {allPositions.length > 0 && <FitBounds positions={allPositions} />}
+          <MapController positions={allPositions} />
 
           {showEmergencies && emergenciesWithCoords.map(e => (
             <Marker
@@ -155,7 +172,7 @@ export default function OperativeMap() {
         </MapContainer>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 console-panel p-3 z-[1000] space-y-1.5">
+        <div className="absolute bottom-4 left-4 bg-card border border-border rounded-lg p-3 z-[1000] space-y-1.5">
           <p className="text-xs font-semibold text-foreground flex items-center gap-1">
             <Layers className="h-3 w-3" /> Leyenda
           </p>
