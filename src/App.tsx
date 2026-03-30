@@ -11,6 +11,8 @@ import ActiveEmergencies from "@/pages/ActiveEmergencies";
 import Dashboard from "@/pages/Dashboard";
 import Volunteers from "@/pages/Volunteers";
 import Vehicles from "@/pages/Vehicles";
+import Companies from "@/pages/Companies";
+import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
 import AdminPanel from "@/pages/AdminPanel";
 import NotFound from "./pages/NotFound.tsx";
@@ -39,6 +41,8 @@ function ProtectedRoutes() {
         <Route path="/mapa" element={<PlaceholderPage title="Mapa Operativo" description="Mapa interactivo con emergencias, móviles, grifos y zonas." />} />
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />
+        <Route path="/companias" element={<Companies />} />
+        <Route path="/claves" element={<EmergencyKeysAdmin />} />
         <Route path="/equipamiento" element={<PlaceholderPage title="Equipamiento" description="Gestión de inventario y herramientas por móvil." />} />
         <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
         <Route path="/dashboard" element={<Dashboard />} />
