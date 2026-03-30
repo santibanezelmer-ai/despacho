@@ -289,7 +289,7 @@ export default function MobileEmergencyDetailPage() {
                   className="w-full flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2 active:bg-secondary/50"
                 >
                   <div className="flex items-center gap-2">
-                    <Droplets className="w-3.5 h-3.5 text-blue-400" />
+                    <Droplets className="w-3.5 h-3.5 text-[hsl(var(--info))]" />
                     <span className="text-xs truncate max-w-[180px]">{h.ubicacion || h.name || 'Grifo'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
