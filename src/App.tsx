@@ -123,6 +123,7 @@ function AppRoutes() {
         <Route path="/exportaciones" element={<ExportsPage />} />
         <Route path="/simulacion" element={<SimulationPage />} />
         <Route path="/alertas" element={<AlertsPage />} />
+        <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
