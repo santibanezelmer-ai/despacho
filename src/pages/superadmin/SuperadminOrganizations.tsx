@@ -31,7 +31,7 @@ export default function SuperadminOrganizations() {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: '', commune: '', region: '', status: 'active' as string });
+  const [form, setForm] = useState({ name: '', commune: '', region: '', status: 'active', adminEmail: '' });
   const qc = useQueryClient();
 
   const { data: orgs, isLoading } = useQuery({
@@ -56,18 +56,54 @@ export default function SuperadminOrganizations() {
     if (!form.name.trim()) { toast.error('El nombre es obligatorio'); return; }
     setCreating(true);
     const slug = slugify(form.name);
-    const { error } = await (supabase as any).from('organizations').insert({
+
+    // 1. Create organization
+    const { data: orgData, error: orgError } = await (supabase as any).from('organizations').insert({
       name: form.name.trim(),
       slug,
       commune: form.commune.trim() || null,
       region: form.region || null,
       status: form.status,
-    });
-    setCreating(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success('Organización creada');
-    setForm({ name: '', commune: '', region: '', status: 'active' });
+    }).select('id').single();
+
+    if (orgError) { toast.error(orgError.message); setCreating(false); return; }
+
+    // 2. If admin email provided, look up user and assign as admin
+    const adminEmail = form.adminEmail.trim().toLowerCase();
+    if (adminEmail && orgData?.id) {
+      const { data: profile, error: profileError } = await (supabase as any)
+        .from('profiles')
+        .select('user_id')
+        .eq('email', adminEmail)
+        .maybeSingle();
+
+      if (profileError) {
+        toast.warning('Organización creada, pero hubo un error buscando el usuario: ' + profileError.message);
+      } else if (!profile) {
+        toast.warning('Organización creada, pero el correo no corresponde a un usuario registrado. Deberá asignarse manualmente.');
+      } else {
+        const { error: memberError } = await (supabase as any)
+          .from('organization_members')
+          .insert({
+            organization_id: orgData.id,
+            user_id: profile.user_id,
+            role: 'admin',
+            status: 'active',
+          });
+
+        if (memberError) {
+          toast.warning('Organización creada, pero no se pudo asignar el admin: ' + memberError.message);
+        } else {
+          toast.success('Organización creada con administrador asignado');
+        }
+      }
+    } else {
+      toast.success('Organización creada');
+    }
+
+    setForm({ name: '', commune: '', region: '', status: 'active', adminEmail: '' });
     setOpen(false);
+    setCreating(false);
     qc.invalidateQueries({ queryKey: ['superadmin-orgs'] });
   };
 
@@ -120,6 +156,18 @@ export default function SuperadminOrganizations() {
                     <SelectItem value="pending">Pendiente</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Email del Administrador</Label>
+                <Input
+                  type="email"
+                  value={form.adminEmail}
+                  onChange={e => setForm(f => ({ ...f, adminEmail: e.target.value }))}
+                  placeholder="admin@ejemplo.com"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Opcional. El usuario debe estar registrado en la plataforma.
+                </p>
               </div>
               <Button className="w-full" onClick={handleCreate} disabled={creating}>
                 {creating ? 'Creando...' : 'Crear Organización'}
