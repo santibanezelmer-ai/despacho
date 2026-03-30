@@ -247,9 +247,10 @@ export default function LeafletMapCanvas({
       });
     }
 
-    if (positions.length > 0) {
+    if (!initialFitDoneRef.current && positions.length > 0) {
       const bounds = L.latLngBounds(positions.map((position) => L.latLng(position[0], position[1])));
       mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      initialFitDoneRef.current = true;
     }
   }, [emergencies, hydrants, positions, showEmergencies, showHydrants]);
 
