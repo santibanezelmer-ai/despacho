@@ -195,11 +195,24 @@ export default function LeafletMapCanvas({
     });
     observer.observe(map.getContainer());
 
+    // Event delegation for hydrant edit/delete buttons
+    const handlePopupClick = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('[data-hydrant-action]') as HTMLElement | null;
+      if (!btn) return;
+      const action = btn.dataset.hydrantAction as 'edit' | 'delete';
+      const id = btn.dataset.hydrantId;
+      if (!action || !id) return;
+      const h = hydrantsRef.current.find(h => h.id === id);
+      if (h) onHydrantActionRef.current?.(action, h);
+    };
+    map.getContainer().addEventListener('click', handlePopupClick);
+
     const timer = window.setTimeout(() => map.invalidateSize({ pan: false }), 150);
 
     return () => {
       window.clearTimeout(timer);
       observer.disconnect();
+      map.getContainer().removeEventListener('click', handlePopupClick);
       map.remove();
       mapRef.current = null;
       emergencyLayerRef.current = null;
