@@ -110,7 +110,7 @@ export default function OperativeMap() {
   }, [emergenciesWithCoords, hydrants, showEmergencies, showHydrants]);
 
   return (
-    <div className="flex w-full flex-col" style={{ width: '100%', height: '100vh' }}>
+    <div className="flex w-full flex-col h-full" style={{ width: '100%' }}>
       <div className="flex items-center justify-between p-3 border-b border-border bg-card">
         <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Map className="h-5 w-5 text-info" /> Mapa Operativo
