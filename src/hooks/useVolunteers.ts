@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useVolunteers() {
+type UseVolunteersOptions = {
+  refetchInterval?: number;
+};
+
+export function useVolunteers(options: UseVolunteersOptions = {}) {
   return useQuery({
     queryKey: ['volunteers'],
     queryFn: async () => {
@@ -12,5 +16,6 @@ export function useVolunteers() {
       if (error) throw error;
       return data;
     },
+    refetchInterval: options.refetchInterval,
   });
 }

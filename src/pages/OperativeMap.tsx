@@ -1,9 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { useVehicles } from '@/hooks/useVehicles';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Map, Flame, Droplets, Layers, Truck } from 'lucide-react';
@@ -49,16 +48,25 @@ function useHydrants() {
 }
 
 const DEFAULT_CENTER: [number, number] = [-33.4489, -70.6693];
+const PRIMARY_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const FALLBACK_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 function MapController({ positions }: { positions: [number, number][] }) {
   const map = useMap();
 
   useEffect(() => {
-    // Invalidate map size after mount to fix grey tiles
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-    return () => clearTimeout(timer);
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize({ pan: false });
+    });
+
+    observer.observe(container);
+
+    const timer = setTimeout(() => map.invalidateSize({ pan: false }), 150);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [map]);
 
   useEffect(() => {
@@ -66,7 +74,7 @@ function MapController({ positions }: { positions: [number, number][] }) {
       const bounds = L.latLngBounds(positions.map(p => L.latLng(p[0], p[1])));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
-  }, [positions.length, map]);
+  }, [positions, map]);
 
   return null;
 }
@@ -83,6 +91,7 @@ export default function OperativeMap() {
   const { data: hydrants } = useHydrants();
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
+  const [tileUrl, setTileUrl] = useState(PRIMARY_TILE_URL);
 
   const emergenciesWithCoords = useMemo(
     () => (emergencies ?? []).filter(e => e.latitude != null && e.longitude != null),
@@ -101,7 +110,7 @@ export default function OperativeMap() {
   }, [emergenciesWithCoords, hydrants, showEmergencies, showHydrants]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex w-full flex-col" style={{ width: '100%', height: '100vh' }}>
       <div className="flex items-center justify-between p-3 border-b border-border bg-card">
         <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Map className="h-5 w-5 text-info" /> Mapa Operativo
@@ -122,16 +131,25 @@ export default function OperativeMap() {
         </div>
       </div>
 
-      <div className="flex-1 relative" style={{ minHeight: '400px' }}>
+      <div className="relative flex-1 min-h-0">
         <MapContainer
           center={DEFAULT_CENTER}
           zoom={13}
           className="h-full w-full"
-          style={{ background: 'hsl(220, 20%, 7%)', height: '100%', width: '100%' }}
+          style={{ height: '100%', width: '100%', background: 'hsl(var(--muted))' }}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution={
+              tileUrl === PRIMARY_TILE_URL
+                ? '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }
+            url={tileUrl}
+            eventHandlers={{
+              tileerror: () => {
+                setTileUrl(prev => (prev === PRIMARY_TILE_URL ? FALLBACK_TILE_URL : prev));
+              },
+            }}
           />
 
           <MapController positions={allPositions} />
@@ -170,6 +188,12 @@ export default function OperativeMap() {
             </Marker>
           ))}
         </MapContainer>
+
+        {tileUrl === FALLBACK_TILE_URL && (
+          <div className="absolute top-4 right-4 z-[1000] rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+            Modo compatibilidad de mapa activo
+          </div>
+        )}
 
         {/* Legend */}
         <div className="absolute bottom-4 left-4 bg-card border border-border rounded-lg p-3 z-[1000] space-y-1.5">
