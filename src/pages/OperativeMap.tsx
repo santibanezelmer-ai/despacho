@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,37 @@ function useHydrants() {
   });
 }
 
+function useSharedHydrants(bounds: { north: number; south: number; east: number; west: number } | null) {
+  return useQuery({
+    queryKey: ['shared-hydrants', bounds?.north, bounds?.south, bounds?.east, bounds?.west],
+    queryFn: async () => {
+      if (!bounds) return [];
+      const { data, error } = await supabase
+        .from('shared_hydrants' as any)
+        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
+        .eq('active', true)
+        .gte('latitude', bounds.south)
+        .lte('latitude', bounds.north)
+        .gte('longitude', bounds.west)
+        .lte('longitude', bounds.east)
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{
+        id: string;
+        latitude: number;
+        longitude: number;
+        ubicacion: string | null;
+        modelo: string | null;
+        diam_grifo: number | null;
+        diam_tub: number | null;
+        anio: number | null;
+      }>;
+    },
+    enabled: !!bounds,
+    staleTime: 30000,
+  });
+}
+
 const statusLabels: Record<string, string> = {
   despacho: 'DESPACHO',
   en_ruta: 'EN RUTA',
@@ -31,6 +62,13 @@ export default function OperativeMap() {
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+
+  const { data: sharedHydrants } = useSharedHydrants(mapBounds);
+
+  const handleBoundsChange = useCallback((bounds: { north: number; south: number; east: number; west: number }) => {
+    setMapBounds(bounds);
+  }, []);
 
   const mapEmergencies = useMemo<MapEmergency[]>(
     () =>
@@ -52,18 +90,25 @@ export default function OperativeMap() {
     [emergencies]
   );
 
-  const mapHydrants = useMemo<MapHydrant[]>(
-    () =>
-      (hydrants ?? []).map((h) => ({
-        id: h.id,
-        latitude: h.latitude,
-        longitude: h.longitude,
-        name: h.name ?? 'Grifo',
-        type: h.type,
-        description: h.description,
-      })),
-    [hydrants]
-  );
+  const mapHydrants = useMemo<MapHydrant[]>(() => {
+    const orgHydrants = (hydrants ?? []).map((h) => ({
+      id: h.id,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      name: h.name ?? 'Grifo',
+      type: h.type,
+      description: h.description,
+    }));
+    const nationalHydrants = (sharedHydrants ?? []).map((h) => ({
+      id: h.id,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      name: h.ubicacion ?? 'Grifo',
+      type: h.modelo ?? null,
+      description: h.anio ? `Año: ${h.anio}` + (h.diam_grifo ? ` | Diám. grifo: ${h.diam_grifo}mm` : '') + (h.diam_tub ? ` | Diám. tubo: ${h.diam_tub}mm` : '') : null,
+    }));
+    return [...orgHydrants, ...nationalHydrants];
+  }, [hydrants, sharedHydrants]);
 
   return (
     <div className="flex w-full flex-col h-full" style={{ width: '100%' }}>
@@ -94,6 +139,7 @@ export default function OperativeMap() {
           showEmergencies={showEmergencies}
           showHydrants={showHydrants}
           onCompatibilityModeChange={setCompatibilityMode}
+          onBoundsChange={handleBoundsChange}
         />
 
         {compatibilityMode && (

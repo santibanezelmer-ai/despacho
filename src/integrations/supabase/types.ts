@@ -748,6 +748,48 @@ export type Database = {
           },
         ]
       }
+      shared_hydrants: {
+        Row: {
+          active: boolean
+          anio: number | null
+          created_at: string
+          diam_grifo: number | null
+          diam_tub: number | null
+          grifo_id: number | null
+          id: string
+          latitude: number
+          longitude: number
+          modelo: string | null
+          ubicacion: string | null
+        }
+        Insert: {
+          active?: boolean
+          anio?: number | null
+          created_at?: string
+          diam_grifo?: number | null
+          diam_tub?: number | null
+          grifo_id?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          modelo?: string | null
+          ubicacion?: string | null
+        }
+        Update: {
+          active?: boolean
+          anio?: number | null
+          created_at?: string
+          diam_grifo?: number | null
+          diam_tub?: number | null
+          grifo_id?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          modelo?: string | null
+          ubicacion?: string | null
+        }
+        Relationships: []
+      }
       superadmins: {
         Row: {
           created_at: string

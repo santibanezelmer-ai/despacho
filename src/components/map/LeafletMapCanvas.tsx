@@ -45,6 +45,7 @@ type LeafletMapCanvasProps = {
   showEmergencies: boolean;
   showHydrants: boolean;
   onCompatibilityModeChange: (enabled: boolean) => void;
+  onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
@@ -111,6 +112,7 @@ export default function LeafletMapCanvas({
   showEmergencies,
   showHydrants,
   onCompatibilityModeChange,
+  onBoundsChange,
 }: LeafletMapCanvasProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -130,6 +132,21 @@ export default function LeafletMapCanvas({
       zoomControl: true,
     });
     mapRef.current = map;
+
+    const reportBounds = () => {
+      if (!onBoundsChange) return;
+      const b = map.getBounds();
+      onBoundsChange({
+        north: b.getNorth(),
+        south: b.getSouth(),
+        east: b.getEast(),
+        west: b.getWest(),
+      });
+    };
+
+    map.on('moveend', reportBounds);
+    // Report initial bounds after map is ready
+    window.setTimeout(reportBounds, 200);
 
     const emergencyLayer = L.layerGroup().addTo(map);
     const hydrantLayer = L.layerGroup().addTo(map);
@@ -171,7 +188,7 @@ export default function LeafletMapCanvas({
       tileLayerRef.current = null;
       tileUrlRef.current = PRIMARY_TILE_URL;
     };
-  }, [onCompatibilityModeChange]);
+  }, [onCompatibilityModeChange, onBoundsChange]);
 
   const positions = useMemo<[number, number][]>(() => {
     const points: [number, number][] = [];
