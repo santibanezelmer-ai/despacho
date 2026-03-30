@@ -20,6 +20,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: allVehicles } = useVehicles();
+  const { data: companies } = useCompanies();
   const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
 
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
@@ -29,6 +30,84 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [callerPhone, setCallerPhone] = useState('');
   const [observations, setObservations] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [playingTones, setPlayingTones] = useState(false);
+  const [currentTone, setCurrentTone] = useState('');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const toneQueueRef = useRef<{ url: string; label: string }[]>([]);
+  const toneIndexRef = useRef(0);
+
+  // Sequential tone player
+  const playNextTone = useCallback(() => {
+    const queue = toneQueueRef.current;
+    const idx = toneIndexRef.current;
+    if (idx >= queue.length) {
+      setPlayingTones(false);
+      setCurrentTone('');
+      return;
+    }
+    const tone = queue[idx];
+    setCurrentTone(tone.label);
+    const audio = new Audio(tone.url);
+    audioRef.current = audio;
+    audio.onended = () => {
+      toneIndexRef.current++;
+      playNextTone();
+    };
+    audio.onerror = () => {
+      toneIndexRef.current++;
+      playNextTone();
+    };
+    audio.play().catch(() => {
+      toneIndexRef.current++;
+      playNextTone();
+    });
+  }, []);
+
+  const startToneSequence = useCallback((vehicleIds: string[]) => {
+    // Get unique company IDs from selected vehicles
+    const companyIds = new Set<string>();
+    for (const vid of vehicleIds) {
+      const v = (allVehicles ?? []).find(veh => veh.id === vid);
+      if (v?.company_id) companyIds.add(v.company_id);
+    }
+
+    const queue: { url: string; label: string }[] = [];
+
+    // Add company tones first
+    for (const cid of companyIds) {
+      const company = (companies ?? []).find(c => c.id === cid);
+      if (company?.tone_url) {
+        queue.push({ url: company.tone_url, label: `Compañía ${company.name}` });
+      }
+    }
+
+    // Add emergency key tone
+    if (emergencyKey.tone_url) {
+      queue.push({ url: emergencyKey.tone_url, label: `Clave ${emergencyKey.code}` });
+    }
+
+    if (queue.length > 0) {
+      toneQueueRef.current = queue;
+      toneIndexRef.current = 0;
+      setPlayingTones(true);
+      playNextTone();
+    }
+  }, [allVehicles, companies, emergencyKey, playNextTone]);
+
+  const stopTones = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    toneQueueRef.current = [];
+    setPlayingTones(false);
+    setCurrentTone('');
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { if (audioRef.current) audioRef.current.pause(); };
+  }, []);
 
   const toggleVehicle = (id: string) => {
     setSelectedVehicleIds(prev =>
