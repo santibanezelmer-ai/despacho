@@ -3,7 +3,7 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Building2, Plus, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Plus, Search, Pencil, Trash2, Loader2, Upload, Volume2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,9 +19,10 @@ interface CompanyForm {
   address: string;
   phone: string;
   active: boolean;
+  tone_url: string;
 }
 
-const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true };
+const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '' };
 
 export default function Companies() {
   const [search, setSearch] = useState('');
@@ -39,8 +40,33 @@ export default function Companies() {
 
   const openNew = () => { setEditing({ ...empty }); setDialogOpen(true); };
   const openEdit = (c: any) => {
-    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active });
+    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '' });
     setDialogOpen(true);
+  };
+
+  const [uploading, setUploading] = useState(false);
+
+  const handleToneUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `company-${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('tones').upload(path, file);
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('tones').getPublicUrl(path);
+      setEditing(f => f ? { ...f, tone_url: urlData.publicUrl } : f);
+      toast.success('Tono subido');
+    } catch (err: any) {
+      toast.error(err.message || 'Error subiendo tono');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const playTone = (url: string) => {
+    try { new Audio(url).play(); } catch { toast.error('No se puede reproducir'); }
   };
 
   const handleSave = async () => {
@@ -54,6 +80,7 @@ export default function Companies() {
         address: editing.address.trim() || null,
         phone: editing.phone.trim() || null,
         active: editing.active,
+        tone_url: editing.tone_url.trim() || null,
       };
       if (editing.id) {
         const { error } = await supabase.from('companies').update(payload).eq('id', editing.id);
@@ -173,6 +200,23 @@ export default function Companies() {
                 <div className="flex items-end gap-2 pb-1">
                   <Switch checked={editing.active} onCheckedChange={v => setEditing(f => f ? { ...f, active: v } : f)} />
                   <Label className="text-xs">Activa</Label>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Tono de Compañía (MP3)</Label>
+                <div className="flex items-center gap-2">
+                  <Input value={editing.tone_url} onChange={e => setEditing(f => f ? { ...f, tone_url: e.target.value } : f)} placeholder="URL o subir archivo" className="bg-muted/50 text-xs flex-1" />
+                  <label className="cursor-pointer">
+                    <input type="file" accept="audio/*" className="hidden" onChange={handleToneUpload} />
+                    <Button size="sm" variant="outline" className="h-8 px-2" asChild disabled={uploading}>
+                      <span>{uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}</span>
+                    </Button>
+                  </label>
+                  {editing.tone_url && (
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => playTone(editing.tone_url)}>
+                      <Volume2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
