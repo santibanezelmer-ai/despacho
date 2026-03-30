@@ -114,6 +114,7 @@ export default function OperativeMap() {
       name: h.name ?? 'Grifo',
       type: h.type,
       description: h.description,
+      isOwn: true,
     }));
     const nationalHydrants = (sharedHydrants ?? []).map((h) => ({
       id: h.id,
@@ -122,6 +123,7 @@ export default function OperativeMap() {
       name: h.ubicacion ?? 'Grifo',
       type: h.modelo ?? null,
       description: h.anio ? `Año: ${h.anio}` + (h.diam_grifo ? ` | Diám. grifo: ${h.diam_grifo}mm` : '') + (h.diam_tub ? ` | Diám. tubo: ${h.diam_tub}mm` : '') : null,
+      isOwn: false,
     }));
     return [...orgHydrants, ...nationalHydrants];
   }, [hydrants, sharedHydrants]);
