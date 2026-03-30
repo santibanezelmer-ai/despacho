@@ -109,6 +109,20 @@ function AppRoutes() {
     );
   }
 
+  // Mobile routes
+  if (location.pathname.startsWith('/mobile')) {
+    return (
+      <MobileLayout>
+        <Routes>
+          <Route path="/mobile" element={<MobileFeedPage />} />
+          <Route path="/mobile/feed" element={<MobileFeedPage />} />
+          <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
+          <Route path="*" element={<MobileFeedPage />} />
+        </Routes>
+      </MobileLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <Routes>
