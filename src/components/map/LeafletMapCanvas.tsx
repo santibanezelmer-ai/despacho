@@ -188,7 +188,7 @@ export default function LeafletMapCanvas({
       tileLayerRef.current = null;
       tileUrlRef.current = PRIMARY_TILE_URL;
     };
-  }, [onCompatibilityModeChange]);
+  }, [onCompatibilityModeChange, onBoundsChange]);
 
   const positions = useMemo<[number, number][]>(() => {
     const points: [number, number][] = [];
