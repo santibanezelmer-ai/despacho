@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, MapPin, Phone, User, MessageSquare, Truck, Send, Loader2 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { X, MapPin, Phone, User, MessageSquare, Truck, Send, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
+import { useCompanies } from '@/hooks/useCompanies';
 
 interface Props {
   emergencyKey: EmergencyKeyRow;
