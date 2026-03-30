@@ -112,6 +112,7 @@ export default function LeafletMapCanvas({
   showEmergencies,
   showHydrants,
   onCompatibilityModeChange,
+  onBoundsChange,
 }: LeafletMapCanvasProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
