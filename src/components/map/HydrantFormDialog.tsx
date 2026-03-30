@@ -18,7 +18,7 @@ type HydrantFormDialogProps = {
   editingHydrant?: { id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null;
 };
 
-export default function HydrantFormDialog({ open, onOpenChange, initialCoords }: HydrantFormDialogProps) {
+export default function HydrantFormDialog({ open, onOpenChange, initialCoords, editingHydrant }: HydrantFormDialogProps) {
   const { orgId } = useOrganization();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,15 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords }:
     setLat(initialCoords.lat.toFixed(6));
     setLng(initialCoords.lng.toFixed(6));
     setLastCoords(initialCoords);
+  }
+
+  // Sync editing hydrant data
+  const [lastEditing, setLastEditing] = useState(editingHydrant);
+  if (editingHydrant && editingHydrant !== lastEditing) {
+    setName(editingHydrant.name ?? '');
+    setType(editingHydrant.type ?? '');
+    setDescription(editingHydrant.description ?? '');
+    setLastEditing(editingHydrant);
   }
 
   const resetForm = () => {
