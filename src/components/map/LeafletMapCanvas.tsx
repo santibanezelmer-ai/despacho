@@ -126,7 +126,12 @@ export default function LeafletMapCanvas({
   onBoundsChange,
   onMapClick,
   clickMode,
+  onHydrantAction,
 }: LeafletMapCanvasProps) {
+  const hydrantsRef = useRef(hydrants);
+  hydrantsRef.current = hydrants;
+  const onHydrantActionRef = useRef(onHydrantAction);
+  onHydrantActionRef.current = onHydrantAction;
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const emergencyLayerRef = useRef<L.LayerGroup | null>(null);
