@@ -196,16 +196,24 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </span>
             <h2 className="text-lg font-bold text-foreground">{emergencyKey.name}</h2>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button onClick={() => { stopTones(); onClose(); }} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Tone indicator */}
-        <div className="mx-4 mt-3 flex items-center gap-2 rounded-md bg-emergency/10 px-3 py-2 text-xs font-mono text-emergency">
-          <span className="pulse-live h-2 w-2 rounded-full bg-emergency" />
-          Reproduciendo tono: {emergencyKey.name}
-        </div>
+        {playingTones && (
+          <div className="mx-4 mt-3 flex items-center justify-between rounded-md bg-emergency/10 px-3 py-2 text-xs font-mono text-emergency">
+            <div className="flex items-center gap-2">
+              <span className="pulse-live h-2 w-2 rounded-full bg-emergency" />
+              <Volume2 className="h-3.5 w-3.5" />
+              Reproduciendo: {currentTone}
+            </div>
+            <button onClick={stopTones} className="hover:text-foreground">
+              <VolumeX className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Form */}
         <div className="p-4 space-y-4">
