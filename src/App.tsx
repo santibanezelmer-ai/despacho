@@ -34,6 +34,9 @@ import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
 import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations";
 import SuperadminRequests from "@/pages/superadmin/SuperadminRequests";
 import NotFound from "./pages/NotFound";
+import MobileLayout from "@/components/mobile/MobileLayout";
+import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
+import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -103,6 +106,20 @@ function AppRoutes() {
       <Routes>
         <Route path="*" element={<PendingApproval />} />
       </Routes>
+    );
+  }
+
+  // Mobile routes
+  if (location.pathname.startsWith('/mobile')) {
+    return (
+      <MobileLayout>
+        <Routes>
+          <Route path="/mobile" element={<MobileFeedPage />} />
+          <Route path="/mobile/feed" element={<MobileFeedPage />} />
+          <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
+          <Route path="*" element={<MobileFeedPage />} />
+        </Routes>
+      </MobileLayout>
     );
   }
 
