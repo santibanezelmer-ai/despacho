@@ -45,6 +45,7 @@ type LeafletMapCanvasProps = {
   showEmergencies: boolean;
   showHydrants: boolean;
   onCompatibilityModeChange: (enabled: boolean) => void;
+  onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();

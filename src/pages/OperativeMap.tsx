@@ -139,6 +139,7 @@ export default function OperativeMap() {
           showEmergencies={showEmergencies}
           showHydrants={showHydrants}
           onCompatibilityModeChange={setCompatibilityMode}
+          onBoundsChange={handleBoundsChange}
         />
 
         {compatibilityMode && (
