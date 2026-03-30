@@ -13,6 +13,7 @@ const navItems = [
   { path: '/mapa', label: 'Mapa Operativo', icon: MapPin, section: 'Operaciones' },
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
   { path: '/moviles', label: 'Móviles', icon: Truck, section: 'Recursos' },
+  { path: '/companias', label: 'Compañías', icon: ClipboardList, section: 'Recursos' },
   { path: '/equipamiento', label: 'Equipamiento', icon: Wrench, section: 'Recursos' },
   { path: '/capacitaciones', label: 'Capacitaciones', icon: GraduationCap, section: 'Recursos' },
   { path: '/dashboard', label: 'Dashboard', icon: BarChart3, section: 'Análisis' },
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/pantalla-central', label: 'Pantalla Central', icon: Monitor, section: 'Sistema' },
   { path: '/simulacion', label: 'Simulación', icon: Play, section: 'Sistema' },
   { path: '/alertas', label: 'Alertas', icon: Bell, section: 'Sistema' },
+  { path: '/claves', label: 'Claves Emergencia', icon: Siren, section: 'Sistema' },
   { path: '/admin', label: 'Administración', icon: Settings, section: 'Sistema' },
 ];
 
