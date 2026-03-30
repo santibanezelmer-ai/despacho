@@ -67,6 +67,7 @@ export default function SimulationPage() {
     try {
       const { error } = await supabase.from('emergencies').insert({
         emergency_key_id: form.keyId,
+        organization_id: orgId!,
         address: form.address,
         caller_name: form.callerName || 'Simulación',
         caller_phone: form.callerPhone || null,

@@ -40,6 +40,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
   const [form, setForm] = useState<VolunteerData>(empty);
   const [saving, setSaving] = useState(false);
   const { data: companies } = useCompanies();
+  const { orgId } = useOrganization();
   const { data: ranks } = useRanks();
   const qc = useQueryClient();
   const isEdit = !!volunteer;
@@ -75,6 +76,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
         rank_id: form.rank_id || null,
         status: form.status as any,
         available: form.available,
+        organization_id: orgId!,
       };
 
       if (isEdit) {

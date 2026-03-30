@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface KeyForm {
   id?: string;
@@ -31,6 +32,7 @@ export default function EmergencyKeysAdmin() {
   const [uploading, setUploading] = useState(false);
   const { data: keys, isLoading } = useEmergencyKeys();
   const { hasRole } = useAuth();
+  const { orgId } = useOrganization();
   const qc = useQueryClient();
   const isAdmin = hasRole('admin');
 
@@ -91,6 +93,7 @@ export default function EmergencyKeysAdmin() {
         sort_order: parseInt(editing.sort_order) || 0,
         active: editing.active,
         tone_url: editing.tone_url.trim() || null,
+        organization_id: orgId!,
       };
       if (editing.id) {
         const { error } = await supabase.from('emergency_keys').update(payload).eq('id', editing.id);

@@ -36,6 +36,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
   const [form, setForm] = useState<VehicleData>(empty);
   const [saving, setSaving] = useState(false);
   const { data: companies } = useCompanies();
+  const { orgId } = useOrganization();
   const qc = useQueryClient();
   const isEdit = !!vehicle;
 
@@ -71,6 +72,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         capacity: parseInt(form.capacity) || 6,
         company_id: form.company_id || null,
         status: form.status as any,
+        organization_id: orgId!,
       };
 
       if (isEdit) {
