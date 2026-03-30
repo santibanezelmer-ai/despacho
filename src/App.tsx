@@ -12,6 +12,7 @@ import Dashboard from "@/pages/Dashboard";
 import Volunteers from "@/pages/Volunteers";
 import Vehicles from "@/pages/Vehicles";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
+import AdminPanel from "@/pages/AdminPanel";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
