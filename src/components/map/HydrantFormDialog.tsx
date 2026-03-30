@@ -73,14 +73,21 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
     }
 
     setLoading(true);
-    const { error } = await supabase.from('hydrants').insert({
+    const payload = {
       organization_id: orgId,
       name: name.trim() || null,
       latitude,
       longitude,
       type: type || null,
       description: description.trim() || null,
-    });
+    };
+
+    let error;
+    if (editingHydrant) {
+      ({ error } = await supabase.from('hydrants').update(payload).eq('id', editingHydrant.id));
+    } else {
+      ({ error } = await supabase.from('hydrants').insert(payload));
+    }
 
     setLoading(false);
 
