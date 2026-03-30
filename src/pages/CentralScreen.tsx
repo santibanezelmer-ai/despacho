@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { Radio, MapPin, Truck, Users, Clock, Flame, Shield } from 'lucide-react';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useVolunteers } from '@/hooks/useVolunteers';
+import { Radio, MapPin, Truck, Users, Clock, Shield, Activity } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
@@ -96,6 +98,8 @@ function TVEmergencyCard({ emergency }: { emergency: any }) {
 
 export default function CentralScreen() {
   const { data: emergencies } = useActiveEmergencies();
+  const { data: vehicles } = useVehicles();
+  const { data: volunteers } = useVolunteers();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -104,6 +108,11 @@ export default function CentralScreen() {
   }, []);
 
   const active = emergencies ?? [];
+  const availableVehicles = (vehicles ?? []).filter(v => v.status === 'disponible').length;
+  const totalVehicles = (vehicles ?? []).length;
+  const inServiceVehicles = (vehicles ?? []).filter(v => v.status === 'en_servicio').length;
+  const activeVolunteers = (volunteers ?? []).filter(v => v.status === 'activo').length;
+  const totalVolunteers = (volunteers ?? []).length;
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -113,7 +122,7 @@ export default function CentralScreen() {
           <Shield className="h-8 w-8 text-emergency" />
           <h1 className="text-3xl font-bold text-foreground">Central de Bomberos</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           {active.length > 0 && (
             <div className="flex items-center gap-2">
               <Radio className="h-5 w-5 text-emergency pulse-live" />
@@ -127,6 +136,38 @@ export default function CentralScreen() {
             <div className="text-sm text-muted-foreground">
               {now.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Resource summary bar */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+          <Activity className="h-6 w-6 text-emergency" />
+          <div>
+            <p className="text-2xl font-mono font-bold text-foreground">{active.length}</p>
+            <p className="text-xs text-muted-foreground">Emergencias</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+          <Truck className="h-6 w-6 text-success" />
+          <div>
+            <p className="text-2xl font-mono font-bold text-foreground">{availableVehicles}<span className="text-sm text-muted-foreground">/{totalVehicles}</span></p>
+            <p className="text-xs text-muted-foreground">Móviles disponibles</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+          <Truck className="h-6 w-6 text-warning" />
+          <div>
+            <p className="text-2xl font-mono font-bold text-foreground">{inServiceVehicles}</p>
+            <p className="text-xs text-muted-foreground">En servicio</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+          <Users className="h-6 w-6 text-info" />
+          <div>
+            <p className="text-2xl font-mono font-bold text-foreground">{activeVolunteers}<span className="text-sm text-muted-foreground">/{totalVolunteers}</span></p>
+            <p className="text-xs text-muted-foreground">Voluntarios activos</p>
           </div>
         </div>
       </div>
