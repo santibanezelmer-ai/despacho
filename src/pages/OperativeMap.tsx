@@ -60,6 +60,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function OperativeMap() {
+  const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const [showHydrants, setShowHydrants] = useState(true);
@@ -69,6 +70,7 @@ export default function OperativeMap() {
   const [clickMode, setClickMode] = useState(false);
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [editingHydrant, setEditingHydrant] = useState<{ id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null>(null);
 
   const { data: sharedHydrants } = useSharedHydrants(mapBounds);
 
