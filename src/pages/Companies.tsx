@@ -80,6 +80,7 @@ export default function Companies() {
         address: editing.address.trim() || null,
         phone: editing.phone.trim() || null,
         active: editing.active,
+        tone_url: editing.tone_url.trim() || null,
       };
       if (editing.id) {
         const { error } = await supabase.from('companies').update(payload).eq('id', editing.id);
