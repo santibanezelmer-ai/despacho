@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useVehicles } from '@/hooks/useVehicles';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -59,12 +60,14 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
     }
     setSaving(true);
     try {
+      const { orgId } = useOrganizationRef.current;
       const payload = {
         name: form.name.trim(),
         quantity: parseInt(form.quantity) || 1,
         vehicle_id: form.vehicle_id,
         condition: form.condition,
         notes: form.notes.trim() || null,
+        organization_id: orgId!,
       };
 
       if (isEdit) {
