@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { useCompanies } from '@/hooks/useCompanies';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -35,6 +36,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
   const [form, setForm] = useState<VehicleData>(empty);
   const [saving, setSaving] = useState(false);
   const { data: companies } = useCompanies();
+  const { orgId } = useOrganization();
   const qc = useQueryClient();
   const isEdit = !!vehicle;
 
@@ -70,6 +72,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         capacity: parseInt(form.capacity) || 6,
         company_id: form.company_id || null,
         status: form.status as any,
+        organization_id: orgId!,
       };
 
       if (isEdit) {

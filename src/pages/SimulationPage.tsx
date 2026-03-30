@@ -8,6 +8,7 @@ import { useEmergencyKeys } from '@/hooks/useEmergencyKeys';
 import { useVehicles } from '@/hooks/useVehicles';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
@@ -27,6 +28,7 @@ export default function SimulationPage() {
   const { data: keys } = useEmergencyKeys();
   const { data: vehicles } = useVehicles();
   const { user } = useAuth();
+  const { orgId } = useOrganization();
   const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const [loading, setLoading] = useState(false);
@@ -66,6 +68,7 @@ export default function SimulationPage() {
     try {
       const { error } = await supabase.from('emergencies').insert({
         emergency_key_id: form.keyId,
+        organization_id: orgId!,
         address: form.address,
         caller_name: form.callerName || 'Simulación',
         caller_phone: form.callerPhone || null,

@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useVehicles } from '@/hooks/useVehicles';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
@@ -18,6 +19,7 @@ interface Props {
 
 export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const { user } = useAuth();
+  const { orgId } = useOrganization();
   const queryClient = useQueryClient();
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
@@ -128,13 +130,14 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         .from('emergencies')
         .insert({
           emergency_key_id: emergencyKey.id,
+          organization_id: orgId!,
           address: address.trim(),
           reference: reference.trim() || null,
           caller_name: callerName.trim() || null,
           caller_phone: callerPhone.trim() || null,
           observations: observations.trim() || null,
           created_by: user?.id ?? null,
-          folio: '', // trigger will generate
+          folio: '',
         })
         .select()
         .single();
@@ -146,6 +149,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         const vehicleInserts = selectedVehicleIds.map(vid => ({
           emergency_id: emergency.id,
           vehicle_id: vid,
+          organization_id: orgId!,
         }));
         const { error: vErr } = await supabase.from('emergency_vehicles').insert(vehicleInserts);
         if (vErr) throw vErr;
@@ -160,6 +164,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       // 3. Add log entry
       await supabase.from('emergency_log').insert({
         emergency_id: emergency.id,
+        organization_id: orgId!,
         message: `Emergencia despachada: ${emergencyKey.code} - ${emergencyKey.name}`,
         created_by: user?.id ?? null,
       });

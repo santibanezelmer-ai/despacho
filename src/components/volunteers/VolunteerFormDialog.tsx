@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useRanks } from '@/hooks/useRanks';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -39,6 +40,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
   const [form, setForm] = useState<VolunteerData>(empty);
   const [saving, setSaving] = useState(false);
   const { data: companies } = useCompanies();
+  const { orgId } = useOrganization();
   const { data: ranks } = useRanks();
   const qc = useQueryClient();
   const isEdit = !!volunteer;
@@ -74,6 +76,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
         rank_id: form.rank_id || null,
         status: form.status as any,
         available: form.available,
+        organization_id: orgId!,
       };
 
       if (isEdit) {

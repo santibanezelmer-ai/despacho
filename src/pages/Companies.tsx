@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface CompanyForm {
   id?: string;
@@ -31,6 +32,7 @@ export default function Companies() {
   const [saving, setSaving] = useState(false);
   const { data: companies, isLoading } = useCompanies();
   const { canWrite } = useAuth();
+  const { orgId } = useOrganization();
   const qc = useQueryClient();
 
   const filtered = (companies ?? []).filter(c =>
@@ -81,6 +83,7 @@ export default function Companies() {
         phone: editing.phone.trim() || null,
         active: editing.active,
         tone_url: editing.tone_url.trim() || null,
+        organization_id: orgId!,
       };
       if (editing.id) {
         const { error } = await supabase.from('companies').update(payload).eq('id', editing.id);
