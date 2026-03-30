@@ -33,7 +33,7 @@ function useSharedHydrants(bounds: { north: number; south: number; east: number;
         .lte('longitude', bounds.east)
         .limit(2000);
       if (error) throw error;
-      return (data ?? []) as Array<{
+      return (data ?? []) as unknown as Array<{
         id: string;
         latitude: number;
         longitude: number;
