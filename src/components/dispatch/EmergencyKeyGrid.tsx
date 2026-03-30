@@ -1,14 +1,27 @@
-import { emergencyKeys } from '@/data/mock-data';
 import { Volume2 } from 'lucide-react';
+import { useEmergencyKeys, type EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Props {
-  onSelectKey: (key: typeof emergencyKeys[0]) => void;
+  onSelectKey: (key: EmergencyKeyRow) => void;
 }
 
 export default function EmergencyKeyGrid({ onSelectKey }: Props) {
+  const { data: keys, isLoading } = useEmergencyKeys();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {emergencyKeys.filter(k => k.active).map((key) => (
+      {(keys ?? []).map((key) => (
         <button
           key={key.id}
           onClick={() => onSelectKey(key)}

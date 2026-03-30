@@ -1,25 +1,109 @@
 import { useState } from 'react';
-import { X, MapPin, Phone, User, MessageSquare, Truck, Send } from 'lucide-react';
+import { X, MapPin, Phone, User, MessageSquare, Truck, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { vehicles } from '@/data/mock-data';
-import type { EmergencyKey } from '@/data/mock-data';
+import { useVehicles } from '@/hooks/useVehicles';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 
 interface Props {
-  emergencyKey: EmergencyKey;
+  emergencyKey: EmergencyKeyRow;
   onClose: () => void;
-  onSubmit: () => void;
 }
 
-export default function DispatchForm({ emergencyKey, onClose, onSubmit }: Props) {
-  const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
-  const available = vehicles.filter(v => v.status === 'disponible');
+export default function DispatchForm({ emergencyKey, onClose }: Props) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: allVehicles } = useVehicles();
+  const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
 
-  const toggleVehicle = (code: string) => {
-    setSelectedVehicles(prev =>
-      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
+  const [address, setAddress] = useState('');
+  const [reference, setReference] = useState('');
+  const [callerName, setCallerName] = useState('');
+  const [callerPhone, setCallerPhone] = useState('');
+  const [observations, setObservations] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const toggleVehicle = (id: string) => {
+    setSelectedVehicleIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+
+  const handleSubmit = async () => {
+    if (!address.trim()) {
+      toast.error('La dirección es obligatoria');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // 1. Create emergency
+      const { data: emergency, error: eErr } = await supabase
+        .from('emergencies')
+        .insert({
+          emergency_key_id: emergencyKey.id,
+          address: address.trim(),
+          reference: reference.trim() || null,
+          caller_name: callerName.trim() || null,
+          caller_phone: callerPhone.trim() || null,
+          observations: observations.trim() || null,
+          created_by: user?.id ?? null,
+          folio: '', // trigger will generate
+        })
+        .select()
+        .single();
+
+      if (eErr) throw eErr;
+
+      // 2. Assign vehicles
+      if (selectedVehicleIds.length > 0) {
+        const vehicleInserts = selectedVehicleIds.map(vid => ({
+          emergency_id: emergency.id,
+          vehicle_id: vid,
+        }));
+        const { error: vErr } = await supabase.from('emergency_vehicles').insert(vehicleInserts);
+        if (vErr) throw vErr;
+
+        // Update vehicle status to en_servicio
+        await supabase
+          .from('vehicles')
+          .update({ status: 'en_servicio' as const })
+          .in('id', selectedVehicleIds);
+      }
+
+      // 3. Add log entry
+      await supabase.from('emergency_log').insert({
+        emergency_id: emergency.id,
+        message: `Emergencia despachada: ${emergencyKey.code} - ${emergencyKey.name}`,
+        created_by: user?.id ?? null,
+      });
+
+      // Play tone if available
+      if (emergencyKey.tone_url) {
+        try {
+          const audio = new Audio(emergencyKey.tone_url);
+          await audio.play();
+        } catch {
+          // tone playback is best-effort
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+
+      toast.success(`Emergencia ${emergencyKey.code} despachada correctamente`);
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al despachar');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -55,31 +139,27 @@ export default function DispatchForm({ emergencyKey, onClose, onSubmit }: Props)
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" /> Dirección
+                <MapPin className="h-3.5 w-3.5" /> Dirección *
               </label>
-              <Input placeholder="Ej: Av. Libertador B. O'Higgins 1234" className="bg-muted/50" />
+              <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Ej: Av. Libertador B. O'Higgins 1234" className="bg-muted/50" required />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" /> Referencia
               </label>
-              <Input placeholder="Ej: Frente al mall" className="bg-muted/50" />
+              <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="Ej: Frente al mall" className="bg-muted/50" />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <User className="h-3.5 w-3.5" /> Solicitante
               </label>
-              <Input placeholder="Nombre del solicitante" className="bg-muted/50" />
+              <Input value={callerName} onChange={e => setCallerName(e.target.value)} placeholder="Nombre del solicitante" className="bg-muted/50" />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Phone className="h-3.5 w-3.5" /> Teléfono
               </label>
-              <Input placeholder="+56 9 XXXX XXXX" className="bg-muted/50" />
-            </div>
-            <div>
-              <label className="mb-1.5 text-xs font-medium text-muted-foreground">Coordenadas</label>
-              <Input placeholder="Auto-detectado" disabled className="bg-muted/30 text-muted-foreground" />
+              <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50" />
             </div>
           </div>
 
@@ -87,41 +167,50 @@ export default function DispatchForm({ emergencyKey, onClose, onSubmit }: Props)
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <MessageSquare className="h-3.5 w-3.5" /> Observaciones
             </label>
-            <Textarea placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" />
+            <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" />
           </div>
 
           {/* Vehicle selection */}
           <div>
             <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Truck className="h-3.5 w-3.5" /> Asignar Móviles
+              <Truck className="h-3.5 w-3.5" /> Asignar Móviles ({selectedVehicleIds.length} seleccionados)
             </label>
             <div className="flex flex-wrap gap-2">
-              {available.map(v => (
-                <button
-                  key={v.id}
-                  onClick={() => toggleVehicle(v.code)}
-                  className={`rounded-md border px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
-                    selectedVehicles.includes(v.code)
-                      ? 'border-emergency bg-emergency/20 text-emergency'
-                      : 'border-border bg-muted/30 text-muted-foreground hover:border-foreground/30'
-                  }`}
-                >
-                  {v.code} · {v.type}
-                </button>
-              ))}
+              {available.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No hay móviles disponibles</p>
+              ) : (
+                available.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => toggleVehicle(v.id)}
+                    className={`rounded-md border px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
+                      selectedVehicleIds.includes(v.id)
+                        ? 'border-emergency bg-emergency/20 text-emergency'
+                        : 'border-border bg-muted/30 text-muted-foreground hover:border-foreground/30'
+                    }`}
+                  >
+                    {v.code} · {v.type}
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={onClose} className="flex-1" disabled={submitting}>
               Cancelar
             </Button>
             <Button
-              onClick={onSubmit}
+              onClick={handleSubmit}
+              disabled={submitting || !address.trim()}
               className="flex-1 bg-emergency text-emergency-foreground hover:bg-emergency/90"
             >
-              <Send className="mr-2 h-4 w-4" />
+              {submitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
               Despachar Emergencia
             </Button>
           </div>
