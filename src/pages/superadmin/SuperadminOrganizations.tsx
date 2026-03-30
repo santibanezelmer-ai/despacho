@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Search, CheckCircle, XCircle, Pause, Play, Loader2 } from 'lucide-react';
+import { Building2, Search, CheckCircle, XCircle, Pause, Play, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   active: { label: 'Activa', color: 'text-success' },
@@ -14,8 +17,21 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   rejected: { label: 'Rechazada', color: 'text-muted-foreground' },
 };
 
+const REGIONES = [
+  'Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo',
+  'Valparaíso', 'Metropolitana', "O'Higgins", 'Maule', 'Ñuble', 'Biobío',
+  'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes',
+];
+
+function slugify(text: string) {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
 export default function SuperadminOrganizations() {
   const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({ name: '', commune: '', region: '', status: 'active' as string });
   const qc = useQueryClient();
 
   const { data: orgs, isLoading } = useQuery({
@@ -36,6 +52,25 @@ export default function SuperadminOrganizations() {
     else { toast.success('Estado actualizado'); qc.invalidateQueries({ queryKey: ['superadmin-orgs'] }); }
   };
 
+  const handleCreate = async () => {
+    if (!form.name.trim()) { toast.error('El nombre es obligatorio'); return; }
+    setCreating(true);
+    const slug = slugify(form.name);
+    const { error } = await (supabase as any).from('organizations').insert({
+      name: form.name.trim(),
+      slug,
+      commune: form.commune.trim() || null,
+      region: form.region || null,
+      status: form.status,
+    });
+    setCreating(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Organización creada');
+    setForm({ name: '', commune: '', region: '', status: 'active' });
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ['superadmin-orgs'] });
+  };
+
   const filtered = (orgs ?? []).filter((o: any) =>
     o.name.toLowerCase().includes(search.toLowerCase()) ||
     (o.commune ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -44,9 +79,55 @@ export default function SuperadminOrganizations() {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-        <Building2 className="h-5 w-5 text-info" /> Organizaciones
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-info" /> Organizaciones
+        </h1>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> Nueva Organización
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Organización</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Nombre *</Label>
+                <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cuerpo de Bomberos de..." />
+              </div>
+              <div className="space-y-2">
+                <Label>Comuna</Label>
+                <Input value={form.commune} onChange={e => setForm(f => ({ ...f, commune: e.target.value }))} placeholder="Ej: Santiago" />
+              </div>
+              <div className="space-y-2">
+                <Label>Región</Label>
+                <Select value={form.region} onValueChange={v => setForm(f => ({ ...f, region: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar región" /></SelectTrigger>
+                  <SelectContent>
+                    {REGIONES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Estado inicial</Label>
+                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activa</SelectItem>
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="w-full" onClick={handleCreate} disabled={creating}>
+                {creating ? 'Creando...' : 'Crear Organización'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
