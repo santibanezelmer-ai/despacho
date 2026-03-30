@@ -192,6 +192,7 @@ export default function OperativeMap() {
           onBoundsChange={handleBoundsChange}
           onMapClick={handleMapClick}
           clickMode={clickMode}
+          onHydrantAction={handleHydrantAction}
         />
 
         {clickMode && (
