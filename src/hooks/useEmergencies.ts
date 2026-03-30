@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type EmergencyRow = Tables<'emergencies'> & {
@@ -7,19 +8,20 @@ export type EmergencyRow = Tables<'emergencies'> & {
 };
 
 export function useActiveEmergencies() {
+  const { orgId } = useOrganization();
   return useQuery({
-    queryKey: ['active-emergencies'],
+    queryKey: ['active-emergencies', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const q = supabase
         .from('emergencies')
         .select('*, emergency_keys(code, name, color)')
         .neq('status', 'finalizada')
         .order('created_at', { ascending: false });
+      const { data, error } = await (q as any).eq('organization_id', orgId);
       if (error) throw error;
 
-      // For each emergency, fetch assigned vehicles
       const enriched = await Promise.all(
-        (data ?? []).map(async (e) => {
+        (data ?? []).map(async (e: any) => {
           const { data: evData } = await supabase
             .from('emergency_vehicles')
             .select('vehicle_id, vehicles(code)')
@@ -40,6 +42,7 @@ export function useActiveEmergencies() {
 
       return enriched;
     },
-    refetchInterval: 5000, // real-time polling every 5s
+    enabled: !!orgId,
+    refetchInterval: 5000,
   });
 }
