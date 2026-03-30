@@ -107,6 +107,13 @@ const buildHydrantPopup = (hydrant: MapHydrant) => {
     hydrant.description ? `<div style="font-size:12px;">${escapeHtml(hydrant.description)}</div>` : '',
   ].filter(Boolean);
 
+  if (hydrant.isOwn) {
+    rows.push(`<div style="margin-top:6px;display:flex;gap:4px;">
+      <button data-hydrant-action="edit" data-hydrant-id="${hydrant.id}" style="font-size:11px;padding:2px 8px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">Editar</button>
+      <button data-hydrant-action="delete" data-hydrant-id="${hydrant.id}" style="font-size:11px;padding:2px 8px;background:#dc2626;color:white;border:none;border-radius:4px;cursor:pointer;">Eliminar</button>
+    </div>`);
+  }
+
   return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:4px;">${rows.join('')}</div>`;
 };
 
