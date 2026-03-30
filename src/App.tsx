@@ -25,6 +25,10 @@ import EquipmentPage from "@/pages/Equipment";
 import CentralScreen from "@/pages/CentralScreen";
 import AlertsPage from "@/pages/AlertsPage";
 import SimulationPage from "@/pages/SimulationPage";
+import TrainingPage from "@/pages/TrainingPage";
+import AuditPage from "@/pages/AuditPage";
+import ExportsPage from "@/pages/ExportsPage";
+import ProfilePage from "@/pages/ProfilePage";
 import SuperadminLayout from "@/pages/superadmin/SuperadminLayout";
 import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
 import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations";
@@ -113,12 +117,13 @@ function AppRoutes() {
         <Route path="/companias" element={<Companies />} />
         <Route path="/claves" element={<EmergencyKeysAdmin />} />
         <Route path="/equipamiento" element={<EquipmentPage />} />
-        <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
+        <Route path="/capacitaciones" element={<TrainingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
-        <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
+        <Route path="/auditoria" element={<AuditPage />} />
+        <Route path="/exportaciones" element={<ExportsPage />} />
         <Route path="/simulacion" element={<SimulationPage />} />
         <Route path="/alertas" element={<AlertsPage />} />
+        <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />

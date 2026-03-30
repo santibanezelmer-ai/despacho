@@ -15,9 +15,10 @@ type HydrantFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialCoords?: { lat: number; lng: number } | null;
+  editingHydrant?: { id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null;
 };
 
-export default function HydrantFormDialog({ open, onOpenChange, initialCoords }: HydrantFormDialogProps) {
+export default function HydrantFormDialog({ open, onOpenChange, initialCoords, editingHydrant }: HydrantFormDialogProps) {
   const { orgId } = useOrganization();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,15 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords }:
     setLastCoords(initialCoords);
   }
 
+  // Sync editing hydrant data
+  const [lastEditing, setLastEditing] = useState(editingHydrant);
+  if (editingHydrant && editingHydrant !== lastEditing) {
+    setName(editingHydrant.name ?? '');
+    setType(editingHydrant.type ?? '');
+    setDescription(editingHydrant.description ?? '');
+    setLastEditing(editingHydrant);
+  }
+
   const resetForm = () => {
     setName('');
     setLat('');
@@ -42,6 +52,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords }:
     setType('');
     setDescription('');
     setLastCoords(null);
+    setLastEditing(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,14 +73,21 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords }:
     }
 
     setLoading(true);
-    const { error } = await supabase.from('hydrants').insert({
+    const payload = {
       organization_id: orgId,
       name: name.trim() || null,
       latitude,
       longitude,
       type: type || null,
       description: description.trim() || null,
-    });
+    };
+
+    let error;
+    if (editingHydrant) {
+      ({ error } = await supabase.from('hydrants').update(payload).eq('id', editingHydrant.id));
+    } else {
+      ({ error } = await supabase.from('hydrants').insert(payload));
+    }
 
     setLoading(false);
 
@@ -78,7 +96,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords }:
       return;
     }
 
-    toast.success('Grifo agregado exitosamente');
+    toast.success(editingHydrant ? 'Grifo actualizado' : 'Grifo agregado exitosamente');
     queryClient.invalidateQueries({ queryKey: ['hydrants'] });
     resetForm();
     onOpenChange(false);
@@ -89,7 +107,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords }:
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-info" /> Agregar Grifo
+            <MapPin className="h-5 w-5 text-info" /> {editingHydrant ? 'Editar Grifo' : 'Agregar Grifo'}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

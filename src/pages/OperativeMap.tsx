@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Map, Flame, Droplets, Layers, Plus, MousePointer2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function OperativeMap() {
+  const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const [showHydrants, setShowHydrants] = useState(true);
@@ -68,6 +70,7 @@ export default function OperativeMap() {
   const [clickMode, setClickMode] = useState(false);
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [editingHydrant, setEditingHydrant] = useState<{ id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null>(null);
 
   const { data: sharedHydrants } = useSharedHydrants(mapBounds);
 
@@ -82,9 +85,24 @@ export default function OperativeMap() {
   }, []);
 
   const handleAddManual = () => {
+    setEditingHydrant(null);
     setClickedCoords(null);
     setHydrantDialogOpen(true);
   };
+
+  const handleHydrantAction = useCallback(async (action: 'edit' | 'delete', hydrant: MapHydrant) => {
+    if (action === 'delete') {
+      if (!confirm('¿Eliminar este grifo?')) return;
+      const { error } = await supabase.from('hydrants').delete().eq('id', hydrant.id);
+      if (error) { toast.error(error.message); return; }
+      toast.success('Grifo eliminado');
+      queryClient.invalidateQueries({ queryKey: ['hydrants'] });
+    } else if (action === 'edit') {
+      setEditingHydrant({ id: hydrant.id, name: hydrant.name, lat: hydrant.latitude, lng: hydrant.longitude, type: hydrant.type, description: hydrant.description });
+      setClickedCoords({ lat: hydrant.latitude, lng: hydrant.longitude });
+      setHydrantDialogOpen(true);
+    }
+  }, [queryClient]);
 
   const mapEmergencies = useMemo<MapEmergency[]>(
     () =>
@@ -114,6 +132,7 @@ export default function OperativeMap() {
       name: h.name ?? 'Grifo',
       type: h.type,
       description: h.description,
+      isOwn: true,
     }));
     const nationalHydrants = (sharedHydrants ?? []).map((h) => ({
       id: h.id,
@@ -122,6 +141,7 @@ export default function OperativeMap() {
       name: h.ubicacion ?? 'Grifo',
       type: h.modelo ?? null,
       description: h.anio ? `Año: ${h.anio}` + (h.diam_grifo ? ` | Diám. grifo: ${h.diam_grifo}mm` : '') + (h.diam_tub ? ` | Diám. tubo: ${h.diam_tub}mm` : '') : null,
+      isOwn: false,
     }));
     return [...orgHydrants, ...nationalHydrants];
   }, [hydrants, sharedHydrants]);
@@ -172,6 +192,7 @@ export default function OperativeMap() {
           onBoundsChange={handleBoundsChange}
           onMapClick={handleMapClick}
           clickMode={clickMode}
+          onHydrantAction={handleHydrantAction}
         />
 
         {clickMode && (
@@ -204,8 +225,9 @@ export default function OperativeMap() {
 
       <HydrantFormDialog
         open={hydrantDialogOpen}
-        onOpenChange={setHydrantDialogOpen}
+        onOpenChange={(v) => { setHydrantDialogOpen(v); if (!v) setEditingHydrant(null); }}
         initialCoords={clickedCoords}
+        editingHydrant={editingHydrant}
       />
     </div>
   );

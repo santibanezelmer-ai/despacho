@@ -37,6 +37,7 @@ export type MapHydrant = {
   name: string;
   type: string | null;
   description: string | null;
+  isOwn?: boolean;
 };
 
 type LeafletMapCanvasProps = {
@@ -48,6 +49,7 @@ type LeafletMapCanvasProps = {
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   clickMode?: boolean;
+  onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
@@ -105,6 +107,13 @@ const buildHydrantPopup = (hydrant: MapHydrant) => {
     hydrant.description ? `<div style="font-size:12px;">${escapeHtml(hydrant.description)}</div>` : '',
   ].filter(Boolean);
 
+  if (hydrant.isOwn) {
+    rows.push(`<div style="margin-top:6px;display:flex;gap:4px;">
+      <button data-hydrant-action="edit" data-hydrant-id="${hydrant.id}" style="font-size:11px;padding:2px 8px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">Editar</button>
+      <button data-hydrant-action="delete" data-hydrant-id="${hydrant.id}" style="font-size:11px;padding:2px 8px;background:#dc2626;color:white;border:none;border-radius:4px;cursor:pointer;">Eliminar</button>
+    </div>`);
+  }
+
   return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:4px;">${rows.join('')}</div>`;
 };
 
@@ -117,7 +126,12 @@ export default function LeafletMapCanvas({
   onBoundsChange,
   onMapClick,
   clickMode,
+  onHydrantAction,
 }: LeafletMapCanvasProps) {
+  const hydrantsRef = useRef(hydrants);
+  hydrantsRef.current = hydrants;
+  const onHydrantActionRef = useRef(onHydrantAction);
+  onHydrantActionRef.current = onHydrantAction;
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const emergencyLayerRef = useRef<L.LayerGroup | null>(null);
@@ -181,11 +195,24 @@ export default function LeafletMapCanvas({
     });
     observer.observe(map.getContainer());
 
+    // Event delegation for hydrant edit/delete buttons
+    const handlePopupClick = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('[data-hydrant-action]') as HTMLElement | null;
+      if (!btn) return;
+      const action = btn.dataset.hydrantAction as 'edit' | 'delete';
+      const id = btn.dataset.hydrantId;
+      if (!action || !id) return;
+      const h = hydrantsRef.current.find(h => h.id === id);
+      if (h) onHydrantActionRef.current?.(action, h);
+    };
+    map.getContainer().addEventListener('click', handlePopupClick);
+
     const timer = window.setTimeout(() => map.invalidateSize({ pan: false }), 150);
 
     return () => {
       window.clearTimeout(timer);
       observer.disconnect();
+      map.getContainer().removeEventListener('click', handlePopupClick);
       map.remove();
       mapRef.current = null;
       emergencyLayerRef.current = null;
