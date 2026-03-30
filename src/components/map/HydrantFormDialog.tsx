@@ -96,7 +96,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
       return;
     }
 
-    toast.success('Grifo agregado exitosamente');
+    toast.success(editingHydrant ? 'Grifo actualizado' : 'Grifo agregado exitosamente');
     queryClient.invalidateQueries({ queryKey: ['hydrants'] });
     resetForm();
     onOpenChange(false);
