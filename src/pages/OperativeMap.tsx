@@ -85,9 +85,24 @@ export default function OperativeMap() {
   }, []);
 
   const handleAddManual = () => {
+    setEditingHydrant(null);
     setClickedCoords(null);
     setHydrantDialogOpen(true);
   };
+
+  const handleHydrantAction = useCallback(async (action: 'edit' | 'delete', hydrant: MapHydrant) => {
+    if (action === 'delete') {
+      if (!confirm('¿Eliminar este grifo?')) return;
+      const { error } = await supabase.from('hydrants').delete().eq('id', hydrant.id);
+      if (error) { toast.error(error.message); return; }
+      toast.success('Grifo eliminado');
+      queryClient.invalidateQueries({ queryKey: ['hydrants'] });
+    } else if (action === 'edit') {
+      setEditingHydrant({ id: hydrant.id, name: hydrant.name, lat: hydrant.latitude, lng: hydrant.longitude, type: hydrant.type, description: hydrant.description });
+      setClickedCoords({ lat: hydrant.latitude, lng: hydrant.longitude });
+      setHydrantDialogOpen(true);
+    }
+  }, [queryClient]);
 
   const mapEmergencies = useMemo<MapEmergency[]>(
     () =>
