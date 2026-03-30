@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,35 +38,38 @@ function ProtectedRoutes() {
 
   if (!user) return <LoginPage />;
 
+  return <ProtectedContent />;
+}
+
+function ProtectedContent() {
+  const location = useLocation();
+
+  // Pantalla Central renders without the sidebar layout
+  if (location.pathname === '/pantalla-central') {
+    return <CentralScreen />;
+  }
+
   return (
-    <Routes>
-      <Route path="/pantalla-central" element={<CentralScreen />} />
-      <Route
-        path="/*"
-        element={
-          <AppLayout>
-            <Routes>
-              <Route path="/" element={<DispatchConsole />} />
-              <Route path="/emergencias" element={<ActiveEmergencies />} />
-              <Route path="/mapa" element={<OperativeMap />} />
-              <Route path="/voluntarios" element={<Volunteers />} />
-              <Route path="/moviles" element={<Vehicles />} />
-              <Route path="/companias" element={<Companies />} />
-              <Route path="/claves" element={<EmergencyKeysAdmin />} />
-              <Route path="/equipamiento" element={<EquipmentPage />} />
-              <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
-              <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
-              <Route path="/simulacion" element={<SimulationPage />} />
-              <Route path="/alertas" element={<AlertsPage />} />
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
-        }
-      />
-    </Routes>
+    <AppLayout>
+      <Routes>
+        <Route path="/" element={<DispatchConsole />} />
+        <Route path="/emergencias" element={<ActiveEmergencies />} />
+        <Route path="/mapa" element={<OperativeMap />} />
+        <Route path="/voluntarios" element={<Volunteers />} />
+        <Route path="/moviles" element={<Vehicles />} />
+        <Route path="/companias" element={<Companies />} />
+        <Route path="/claves" element={<EmergencyKeysAdmin />} />
+        <Route path="/equipamiento" element={<EquipmentPage />} />
+        <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
+        <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
+        <Route path="/simulacion" element={<SimulationPage />} />
+        <Route path="/alertas" element={<AlertsPage />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AppLayout>
   );
 }
 
