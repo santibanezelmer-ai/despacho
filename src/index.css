@@ -127,6 +127,14 @@
     font-family: var(--font-mono);
     @apply text-2xl font-bold tracking-wider;
   }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 @keyframes pulse-live {
