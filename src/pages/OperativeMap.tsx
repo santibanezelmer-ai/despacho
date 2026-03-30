@@ -225,8 +225,9 @@ export default function OperativeMap() {
 
       <HydrantFormDialog
         open={hydrantDialogOpen}
-        onOpenChange={setHydrantDialogOpen}
+        onOpenChange={(v) => { setHydrantDialogOpen(v); if (!v) setEditingHydrant(null); }}
         initialCoords={clickedCoords}
+        editingHydrant={editingHydrant}
       />
     </div>
   );
