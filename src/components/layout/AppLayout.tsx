@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
@@ -31,24 +32,22 @@ const sections = ['Operaciones', 'Recursos', 'Análisis', 'Sistema'];
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { user, roles, signOut } = useAuth();
+  const { user, signOut, isSuperadmin } = useAuth();
+  const { currentOrg, orgRole } = useOrganization();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <aside
-        className={`flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${
-          collapsed ? 'w-16' : 'w-60'
-        }`}
-      >
-        {/* Logo */}
+      <aside className={`flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
+        {/* Logo + Org name */}
         <div className="flex items-center gap-2 border-b border-border px-3 py-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emergency">
             <Siren className="h-5 w-5 text-emergency-foreground" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-bold text-foreground">Central de Bomberos</h1>
+              <h1 className="truncate text-sm font-bold text-foreground">
+                {currentOrg?.organization?.name ?? 'Central de Bomberos'}
+              </h1>
               <p className="text-[10px] font-mono text-muted-foreground">v4.0</p>
             </div>
           )}
@@ -57,13 +56,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Live indicator */}
         <div className="flex items-center gap-2 border-b border-border px-3 py-2">
           <span className="pulse-live h-2 w-2 rounded-full bg-success" />
-          {!collapsed && (
-            <span className="text-[11px] font-mono text-success">EN LÍNEA</span>
-          )}
+          {!collapsed && <span className="text-[11px] font-mono text-success">EN LÍNEA</span>}
         </div>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-2">
+          {/* Superadmin link */}
+          {isSuperadmin && !collapsed && (
+            <div className="mb-1">
+              <Link
+                to="/superadmin"
+                className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-info hover:bg-info/10 font-medium"
+              >
+                <Shield className="h-4 w-4 shrink-0" />
+                <span className="truncate">Panel Superadmin</span>
+              </Link>
+            </div>
+          )}
+
           {sections.map((section) => (
             <div key={section} className="mb-1">
               {!collapsed && (
@@ -76,17 +86,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 .map((item) => {
                   const isActive = location.pathname === item.path;
 
-                  // Special case: Central Screen opens in a new window
                   if (item.path === '/pantalla-central') {
                     return (
                       <button
                         key={item.path}
                         onClick={() => {
-                          window.open(
-                            '/pantalla-central',
-                            'central-screen',
-                            'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no'
-                          );
+                          window.open('/pantalla-central', 'central-screen', 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
                         }}
                         className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         title={collapsed ? item.label : undefined}
@@ -122,7 +127,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {!collapsed && user && (
             <div className="mb-1">
               <p className="truncate text-xs font-medium text-foreground">{user.email}</p>
-              <p className="text-[10px] text-muted-foreground uppercase">{roles.join(', ') || 'sin rol'}</p>
+              <p className="text-[10px] text-muted-foreground uppercase">
+                {orgRole ?? 'sin rol'}
+                {isSuperadmin && <span className="ml-1 text-info">· SA</span>}
+              </p>
             </div>
           )}
           <div className="flex items-center gap-1">
@@ -143,10 +151,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
-        {children}
-      </main>
+      <main className="flex-1 overflow-y-auto flex flex-col">{children}</main>
     </div>
   );
 }

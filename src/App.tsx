@@ -4,8 +4,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { OrganizationProvider, useOrganization } from "@/contexts/OrganizationContext";
 import AppLayout from "@/components/layout/AppLayout";
+import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
+import RegisterOrganization from "@/pages/RegisterOrganization";
+import PendingApproval from "@/pages/PendingApproval";
+import ResetPassword from "@/pages/ResetPassword";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
 import Dashboard from "@/pages/Dashboard";
@@ -20,16 +25,21 @@ import EquipmentPage from "@/pages/Equipment";
 import CentralScreen from "@/pages/CentralScreen";
 import AlertsPage from "@/pages/AlertsPage";
 import SimulationPage from "@/pages/SimulationPage";
-import ResetPassword from "@/pages/ResetPassword";
-import NotFound from "./pages/NotFound.tsx";
+import SuperadminLayout from "@/pages/superadmin/SuperadminLayout";
+import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
+import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations";
+import SuperadminRequests from "@/pages/superadmin/SuperadminRequests";
+import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoutes() {
-  const { user, loading } = useAuth();
+function AppRoutes() {
+  const { user, loading: authLoading, isSuperadmin } = useAuth();
+  const { orgId, currentOrg, loading: orgLoading, memberships } = useOrganization();
+  const location = useLocation();
 
-  if (loading) {
+  if (authLoading || (user && orgLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-emergency" />
@@ -37,17 +47,59 @@ function ProtectedRoutes() {
     );
   }
 
-  if (!user) return <LoginPage />;
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterOrganization />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
 
-  return <ProtectedContent />;
-}
-
-function ProtectedContent() {
-  const location = useLocation();
-
-  // Pantalla Central renders without the sidebar layout
   if (location.pathname === '/pantalla-central') {
     return <CentralScreen />;
+  }
+
+  if (location.pathname.startsWith('/superadmin')) {
+    if (!isSuperadmin) return <Navigate to="/" replace />;
+    return (
+      <SuperadminLayout>
+        <Routes>
+          <Route path="/superadmin" element={<SuperadminDashboard />} />
+          <Route path="/superadmin/organizaciones" element={<SuperadminOrganizations />} />
+          <Route path="/superadmin/solicitudes" element={<SuperadminRequests />} />
+          <Route path="*" element={<Navigate to="/superadmin" replace />} />
+        </Routes>
+      </SuperadminLayout>
+    );
+  }
+
+  if (memberships.length === 0 && !isSuperadmin) {
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<PendingApproval />} />
+      </Routes>
+    );
+  }
+
+  if (memberships.length === 0 && isSuperadmin) {
+    return (
+      <Routes>
+        <Route path="*" element={<Navigate to="/superadmin" replace />} />
+      </Routes>
+    );
+  }
+
+  if (currentOrg && currentOrg.organization?.status !== 'active') {
+    return (
+      <Routes>
+        <Route path="*" element={<PendingApproval />} />
+      </Routes>
+    );
   }
 
   return (
@@ -68,6 +120,8 @@ function ProtectedContent() {
         <Route path="/simulacion" element={<SimulationPage />} />
         <Route path="/alertas" element={<AlertsPage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
@@ -81,10 +135,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="*" element={<ProtectedRoutes />} />
-          </Routes>
+          <OrganizationProvider>
+            <Routes>
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="*" element={<AppRoutes />} />
+            </Routes>
+          </OrganizationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

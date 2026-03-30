@@ -9,11 +9,12 @@ interface AuthContextType {
   session: Session | null;
   roles: AppRole[];
   loading: boolean;
+  isSuperadmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
-  canWrite: boolean; // admin, operador, oficial
+  canWrite: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,10 +24,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase.rpc('get_user_roles', { _user_id: userId });
     if (data) setRoles(data as AppRole[]);
+  };
+
+  const fetchSuperadmin = async (userId: string) => {
+    const { data } = await (supabase as any)
+      .from('superadmins')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    setIsSuperadmin(!!data);
   };
 
   useEffect(() => {
@@ -34,9 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => fetchRoles(session.user.id), 0);
+        setTimeout(() => {
+          fetchRoles(session.user.id);
+          fetchSuperadmin(session.user.id);
+        }, 0);
       } else {
         setRoles([]);
+        setIsSuperadmin(false);
       }
       setLoading(false);
     });
@@ -46,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchRoles(session.user.id);
+        fetchSuperadmin(session.user.id);
       }
       setLoading(false);
     });
@@ -62,10 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: name },
-        emailRedirectTo: window.location.origin,
-      },
+      options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
     });
     return { error: error as Error | null };
   };
@@ -73,13 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setRoles([]);
+    setIsSuperadmin(false);
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
   const canWrite = hasRole('admin') || hasRole('operador') || hasRole('oficial');
 
   return (
-    <AuthContext.Provider value={{ user, session, roles, loading, signIn, signUp, signOut, hasRole, canWrite }}>
+    <AuthContext.Provider value={{ user, session, roles, loading, isSuperadmin, signIn, signUp, signOut, hasRole, canWrite }}>
       {children}
     </AuthContext.Provider>
   );
