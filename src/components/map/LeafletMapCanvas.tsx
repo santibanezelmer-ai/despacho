@@ -49,6 +49,7 @@ type LeafletMapCanvasProps = {
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   clickMode?: boolean;
+  onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
