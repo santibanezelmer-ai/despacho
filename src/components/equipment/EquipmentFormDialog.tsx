@@ -35,6 +35,7 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
   const [form, setForm] = useState<EquipmentData>(empty);
   const [saving, setSaving] = useState(false);
   const { data: vehicles } = useVehicles();
+  const { orgId } = useOrganization();
   const qc = useQueryClient();
   const isEdit = !!equipment;
 
@@ -60,7 +61,6 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
     }
     setSaving(true);
     try {
-      const { orgId } = useOrganizationRef.current;
       const payload = {
         name: form.name.trim(),
         quantity: parseInt(form.quantity) || 1,

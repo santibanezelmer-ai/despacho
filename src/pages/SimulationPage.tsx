@@ -8,6 +8,7 @@ import { useEmergencyKeys } from '@/hooks/useEmergencyKeys';
 import { useVehicles } from '@/hooks/useVehicles';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
