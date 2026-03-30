@@ -4,29 +4,84 @@ import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import DispatchForm from '@/components/dispatch/DispatchForm';
 import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
 import StatsCard from '@/components/dashboard/StatsCard';
-import { activeEmergencies, vehicles, type EmergencyKey } from '@/data/mock-data';
+import { useActiveEmergencies } from '@/hooks/useEmergencies';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useVolunteers } from '@/hooks/useVolunteers';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 
 export default function DispatchConsole() {
-  const [selectedKey, setSelectedKey] = useState<EmergencyKey | null>(null);
+  const [selectedKey, setSelectedKey] = useState<EmergencyKeyRow | null>(null);
+  const { data: emergencies } = useActiveEmergencies();
+  const { data: vehicles } = useVehicles();
+  const { data: volunteers } = useVolunteers();
+  const queryClient = useQueryClient();
 
-  const handleSelectKey = (key: EmergencyKey) => {
+  const availableVehicles = (vehicles ?? []).filter(v => v.status === 'disponible').length;
+  const totalVehicles = (vehicles ?? []).length;
+  const activeVolunteers = (volunteers ?? []).filter(v => v.status === 'activo').length;
+  const activeCount = (emergencies ?? []).length;
+
+  const handleSelectKey = (key: EmergencyKeyRow) => {
     setSelectedKey(key);
-    toast.info(`Reproduciendo tono: ${key.name}`, { duration: 3000 });
+    // Play tone if available
+    if (key.tone_url) {
+      try {
+        const audio = new Audio(key.tone_url);
+        audio.play();
+      } catch {
+        // best-effort
+      }
+    }
+    toast.info(`Clave seleccionada: ${key.code} - ${key.name}`, { duration: 3000 });
   };
 
-  const handleDispatch = () => {
-    toast.success('Emergencia despachada correctamente');
-    setSelectedKey(null);
-  };
+  const handleAdvanceStatus = async (emergencyId: string, newStatus: string) => {
+    const timestampField: Record<string, string> = {
+      en_ruta: 'en_route_at',
+      en_trabajo: 'working_at',
+      controlada: 'controlled_at',
+      finalizada: 'finished_at',
+    };
 
-  const availableVehicles = vehicles.filter(v => v.status === 'disponible').length;
-  const activeCount = activeEmergencies.filter(e => e.status !== 'finalizada').length;
+    const update: Record<string, any> = { status: newStatus };
+    const field = timestampField[newStatus];
+    if (field) update[field] = new Date().toISOString();
+
+    // If finishing, release vehicles
+    if (newStatus === 'finalizada') {
+      const { data: evs } = await supabase
+        .from('emergency_vehicles')
+        .select('vehicle_id')
+        .eq('emergency_id', emergencyId)
+        .is('released_at', null);
+
+      if (evs && evs.length > 0) {
+        const vehicleIds = evs.map(ev => ev.vehicle_id);
+        await supabase.from('vehicles').update({ status: 'disponible' as const }).in('id', vehicleIds);
+        await supabase
+          .from('emergency_vehicles')
+          .update({ released_at: new Date().toISOString() })
+          .eq('emergency_id', emergencyId)
+          .is('released_at', null);
+      }
+    }
+
+    const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
+    if (error) {
+      toast.error('Error al actualizar estado');
+    } else {
+      toast.success(`Estado actualizado a ${newStatus.replace('_', ' ')}`);
+      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    }
+  };
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -49,15 +104,13 @@ export default function DispatchConsole() {
         </div>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard title="Emergencias Activas" value={activeCount} icon={Siren} color="hsl(0, 85%, 55%)" />
-        <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${vehicles.length} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
-        <StatsCard title="Personal en Servicio" value={24} subtitle="de 85 activos" icon={Users} color="hsl(35, 95%, 55%)" />
-        <StatsCard title="Tiempo Resp. Prom." value="4:32" subtitle="últimas 24h" icon={Clock} color="hsl(210, 85%, 55%)" />
+        <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${totalVehicles} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
+        <StatsCard title="Voluntarios Activos" value={activeVolunteers} icon={Users} color="hsl(35, 95%, 55%)" />
+        <StatsCard title="Tiempo Resp. Prom." value="—" subtitle="últimas 24h" icon={Clock} color="hsl(210, 85%, 55%)" />
       </div>
 
-      {/* Emergency Keys */}
       <div className="console-panel p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-emergency pulse-live" />
@@ -66,27 +119,24 @@ export default function DispatchConsole() {
         <EmergencyKeyGrid onSelectKey={handleSelectKey} />
       </div>
 
-      {/* Active Emergencies */}
-      {activeEmergencies.length > 0 && (
+      {activeCount > 0 && (
         <div>
           <h2 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-warning pulse-live" />
             Emergencias Activas ({activeCount})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {activeEmergencies.filter(e => e.status !== 'finalizada').map(e => (
-              <ActiveEmergencyCard key={e.id} emergency={e} />
+            {(emergencies ?? []).map(e => (
+              <ActiveEmergencyCard key={e.id} emergency={e} onAdvanceStatus={handleAdvanceStatus} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Dispatch form modal */}
       {selectedKey && (
         <DispatchForm
           emergencyKey={selectedKey}
           onClose={() => setSelectedKey(null)}
-          onSubmit={handleDispatch}
         />
       )}
     </div>
