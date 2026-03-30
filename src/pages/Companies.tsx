@@ -40,8 +40,33 @@ export default function Companies() {
 
   const openNew = () => { setEditing({ ...empty }); setDialogOpen(true); };
   const openEdit = (c: any) => {
-    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active });
+    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '' });
     setDialogOpen(true);
+  };
+
+  const [uploading, setUploading] = useState(false);
+
+  const handleToneUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `company-${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('tones').upload(path, file);
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('tones').getPublicUrl(path);
+      setEditing(f => f ? { ...f, tone_url: urlData.publicUrl } : f);
+      toast.success('Tono subido');
+    } catch (err: any) {
+      toast.error(err.message || 'Error subiendo tono');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const playTone = (url: string) => {
+    try { new Audio(url).play(); } catch { toast.error('No se puede reproducir'); }
   };
 
   const handleSave = async () => {
