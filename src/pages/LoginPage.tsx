@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Siren, LogIn, UserPlus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,6 +103,26 @@ export default function LoginPage() {
             )}
             {isSignUp ? 'Crear Cuenta' : 'Ingresar'}
           </Button>
+
+          {!isSignUp && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) {
+                  toast.error('Ingresa tu email primero');
+                  return;
+                }
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/reset-password`,
+                });
+                if (error) toast.error(error.message);
+                else toast.success('Revisa tu email para restablecer tu contraseña');
+              }}
+              className="block w-full text-center text-xs text-emergency hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
 
           <p className="text-center text-xs text-muted-foreground">
             {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
