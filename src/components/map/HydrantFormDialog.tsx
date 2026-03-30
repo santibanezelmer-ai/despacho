@@ -107,7 +107,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-info" /> Agregar Grifo
+            <MapPin className="h-5 w-5 text-info" /> {editingHydrant ? 'Editar Grifo' : 'Agregar Grifo'}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
