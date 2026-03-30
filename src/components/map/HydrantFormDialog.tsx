@@ -15,6 +15,7 @@ type HydrantFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialCoords?: { lat: number; lng: number } | null;
+  editingHydrant?: { id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null;
 };
 
 export default function HydrantFormDialog({ open, onOpenChange, initialCoords }: HydrantFormDialogProps) {
