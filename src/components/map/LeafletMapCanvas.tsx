@@ -46,6 +46,8 @@ type LeafletMapCanvasProps = {
   showHydrants: boolean;
   onCompatibilityModeChange: (enabled: boolean) => void;
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
+  onMapClick?: (latlng: { lat: number; lng: number }) => void;
+  clickMode?: boolean;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
@@ -113,6 +115,8 @@ export default function LeafletMapCanvas({
   showHydrants,
   onCompatibilityModeChange,
   onBoundsChange,
+  onMapClick,
+  clickMode,
 }: LeafletMapCanvasProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -189,6 +193,27 @@ export default function LeafletMapCanvas({
       tileUrlRef.current = PRIMARY_TILE_URL;
     };
   }, [onCompatibilityModeChange, onBoundsChange]);
+
+  // Handle click mode for placing hydrants
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const container = map.getContainer();
+    if (clickMode) {
+      container.style.cursor = 'crosshair';
+      const handleClick = (e: L.LeafletMouseEvent) => {
+        onMapClick?.({ lat: e.latlng.lat, lng: e.latlng.lng });
+      };
+      map.on('click', handleClick);
+      return () => {
+        container.style.cursor = '';
+        map.off('click', handleClick);
+      };
+    } else {
+      container.style.cursor = '';
+    }
+  }, [clickMode, onMapClick]);
 
   const positions = useMemo<[number, number][]>(() => {
     const points: [number, number][] = [];
