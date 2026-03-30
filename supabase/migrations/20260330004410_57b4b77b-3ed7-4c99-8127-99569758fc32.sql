@@ -1,0 +1,1 @@
+ALTER TABLE public.companies ADD COLUMN tone_url text;
