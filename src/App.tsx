@@ -39,27 +39,34 @@ function ProtectedRoutes() {
   if (!user) return <LoginPage />;
 
   return (
-    <AppLayout>
-      <Routes>
-        <Route path="/" element={<DispatchConsole />} />
-        <Route path="/emergencias" element={<ActiveEmergencies />} />
-        <Route path="/mapa" element={<OperativeMap />} />
-        <Route path="/voluntarios" element={<Volunteers />} />
-        <Route path="/moviles" element={<Vehicles />} />
-        <Route path="/companias" element={<Companies />} />
-        <Route path="/claves" element={<EmergencyKeysAdmin />} />
-        <Route path="/equipamiento" element={<EquipmentPage />} />
-        <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
-        <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
-        <Route path="/pantalla-central" element={<CentralScreen />} />
-        <Route path="/simulacion" element={<SimulationPage />} />
-        <Route path="/alertas" element={<AlertsPage />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AppLayout>
+    <Routes>
+      <Route path="/pantalla-central" element={<CentralScreen />} />
+      <Route
+        path="/*"
+        element={
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<DispatchConsole />} />
+              <Route path="/emergencias" element={<ActiveEmergencies />} />
+              <Route path="/mapa" element={<OperativeMap />} />
+              <Route path="/voluntarios" element={<Volunteers />} />
+              <Route path="/moviles" element={<Vehicles />} />
+              <Route path="/companias" element={<Companies />} />
+              <Route path="/claves" element={<EmergencyKeysAdmin />} />
+              <Route path="/equipamiento" element={<EquipmentPage />} />
+              <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
+              <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
+              <Route path="/simulacion" element={<SimulationPage />} />
+              <Route path="/alertas" element={<AlertsPage />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
+        }
+      />
+    </Routes>
   );
 }
 

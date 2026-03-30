@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useVehicles() {
+type UseVehiclesOptions = {
+  refetchInterval?: number;
+};
+
+export function useVehicles(options: UseVehiclesOptions = {}) {
   return useQuery({
     queryKey: ['vehicles'],
     queryFn: async () => {
@@ -12,5 +16,6 @@ export function useVehicles() {
       if (error) throw error;
       return data;
     },
+    refetchInterval: options.refetchInterval,
   });
 }
