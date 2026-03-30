@@ -15,6 +15,9 @@ import Companies from "@/pages/Companies";
 import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
 import AdminPanel from "@/pages/AdminPanel";
+import OperativeMap from "@/pages/OperativeMap";
+import EquipmentPage from "@/pages/Equipment";
+import CentralScreen from "@/pages/CentralScreen";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
@@ -38,17 +41,17 @@ function ProtectedRoutes() {
       <Routes>
         <Route path="/" element={<DispatchConsole />} />
         <Route path="/emergencias" element={<ActiveEmergencies />} />
-        <Route path="/mapa" element={<PlaceholderPage title="Mapa Operativo" description="Mapa interactivo con emergencias, móviles, grifos y zonas." />} />
+        <Route path="/mapa" element={<OperativeMap />} />
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />
         <Route path="/companias" element={<Companies />} />
         <Route path="/claves" element={<EmergencyKeysAdmin />} />
-        <Route path="/equipamiento" element={<PlaceholderPage title="Equipamiento" description="Gestión de inventario y herramientas por móvil." />} />
+        <Route path="/equipamiento" element={<EquipmentPage />} />
         <Route path="/capacitaciones" element={<PlaceholderPage title="Capacitaciones" description="Registro de cursos, certificaciones y vencimientos." />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/auditoria" element={<PlaceholderPage title="Auditoría" description="Registro completo de todas las acciones del sistema." />} />
         <Route path="/exportaciones" element={<PlaceholderPage title="Exportaciones" description="Exportar datos a Excel y PDF con filtros." />} />
-        <Route path="/pantalla-central" element={<PlaceholderPage title="Pantalla Central (TV)" description="Vista en tiempo real para pantallas de cuartel." />} />
+        <Route path="/pantalla-central" element={<CentralScreen />} />
         <Route path="/simulacion" element={<PlaceholderPage title="Modo Simulación" description="Crear emergencias ficticias para entrenamiento." />} />
         <Route path="/alertas" element={<PlaceholderPage title="Alertas Internas" description="Alertas de falta de personal, móviles y tiempos." />} />
         <Route path="/admin" element={<AdminPanel />} />
