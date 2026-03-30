@@ -20,6 +20,7 @@ import EquipmentPage from "@/pages/Equipment";
 import CentralScreen from "@/pages/CentralScreen";
 import AlertsPage from "@/pages/AlertsPage";
 import SimulationPage from "@/pages/SimulationPage";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
