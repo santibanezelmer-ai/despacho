@@ -80,9 +80,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/*" element={<ProtectedRoutes />} />
-          </Routes>
+          <ProtectedRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
