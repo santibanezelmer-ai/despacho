@@ -122,6 +122,7 @@ export default function LeafletMapCanvas({
   const mapRef = useRef<L.Map | null>(null);
   const emergencyLayerRef = useRef<L.LayerGroup | null>(null);
   const hydrantLayerRef = useRef<L.LayerGroup | null>(null);
+  const initialFitDoneRef = useRef(false);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const tileUrlRef = useRef(PRIMARY_TILE_URL);
 
