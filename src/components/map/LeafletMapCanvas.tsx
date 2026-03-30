@@ -122,6 +122,7 @@ export default function LeafletMapCanvas({
   const mapRef = useRef<L.Map | null>(null);
   const emergencyLayerRef = useRef<L.LayerGroup | null>(null);
   const hydrantLayerRef = useRef<L.LayerGroup | null>(null);
+  const initialFitDoneRef = useRef(false);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const tileUrlRef = useRef(PRIMARY_TILE_URL);
 
@@ -246,9 +247,10 @@ export default function LeafletMapCanvas({
       });
     }
 
-    if (positions.length > 0) {
+    if (!initialFitDoneRef.current && positions.length > 0) {
       const bounds = L.latLngBounds(positions.map((position) => L.latLng(position[0], position[1])));
       mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      initialFitDoneRef.current = true;
     }
   }, [emergencies, hydrants, positions, showEmergencies, showHydrants]);
 
