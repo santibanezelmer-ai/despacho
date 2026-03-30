@@ -3,7 +3,7 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Building2, Plus, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Plus, Search, Pencil, Trash2, Loader2, Upload, Volume2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,9 +19,10 @@ interface CompanyForm {
   address: string;
   phone: string;
   active: boolean;
+  tone_url: string;
 }
 
-const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true };
+const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '' };
 
 export default function Companies() {
   const [search, setSearch] = useState('');
