@@ -34,6 +34,9 @@ import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
 import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations";
 import SuperadminRequests from "@/pages/superadmin/SuperadminRequests";
 import NotFound from "./pages/NotFound";
+import MobileLayout from "@/components/mobile/MobileLayout";
+import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
+import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
