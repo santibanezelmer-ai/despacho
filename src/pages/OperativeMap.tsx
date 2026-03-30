@@ -2,10 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Map, Flame, Droplets, Layers } from 'lucide-react';
+import { Map, Flame, Droplets, Layers, Plus, MousePointer2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import LeafletMapCanvas, { type MapEmergency, type MapHydrant } from '@/components/map/LeafletMapCanvas';
+import HydrantFormDialog from '@/components/map/HydrantFormDialog';
 
 function useHydrants() {
   return useQuery({
@@ -63,12 +65,26 @@ export default function OperativeMap() {
   const [showEmergencies, setShowEmergencies] = useState(true);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+  const [clickMode, setClickMode] = useState(false);
+  const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
+  const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const { data: sharedHydrants } = useSharedHydrants(mapBounds);
 
   const handleBoundsChange = useCallback((bounds: { north: number; south: number; east: number; west: number }) => {
     setMapBounds(bounds);
   }, []);
+
+  const handleMapClick = useCallback((latlng: { lat: number; lng: number }) => {
+    setClickedCoords(latlng);
+    setClickMode(false);
+    setHydrantDialogOpen(true);
+  }, []);
+
+  const handleAddManual = () => {
+    setClickedCoords(null);
+    setHydrantDialogOpen(true);
+  };
 
   const mapEmergencies = useMemo<MapEmergency[]>(
     () =>
@@ -129,6 +145,20 @@ export default function OperativeMap() {
               <Droplets className="h-3 w-3 text-info" /> Grifos
             </Label>
           </div>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant={clickMode ? 'default' : 'outline'}
+              className="h-7 text-xs gap-1"
+              onClick={() => setClickMode(!clickMode)}
+            >
+              <MousePointer2 className="h-3 w-3" />
+              {clickMode ? 'Cancelar' : 'Colocar en mapa'}
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAddManual}>
+              <Plus className="h-3 w-3" /> Agregar grifo
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -140,7 +170,15 @@ export default function OperativeMap() {
           showHydrants={showHydrants}
           onCompatibilityModeChange={setCompatibilityMode}
           onBoundsChange={handleBoundsChange}
+          onMapClick={handleMapClick}
+          clickMode={clickMode}
         />
+
+        {clickMode && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-md border border-primary bg-primary/90 px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg">
+            Haz clic en el mapa para colocar un grifo
+          </div>
+        )}
 
         {compatibilityMode && (
           <div className="absolute top-4 right-4 z-[1000] rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
@@ -163,6 +201,12 @@ export default function OperativeMap() {
           </div>
         </div>
       </div>
+
+      <HydrantFormDialog
+        open={hydrantDialogOpen}
+        onOpenChange={setHydrantDialogOpen}
+        initialCoords={clickedCoords}
+      />
     </div>
   );
 }
