@@ -164,15 +164,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         created_by: user?.id ?? null,
       });
 
-      // Play tone if available
-      if (emergencyKey.tone_url) {
-        try {
-          const audio = new Audio(emergencyKey.tone_url);
-          await audio.play();
-        } catch {
-          // tone playback is best-effort
-        }
-      }
+      // Play tone sequence: company tones → key tone
+      startToneSequence(selectedVehicleIds);
 
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
