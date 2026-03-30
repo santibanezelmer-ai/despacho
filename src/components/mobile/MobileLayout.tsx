@@ -23,7 +23,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
             )}
           </div>
         </div>
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Conectado" />
+        <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" title="Conectado" />
       </header>
 
       {/* Content */}
