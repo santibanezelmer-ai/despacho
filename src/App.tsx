@@ -12,6 +12,7 @@ import Dashboard from "@/pages/Dashboard";
 import Volunteers from "@/pages/Volunteers";
 import Vehicles from "@/pages/Vehicles";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
+import AdminPanel from "@/pages/AdminPanel";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
@@ -46,7 +47,7 @@ function ProtectedRoutes() {
         <Route path="/pantalla-central" element={<PlaceholderPage title="Pantalla Central (TV)" description="Vista en tiempo real para pantallas de cuartel." />} />
         <Route path="/simulacion" element={<PlaceholderPage title="Modo Simulación" description="Crear emergencias ficticias para entrenamiento." />} />
         <Route path="/alertas" element={<PlaceholderPage title="Alertas Internas" description="Alertas de falta de personal, móviles y tiempos." />} />
-        <Route path="/admin" element={<PlaceholderPage title="Administración" description="Panel de configuración general del sistema." />} />
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
