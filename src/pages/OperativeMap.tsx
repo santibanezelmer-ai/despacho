@@ -208,6 +208,8 @@ export default function OperativeMap() {
           onMapClick={handleMapClick}
           clickMode={clickMode}
           onHydrantAction={handleHydrantAction}
+          locateRequested={locateCounter}
+          onLocateResult={handleLocateResult}
         />
 
         {clickMode && (
