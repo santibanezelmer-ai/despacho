@@ -285,5 +285,32 @@ export default function LeafletMapCanvas({
     }
   }, [emergencies, hydrants, positions, showEmergencies, showHydrants]);
 
+  // Geolocation
+  const locationMarkerRef = useRef<L.Marker | null>(null);
+  useEffect(() => {
+    if (!locateRequested || !mapRef.current) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const map = mapRef.current!;
+        map.setView([latitude, longitude], 15);
+        if (locationMarkerRef.current) locationMarkerRef.current.remove();
+        locationMarkerRef.current = L.marker([latitude, longitude], {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="width:18px;height:18px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.6);"></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          }),
+        }).addTo(map).bindPopup('Tu ubicación').openPopup();
+        onLocateResult?.({ lat: latitude, lng: longitude });
+      },
+      () => {
+        onLocateResult?.(null);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [locateRequested, onLocateResult]);
+
   return <div ref={mapContainerRef} className="h-full w-full bg-muted" />;
 }
