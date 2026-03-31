@@ -190,6 +190,9 @@ export default function OperativeMap() {
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAddManual}>
               <Plus className="h-3 w-3" /> Agregar grifo
             </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleLocate} disabled={locating}>
+              <LocateFixed className={`h-3 w-3 ${locating ? 'animate-pulse' : ''}`} /> Mi ubicación
+            </Button>
           </div>
         </div>
       </div>
