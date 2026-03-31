@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -50,6 +50,8 @@ type LeafletMapCanvasProps = {
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   clickMode?: boolean;
   onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
+  locateRequested?: number; // increment to trigger geolocation
+  onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
@@ -127,6 +129,8 @@ export default function LeafletMapCanvas({
   onMapClick,
   clickMode,
   onHydrantAction,
+  locateRequested,
+  onLocateResult,
 }: LeafletMapCanvasProps) {
   const hydrantsRef = useRef(hydrants);
   hydrantsRef.current = hydrants;
@@ -280,6 +284,33 @@ export default function LeafletMapCanvas({
       initialFitDoneRef.current = true;
     }
   }, [emergencies, hydrants, positions, showEmergencies, showHydrants]);
+
+  // Geolocation
+  const locationMarkerRef = useRef<L.Marker | null>(null);
+  useEffect(() => {
+    if (!locateRequested || !mapRef.current) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const map = mapRef.current!;
+        map.setView([latitude, longitude], 15);
+        if (locationMarkerRef.current) locationMarkerRef.current.remove();
+        locationMarkerRef.current = L.marker([latitude, longitude], {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="width:18px;height:18px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.6);"></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          }),
+        }).addTo(map).bindPopup('Tu ubicación').openPopup();
+        onLocateResult?.({ lat: latitude, lng: longitude });
+      },
+      () => {
+        onLocateResult?.(null);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [locateRequested, onLocateResult]);
 
   return <div ref={mapContainerRef} className="h-full w-full bg-muted" />;
 }

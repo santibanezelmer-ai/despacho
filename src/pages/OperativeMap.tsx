@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Map, Flame, Droplets, Layers, Plus, MousePointer2 } from 'lucide-react';
+import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -71,6 +71,8 @@ export default function OperativeMap() {
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [editingHydrant, setEditingHydrant] = useState<{ id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null>(null);
+  const [locateCounter, setLocateCounter] = useState(0);
+  const [locating, setLocating] = useState(false);
 
   const { data: sharedHydrants } = useSharedHydrants(mapBounds);
 
@@ -89,6 +91,16 @@ export default function OperativeMap() {
     setClickedCoords(null);
     setHydrantDialogOpen(true);
   };
+
+  const handleLocate = useCallback(() => {
+    setLocating(true);
+    setLocateCounter(c => c + 1);
+  }, []);
+
+  const handleLocateResult = useCallback((latlng: { lat: number; lng: number } | null) => {
+    setLocating(false);
+    if (!latlng) toast.error('No se pudo obtener tu ubicación');
+  }, []);
 
   const handleHydrantAction = useCallback(async (action: 'edit' | 'delete', hydrant: MapHydrant) => {
     if (action === 'delete') {
@@ -178,6 +190,9 @@ export default function OperativeMap() {
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAddManual}>
               <Plus className="h-3 w-3" /> Agregar grifo
             </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleLocate} disabled={locating}>
+              <LocateFixed className={`h-3 w-3 ${locating ? 'animate-pulse' : ''}`} /> Mi ubicación
+            </Button>
           </div>
         </div>
       </div>
@@ -193,6 +208,8 @@ export default function OperativeMap() {
           onMapClick={handleMapClick}
           clickMode={clickMode}
           onHydrantAction={handleHydrantAction}
+          locateRequested={locateCounter}
+          onLocateResult={handleLocateResult}
         />
 
         {clickMode && (

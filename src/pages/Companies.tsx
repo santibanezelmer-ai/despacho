@@ -106,8 +106,16 @@ export default function Companies() {
   const handleDelete = async (c: any) => {
     if (!confirm(`¿Eliminar compañía "${c.name}"?`)) return;
     const { error } = await supabase.from('companies').delete().eq('id', c.id);
-    if (error) toast.error(error.message);
-    else { toast.success('Compañía eliminada'); qc.invalidateQueries({ queryKey: ['companies'] }); }
+    if (error) {
+      if (error.code === '23503' || error.message?.includes('violates foreign key') || (error as any).status === 409) {
+        toast.error('No se puede eliminar: esta compañía tiene vehículos o voluntarios asignados. Reasígnalos primero.');
+      } else {
+        toast.error(error.message);
+      }
+    } else {
+      toast.success('Compañía eliminada');
+      qc.invalidateQueries({ queryKey: ['companies'] });
+    }
   };
 
   return (

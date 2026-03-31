@@ -26,12 +26,24 @@ export default function AuditPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('audit_log')
-        .select('*, profiles:user_id(display_name, email)')
+        .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
-      return data ?? [];
+
+      // Fetch profiles separately (no FK from audit_log to profiles)
+      const userIds = [...new Set((data ?? []).map((l: any) => l.user_id).filter(Boolean))];
+      let profilesMap: Record<string, { display_name: string | null; email: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, email')
+          .in('user_id', userIds);
+        (profiles ?? []).forEach((p: any) => { profilesMap[p.user_id] = p; });
+      }
+
+      return (data ?? []).map((l: any) => ({ ...l, profiles: profilesMap[l.user_id] ?? null }));
     },
     enabled: !!orgId,
   });
