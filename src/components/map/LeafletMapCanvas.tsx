@@ -129,6 +129,8 @@ export default function LeafletMapCanvas({
   onMapClick,
   clickMode,
   onHydrantAction,
+  locateRequested,
+  onLocateResult,
 }: LeafletMapCanvasProps) {
   const hydrantsRef = useRef(hydrants);
   hydrantsRef.current = hydrants;
