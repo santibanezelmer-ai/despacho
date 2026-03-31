@@ -39,6 +39,7 @@ import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
 import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
 import { Loader2 } from "lucide-react";
+import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
   const { orgId, currentOrg, loading: orgLoading, memberships } = useOrganization();
   const location = useLocation();
+  const isNativeMobile = useIsNativeMobile();
 
   if (authLoading || (user && orgLoading)) {
     return (
