@@ -197,7 +197,7 @@ export default function OperativeMap() {
         </div>
       </div>
 
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0" style={{ isolation: 'isolate' }}>
         <LeafletMapCanvas
           emergencies={mapEmergencies}
           hydrants={mapHydrants}
