@@ -71,6 +71,8 @@ export default function OperativeMap() {
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [editingHydrant, setEditingHydrant] = useState<{ id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null>(null);
+  const [locateCounter, setLocateCounter] = useState(0);
+  const [locating, setLocating] = useState(false);
 
   const { data: sharedHydrants } = useSharedHydrants(mapBounds);
 
