@@ -58,6 +58,10 @@ function AppRoutes() {
   }
 
   if (!user) {
+    // On native/mobile, skip landing and go straight to login
+    if (isNativeMobile && location.pathname === '/') {
+      return <Navigate to="/login" replace />;
+    }
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -67,6 +71,11 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
+  }
+
+  // Authenticated user on native/mobile hitting a non-mobile route → redirect to mobile feed
+  if (isNativeMobile && !location.pathname.startsWith('/mobile') && location.pathname !== '/pantalla-central' && !location.pathname.startsWith('/superadmin')) {
+    return <Navigate to="/mobile/feed" replace />;
   }
 
   if (location.pathname === '/pantalla-central') {
