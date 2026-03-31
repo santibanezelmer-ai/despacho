@@ -39,6 +39,7 @@ import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
 import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
 import { Loader2 } from "lucide-react";
+import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
   const { orgId, currentOrg, loading: orgLoading, memberships } = useOrganization();
   const location = useLocation();
+  const isNativeMobile = useIsNativeMobile();
 
   if (authLoading || (user && orgLoading)) {
     return (
@@ -56,6 +58,10 @@ function AppRoutes() {
   }
 
   if (!user) {
+    // On native/mobile, skip landing and go straight to login
+    if (isNativeMobile && location.pathname === '/') {
+      return <Navigate to="/login" replace />;
+    }
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -65,6 +71,11 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
+  }
+
+  // Authenticated user on native/mobile hitting a non-mobile route → redirect to mobile feed
+  if (isNativeMobile && !location.pathname.startsWith('/mobile') && location.pathname !== '/pantalla-central' && !location.pathname.startsWith('/superadmin')) {
+    return <Navigate to="/mobile/feed" replace />;
   }
 
   if (location.pathname === '/pantalla-central') {
