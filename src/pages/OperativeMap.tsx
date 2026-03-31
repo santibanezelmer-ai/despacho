@@ -92,6 +92,16 @@ export default function OperativeMap() {
     setHydrantDialogOpen(true);
   };
 
+  const handleLocate = useCallback(() => {
+    setLocating(true);
+    setLocateCounter(c => c + 1);
+  }, []);
+
+  const handleLocateResult = useCallback((latlng: { lat: number; lng: number } | null) => {
+    setLocating(false);
+    if (!latlng) toast.error('No se pudo obtener tu ubicación');
+  }, []);
+
   const handleHydrantAction = useCallback(async (action: 'edit' | 'delete', hydrant: MapHydrant) => {
     if (action === 'delete') {
       if (!confirm('¿Eliminar este grifo?')) return;
