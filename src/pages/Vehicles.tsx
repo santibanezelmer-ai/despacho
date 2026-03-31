@@ -34,8 +34,16 @@ export default function Vehicles() {
   const handleDelete = async (v: any) => {
     if (!confirm(`¿Eliminar móvil "${v.code}"?`)) return;
     const { error } = await supabase.from('vehicles').delete().eq('id', v.id);
-    if (error) toast.error(error.message);
-    else { toast.success('Móvil eliminado'); qc.invalidateQueries({ queryKey: ['vehicles'] }); }
+    if (error) {
+      if (error.code === '23503' || error.message?.includes('409')) {
+        toast.error('No se puede eliminar: este móvil tiene emergencias, equipamiento u otros registros asociados.');
+      } else {
+        toast.error(error.message);
+      }
+    } else {
+      toast.success('Móvil eliminado');
+      qc.invalidateQueries({ queryKey: ['vehicles'] });
+    }
   };
 
   return (
