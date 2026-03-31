@@ -50,6 +50,8 @@ type LeafletMapCanvasProps = {
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   clickMode?: boolean;
   onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
+  locateRequested?: number; // increment to trigger geolocation
+  onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
