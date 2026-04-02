@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, LogOut, Mail, ShieldCheck, User2 } from 'lucide-react';
+import { Building2, LogOut, Mail, ShieldCheck, User2, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Button } from '@/components/ui/button';
+import { simulatePushNotification } from '@/services/pushService';
+import { useActiveEmergencies } from '@/hooks/useEmergencies';
 
 function formatRole(role: string | null) {
   if (!role) return 'Sin rol';
@@ -14,6 +16,7 @@ export default function MobileProfilePage() {
   const { user, signOut } = useAuth();
   const { currentOrg, orgRole } = useOrganization();
   const navigate = useNavigate();
+  const { data: emergencies } = useActiveEmergencies();
 
   const displayName = useMemo(() => {
     const name = user?.user_metadata?.full_name as string | undefined;
@@ -25,6 +28,12 @@ export default function MobileProfilePage() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/login', { replace: true });
+  };
+
+  const handleTestPush = () => {
+    const firstEmergency = emergencies?.[0];
+    const id = firstEmergency?.id ?? 'test-emergency-id';
+    simulatePushNotification(navigate, id);
   };
 
   return (
@@ -62,6 +71,11 @@ export default function MobileProfilePage() {
           </div>
         </div>
       </section>
+
+      <Button type="button" variant="outline" className="w-full h-11 gap-2" onClick={handleTestPush}>
+        <Bell className="h-4 w-4" />
+        Probar notificación
+      </Button>
 
       <Button type="button" variant="secondary" className="w-full h-11 gap-2" onClick={handleSignOut}>
         <LogOut className="h-4 w-4" />

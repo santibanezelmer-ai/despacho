@@ -2,12 +2,57 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import type { NavigateFunction } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PushPayload {
   title?: string;
   body?: string;
   emergencyId?: string;
   type?: string;
+}
+
+/**
+ * Save or update the device token in Supabase.
+ */
+async function saveTokenToSupabase(token: string, platform: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Get user's active organization
+    const { data: membership } = await (supabase as any)
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+
+    if (!membership?.organization_id) return;
+
+    // Upsert token (on conflict by token uniqueness)
+    const { error } = await (supabase as any)
+      .from('device_tokens')
+      .upsert(
+        {
+          user_id: user.id,
+          organization_id: membership.organization_id,
+          token,
+          platform,
+          last_seen_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'token' }
+      );
+
+    if (error) {
+      console.error('[Push] Error saving token:', error);
+    } else {
+      console.log('[Push] Token saved to database');
+    }
+  } catch (err) {
+    console.error('[Push] Error saving token:', err);
+  }
 }
 
 /**
@@ -36,10 +81,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
     await PushNotifications.register();
 
     return new Promise((resolve) => {
-      PushNotifications.addListener('registration', (token) => {
-        console.log('[Push] Token:', token.value);
+      PushNotifications.addListener('registration', async (tokenData) => {
+        console.log('[Push] Token:', tokenData.value);
+        const platform = Capacitor.getPlatform(); // 'android' | 'ios'
+        await saveTokenToSupabase(tokenData.value, platform);
         toast.success('Notificaciones activadas');
-        resolve(token.value);
+        resolve(tokenData.value);
       });
 
       PushNotifications.addListener('registrationError', (err) => {
@@ -56,13 +103,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
 /**
  * Set up listeners for incoming push notifications.
- * - Foreground: shows a toast
- * - Action (tap): navigates to emergency detail if emergencyId present
  */
 export function setupPushListeners(navigate: NavigateFunction): void {
   if (!Capacitor.isNativePlatform()) return;
 
-  // Notification received while app is in foreground
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[Push] Received:', notification);
     const payload = notification.data as PushPayload;
@@ -71,7 +115,6 @@ export function setupPushListeners(navigate: NavigateFunction): void {
     });
   });
 
-  // User tapped on a notification
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     console.log('[Push] Action:', action);
     const payload = action.notification.data as PushPayload;
@@ -91,7 +134,6 @@ export function removePushListeners(): void {
 
 /**
  * Simulate a local push notification for development/testing.
- * Navigates directly to the emergency detail.
  */
 export function simulatePushNotification(navigate: NavigateFunction, emergencyId: string): void {
   toast.info('🚨 Simulación: Nueva emergencia', {
@@ -102,4 +144,33 @@ export function simulatePushNotification(navigate: NavigateFunction, emergencyId
     },
     duration: 6000,
   });
+}
+
+/**
+ * Send push notifications to all devices in an organization via edge function.
+ */
+export async function sendPushToOrganization(
+  organizationId: string,
+  emergencyId: string,
+  title: string,
+  body: string
+): Promise<void> {
+  try {
+    const { error } = await supabase.functions.invoke('send-push-notification', {
+      body: {
+        organization_id: organizationId,
+        emergency_id: emergencyId,
+        title,
+        body,
+        type: 'new_emergency',
+      },
+    });
+    if (error) {
+      console.error('[Push] Error sending push:', error);
+    } else {
+      console.log('[Push] Push notifications sent');
+    }
+  } catch (err) {
+    console.error('[Push] Error invoking push function:', err);
+  }
 }

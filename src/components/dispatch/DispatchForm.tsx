@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
+import { sendPushToOrganization } from '@/services/pushService';
 
 interface Props {
   emergencyKey: EmergencyKeyRow;
@@ -174,6 +175,14 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+
+      // Send push notifications to org devices
+      sendPushToOrganization(
+        orgId!,
+        emergency.id,
+        `🚨 ${emergencyKey.code} — ${emergencyKey.name}`,
+        `Dirección: ${address.trim()}`
+      );
 
       toast.success(`Emergencia ${emergencyKey.code} despachada correctamente`);
       onClose();
