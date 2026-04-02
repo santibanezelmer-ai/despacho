@@ -38,6 +38,8 @@ import MobileLayout from "@/components/mobile/MobileLayout";
 import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
 import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
+import MobileMapPage from "@/pages/mobile/MobileMapPage";
+import OnboardingPage from "@/pages/admin/OnboardingPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 
@@ -130,7 +132,8 @@ function AppRoutes() {
           <Route path="/mobile/feed" element={<MobileFeedPage />} />
           <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
           <Route path="/mobile/profile" element={<MobileProfilePage />} />
-          <Route path="*" element={<MobileFeedPage />} />
+          <Route path="/mobile/map" element={<MobileMapPage />} />
+          <Route path="*" element={<Navigate to="/mobile/feed" replace />} />
         </Routes>
       </MobileLayout>
     );
@@ -155,6 +158,7 @@ function AppRoutes() {
         <Route path="/alertas" element={<AlertsPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
