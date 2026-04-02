@@ -158,6 +158,7 @@ function AppRoutes() {
         <Route path="/alertas" element={<AlertsPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
