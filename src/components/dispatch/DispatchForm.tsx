@@ -176,6 +176,14 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
 
+      // Send push notifications to org devices
+      sendPushToOrganization(
+        orgId!,
+        emergency.id,
+        `🚨 ${emergencyKey.code} — ${emergencyKey.name}`,
+        `Dirección: ${address.trim()}`
+      );
+
       toast.success(`Emergencia ${emergencyKey.code} despachada correctamente`);
       onClose();
     } catch (err: any) {
