@@ -132,7 +132,8 @@ function AppRoutes() {
           <Route path="/mobile/feed" element={<MobileFeedPage />} />
           <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
           <Route path="/mobile/profile" element={<MobileProfilePage />} />
-          <Route path="*" element={<MobileFeedPage />} />
+          <Route path="/mobile/map" element={<MobileMapPage />} />
+          <Route path="*" element={<Navigate to="/mobile/feed" replace />} />
         </Routes>
       </MobileLayout>
     );
