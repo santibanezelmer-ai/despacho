@@ -38,6 +38,8 @@ import MobileLayout from "@/components/mobile/MobileLayout";
 import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
 import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
+import MobileMapPage from "@/pages/mobile/MobileMapPage";
+import OnboardingPage from "@/pages/admin/OnboardingPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 
