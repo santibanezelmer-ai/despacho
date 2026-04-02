@@ -18,13 +18,17 @@ export function useOnboardingChecklist() {
     queryFn: async (): Promise<OnboardingItem[]> => {
       if (!orgId) return [];
 
-      const org = currentOrg?.organization;
+      // Fetch full org data for config check
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('name, status, phone, institution_email, address, logo_url')
+        .eq('id', orgId)
+        .single();
 
-      // Check organization configured
       const orgConfigured = !!(
-        org?.name &&
-        org?.status === 'active' &&
-        (org?.phone || org?.institution_email || org?.address || org?.logo_url)
+        orgData?.name &&
+        orgData?.status === 'active' &&
+        (orgData?.phone || orgData?.institution_email || orgData?.address || orgData?.logo_url)
       );
 
       // Check counts in parallel
