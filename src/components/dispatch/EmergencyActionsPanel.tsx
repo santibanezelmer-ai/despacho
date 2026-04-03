@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useUpdateAddress, useUpdateLocation, useAssignVehicles, useToggleFlag } from '@/hooks/useEmergencyActions';
+import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import { toast } from 'sonner';
 
 interface Emergency {
