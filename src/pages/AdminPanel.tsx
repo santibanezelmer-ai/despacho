@@ -236,6 +236,10 @@ export default function AdminPanel() {
         <Shield className="inline h-3 w-3 mr-1" />
         Haz clic en un rol para quitarlo. Los cambios se aplican inmediatamente.
       </p>
+
+      <div className="border-t border-border pt-6">
+        <SystemSoundsAdmin />
+      </div>
     </div>
   );
 }
