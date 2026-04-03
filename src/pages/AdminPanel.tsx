@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Shield, ShieldPlus, Trash2, Users } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
