@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 
 export default function DispatchConsole() {
@@ -19,6 +20,7 @@ export default function DispatchConsole() {
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
   const queryClient = useQueryClient();
+  const playSystemSound = usePlaySystemSound();
 
   const availableVehicles = (vehicles ?? []).filter(v => v.status === 'disponible').length;
   const totalVehicles = (vehicles ?? []).length;
@@ -26,16 +28,8 @@ export default function DispatchConsole() {
   const activeCount = (emergencies ?? []).length;
 
   const handleSelectKey = (key: EmergencyKeyRow) => {
+    // Solo seleccionar clave, NO reproducir tono aquí
     setSelectedKey(key);
-    // Play tone if available
-    if (key.tone_url) {
-      try {
-        const audio = new Audio(key.tone_url);
-        audio.play();
-      } catch {
-        // best-effort
-      }
-    }
     toast.info(`Clave seleccionada: ${key.code} - ${key.name}`, { duration: 3000 });
   };
 
@@ -93,11 +87,27 @@ export default function DispatchConsole() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={() => {
+              const audio = playSystemSound('prueba_sirena');
+              if (!audio) toast.info('Sin sonido de sirena configurado');
+            }}
+          >
             <Volume2 className="mr-1.5 h-3.5 w-3.5" />
             Prueba Sirena
           </Button>
-          <Button variant="outline" size="sm" className="text-xs border-warning text-warning hover:bg-warning/10">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs border-warning text-warning hover:bg-warning/10"
+            onClick={() => {
+              const audio = playSystemSound('mediodia');
+              if (!audio) toast.info('Sin sonido de mediodía configurado');
+            }}
+          >
             <AlertTriangle className="mr-1.5 h-3.5 w-3.5" />
             Mediodía
           </Button>
