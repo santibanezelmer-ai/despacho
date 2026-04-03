@@ -864,6 +864,44 @@ export type Database = {
         }
         Relationships: []
       }
+      system_sounds: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          organization_id: string
+          sound_key: string
+          sound_url: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string
+          organization_id: string
+          sound_key: string
+          sound_url: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          organization_id?: string
+          sound_key?: string
+          sound_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_sounds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training: {
         Row: {
           certification: string | null
