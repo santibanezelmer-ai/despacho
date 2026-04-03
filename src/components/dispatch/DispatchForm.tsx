@@ -67,24 +67,35 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   }, []);
 
   const startToneSequence = useCallback((vehicleIds: string[]) => {
-    // Get unique company IDs from selected vehicles
-    const companyIds = new Set<string>();
+    // Get unique company IDs from selected vehicles, preserving order by company number
+    const companyMap = new Map<string, { tone_url: string | null; name: string; number: number }>();
     for (const vid of vehicleIds) {
       const v = (allVehicles ?? []).find(veh => veh.id === vid);
-      if (v?.company_id) companyIds.add(v.company_id);
+      if (v?.company_id && !companyMap.has(v.company_id)) {
+        const company = (companies ?? []).find(c => c.id === v.company_id);
+        if (company) {
+          companyMap.set(v.company_id, {
+            tone_url: company.tone_url,
+            name: company.name,
+            number: company.number,
+          });
+        }
+      }
     }
+
+    // Sort companies by number (1ra, 2da, 3ra...)
+    const sortedCompanies = Array.from(companyMap.values()).sort((a, b) => a.number - b.number);
 
     const queue: { url: string; label: string }[] = [];
 
-    // Add company tones first
-    for (const cid of companyIds) {
-      const company = (companies ?? []).find(c => c.id === cid);
-      if (company?.tone_url) {
+    // Add company tones in order
+    for (const company of sortedCompanies) {
+      if (company.tone_url) {
         queue.push({ url: company.tone_url, label: `Compañía ${company.name}` });
       }
     }
 
-    // Add emergency key tone
+    // Emergency key tone plays AFTER all company tones
     if (emergencyKey.tone_url) {
       queue.push({ url: emergencyKey.tone_url, label: `Clave ${emergencyKey.code}` });
     }
