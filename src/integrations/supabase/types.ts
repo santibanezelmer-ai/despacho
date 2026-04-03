@@ -149,14 +149,19 @@ export type Database = {
       emergencies: {
         Row: {
           address: string
+          ambulance_requested: boolean
           caller_name: string | null
           caller_phone: string | null
+          carabineros_requested: boolean
           controlled_at: string | null
           created_at: string
           created_by: string | null
+          declared: boolean
+          declared_at: string | null
           dispatched_at: string | null
           emergency_key_id: string
           en_route_at: string | null
+          external_support: boolean
           finished_at: string | null
           folio: string
           id: string
@@ -172,14 +177,19 @@ export type Database = {
         }
         Insert: {
           address: string
+          ambulance_requested?: boolean
           caller_name?: string | null
           caller_phone?: string | null
+          carabineros_requested?: boolean
           controlled_at?: string | null
           created_at?: string
           created_by?: string | null
+          declared?: boolean
+          declared_at?: string | null
           dispatched_at?: string | null
           emergency_key_id: string
           en_route_at?: string | null
+          external_support?: boolean
           finished_at?: string | null
           folio: string
           id?: string
@@ -195,14 +205,19 @@ export type Database = {
         }
         Update: {
           address?: string
+          ambulance_requested?: boolean
           caller_name?: string | null
           caller_phone?: string | null
+          carabineros_requested?: boolean
           controlled_at?: string | null
           created_at?: string
           created_by?: string | null
+          declared?: boolean
+          declared_at?: string | null
           dispatched_at?: string | null
           emergency_key_id?: string
           en_route_at?: string | null
+          external_support?: boolean
           finished_at?: string | null
           folio?: string
           id?: string
