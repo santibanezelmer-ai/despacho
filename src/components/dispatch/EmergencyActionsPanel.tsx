@@ -107,11 +107,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const handleToggle = (field: string, currentValue: boolean, label: string) => {
     toggleFlag.mutate({ id: emergency.id, field, value: !currentValue, label });
     if (field === 'declared' && !currentValue) {
-      // Play declared sound
-      try {
-        const audio = new Audio('/tones/declared.mp3');
-        audio.play().catch(() => {});
-      } catch {}
+      const audio = playSystemSound('declarado');
+      if (!audio) toast.info('Sin sonido de declarado configurado');
       toast.success('🔊 Emergencia declarada');
     }
   };
