@@ -43,6 +43,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const updateLocation = useUpdateLocation();
   const assignVehicles = useAssignVehicles();
   const toggleFlag = useToggleFlag();
+  const playSystemSound = usePlaySystemSound();
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
