@@ -35,6 +35,7 @@ export function useActiveEmergencies() {
           return {
             ...e,
             vehicleCodes: (evData ?? []).map((ev: any) => ev.vehicles?.code).filter(Boolean) as string[],
+            vehicleIds: (evData ?? []).map((ev: any) => ev.vehicle_id).filter(Boolean) as string[],
             personnelCount: personnelCount ?? 0,
           };
         })
