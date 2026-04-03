@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useUpdateAddress, useUpdateLocation, useAssignVehicles, useToggleFlag } from '@/hooks/useEmergencyActions';
+import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import { toast } from 'sonner';
 
 interface Emergency {
@@ -42,6 +43,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const updateLocation = useUpdateLocation();
   const assignVehicles = useAssignVehicles();
   const toggleFlag = useToggleFlag();
+  const playSystemSound = usePlaySystemSound();
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
@@ -105,11 +107,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const handleToggle = (field: string, currentValue: boolean, label: string) => {
     toggleFlag.mutate({ id: emergency.id, field, value: !currentValue, label });
     if (field === 'declared' && !currentValue) {
-      // Play declared sound
-      try {
-        const audio = new Audio('/tones/declared.mp3');
-        audio.play().catch(() => {});
-      } catch {}
+      const audio = playSystemSound('declarado');
+      if (!audio) toast.info('Sin sonido de declarado configurado');
       toast.success('🔊 Emergencia declarada');
     }
   };
