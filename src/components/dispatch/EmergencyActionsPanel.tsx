@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 interface Emergency {
   id: string;
   address: string;
-  latitude: number | null;
-  longitude: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
   external_support?: boolean;
   declared?: boolean;
   carabineros_requested?: boolean;
