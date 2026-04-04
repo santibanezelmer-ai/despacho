@@ -239,6 +239,10 @@ export default function AdminPanel() {
       </p>
 
       <div className="border-t border-border pt-6">
+        <RanksAdmin />
+      </div>
+
+      <div className="border-t border-border pt-6">
         <SystemSoundsAdmin />
       </div>
     </div>

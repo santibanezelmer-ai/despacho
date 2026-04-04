@@ -222,11 +222,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
             )}
           </section>
 
-          {/* 4. Action Buttons Grid */}
+          {/* 4. Vehicle Personnel Manager */}
+          <section>
+            <VehiclePersonnelManager emergencyId={emergency.id} />
+          </section>
+
+          {/* 5. Action Buttons Grid */}
           <section>
             <label className="mb-2 text-xs font-medium text-muted-foreground">Acciones Operativas</label>
             <div className="grid grid-cols-2 gap-2">
-              {/* 10-12 External Support */}
               <button
                 onClick={() => handleToggle('external_support', extSupport, '10-12 Apoyo externo')}
                 className={`flex items-center gap-2 rounded-md border px-3 py-2.5 text-xs font-medium transition-colors ${
@@ -239,7 +243,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 <span>10-12 — Apoyo Externo</span>
               </button>
 
-              {/* Declared */}
               <button
                 onClick={() => handleToggle('declared', declared, 'Declarado')}
                 className={`flex items-center gap-2 rounded-md border px-3 py-2.5 text-xs font-medium transition-colors ${
@@ -252,7 +255,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 <span>Declarado</span>
               </button>
 
-              {/* Carabineros */}
               <button
                 onClick={() => handleToggle('carabineros_requested', carabineros, '1-0 Carabineros')}
                 className={`flex items-center gap-2 rounded-md border px-3 py-2.5 text-xs font-medium transition-colors ${
@@ -265,7 +267,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 <span>1-0 — Carabineros</span>
               </button>
 
-              {/* Ambulance */}
               <button
                 onClick={() => handleToggle('ambulance_requested', ambulance, '1-2 Ambulancia')}
                 className={`flex items-center gap-2 rounded-md border px-3 py-2.5 text-xs font-medium transition-colors ${
