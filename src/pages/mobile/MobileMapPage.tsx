@@ -111,6 +111,15 @@ export default function MobileMapPage() {
 
     mapRef.current = map;
 
+    // Auto-geolocate on mount
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+
     return () => {
       map.remove();
       mapRef.current = null;

@@ -211,6 +211,16 @@ export default function LeafletMapCanvas({
     };
     map.getContainer().addEventListener('click', handlePopupClick);
 
+    // Auto-geolocate on mount
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        map.setView([latitude, longitude], 14);
+      },
+      () => {}, // silently fall back to default center
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+
     const timer = window.setTimeout(() => map.invalidateSize({ pan: false }), 150);
 
     return () => {

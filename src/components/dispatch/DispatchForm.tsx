@@ -92,6 +92,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     for (const company of sortedCompanies) {
       if (company.tone_url) {
         queue.push({ url: company.tone_url, label: `Compañía ${company.name}` });
+      } else {
+        toast.warning(`Compañía ${company.name} no tiene tono configurado`);
       }
     }
 
