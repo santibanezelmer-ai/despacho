@@ -6,6 +6,7 @@ import { useVehicles } from '@/hooks/useVehicles';
 import { useUpdateAddress, useUpdateLocation, useAssignVehicles, useToggleFlag } from '@/hooks/useEmergencyActions';
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import { toast } from 'sonner';
+import VehiclePersonnelManager from './VehiclePersonnelManager';
 
 interface Emergency {
   id: string;
