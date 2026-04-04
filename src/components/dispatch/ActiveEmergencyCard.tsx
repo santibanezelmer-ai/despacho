@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
+import EmergencyPdfDownload from './EmergencyPdfDownload';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
