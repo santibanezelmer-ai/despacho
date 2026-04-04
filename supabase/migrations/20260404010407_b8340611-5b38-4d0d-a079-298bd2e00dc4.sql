@@ -1,0 +1,1 @@
+CREATE POLICY "ep_delete" ON public.emergency_personnel FOR DELETE TO authenticated USING (is_superadmin() OR can_write_in_org(organization_id));

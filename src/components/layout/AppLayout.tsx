@@ -5,13 +5,14 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
-  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User
+  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
   { path: '/emergencias', label: 'Emergencias Activas', icon: Radio, section: 'Operaciones' },
+  { path: '/historial', label: 'Historial', icon: Archive, section: 'Operaciones' },
   { path: '/mapa', label: 'Mapa Operativo', icon: MapPin, section: 'Operaciones' },
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
   { path: '/moviles', label: 'Móviles', icon: Truck, section: 'Recursos' },

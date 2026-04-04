@@ -127,14 +127,13 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
           vol?.ranks?.name ?? '—',
           vol?.companies?.name ?? '—',
           ep.emergency_vehicles?.vehicles?.code ?? '—',
-          vol?.phone ?? '—',
         ];
       });
 
       autoTable(doc, {
         startY: y,
-        head: [['Nombre', 'RUT', 'Rol', 'Grado', 'Compañía', 'Móvil', 'Teléfono']],
-        body: personnelRows.length > 0 ? personnelRows : [['Sin personal asignado', '', '', '', '', '', '']],
+        head: [['Nombre', 'RUT', 'Rol', 'Grado', 'Compañía', 'Móvil']],
+        body: personnelRows.length > 0 ? personnelRows : [['Sin personal asignado', '', '', '', '', '']],
         styles: { fontSize: 8 },
         headStyles: { fillColor: [30, 30, 30] },
       });

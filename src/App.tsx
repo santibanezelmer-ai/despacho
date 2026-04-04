@@ -13,6 +13,7 @@ import PendingApproval from "@/pages/PendingApproval";
 import ResetPassword from "@/pages/ResetPassword";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
+import EmergencyHistory from "@/pages/EmergencyHistory";
 import Dashboard from "@/pages/Dashboard";
 import Volunteers from "@/pages/Volunteers";
 import Vehicles from "@/pages/Vehicles";
@@ -144,6 +145,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<DispatchConsole />} />
         <Route path="/emergencias" element={<ActiveEmergencies />} />
+        <Route path="/historial" element={<EmergencyHistory />} />
         <Route path="/mapa" element={<OperativeMap />} />
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />
