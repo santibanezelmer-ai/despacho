@@ -5,7 +5,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
-  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User
+  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
