@@ -127,7 +127,6 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
           vol?.ranks?.name ?? '—',
           vol?.companies?.name ?? '—',
           ep.emergency_vehicles?.vehicles?.code ?? '—',
-          vol?.phone ?? '—',
         ];
       });
 
