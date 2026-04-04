@@ -152,6 +152,9 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
               <Settings className="h-3.5 w-3.5" /> Acciones
             </button>
 
+            {/* PDF download */}
+            <EmergencyPdfDownload emergencyId={emergency.id} folio={emergency.folio} />
+
             {/* Advance status */}
             {nextStatus && onAdvanceStatus && (
               <button
