@@ -145,6 +145,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<DispatchConsole />} />
         <Route path="/emergencias" element={<ActiveEmergencies />} />
+        <Route path="/historial" element={<EmergencyHistory />} />
         <Route path="/mapa" element={<OperativeMap />} />
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />

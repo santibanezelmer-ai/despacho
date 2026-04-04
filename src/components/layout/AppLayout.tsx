@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
   { path: '/emergencias', label: 'Emergencias Activas', icon: Radio, section: 'Operaciones' },
+  { path: '/historial', label: 'Historial', icon: Archive, section: 'Operaciones' },
   { path: '/mapa', label: 'Mapa Operativo', icon: MapPin, section: 'Operaciones' },
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
   { path: '/moviles', label: 'Móviles', icon: Truck, section: 'Recursos' },
