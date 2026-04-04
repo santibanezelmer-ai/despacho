@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
+import EmergencyPdfDownload from './EmergencyPdfDownload';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
@@ -150,6 +151,9 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
             >
               <Settings className="h-3.5 w-3.5" /> Acciones
             </button>
+
+            {/* PDF download */}
+            <EmergencyPdfDownload emergencyId={emergency.id} folio={emergency.folio} />
 
             {/* Advance status */}
             {nextStatus && onAdvanceStatus && (
