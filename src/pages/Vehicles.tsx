@@ -85,9 +85,13 @@ export default function Vehicles() {
                 <p className="mt-1 text-sm text-muted-foreground">{v.type}</p>
                 <p className="text-xs text-muted-foreground">{v.companies?.name ?? '—'}</p>
                 <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    <span>Cap. {v.capacity}</span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Cap. {v.capacity}</span>
+                    {v.odometer != null && (
+                      <span className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded">
+                        {v.odometer.toLocaleString()} km
+                      </span>
+                    )}
                   </div>
                   {canWrite && (
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

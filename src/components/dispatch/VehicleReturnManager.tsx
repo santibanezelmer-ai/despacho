@@ -45,8 +45,10 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
         .eq('id', evId);
       if (evErr) throw evErr;
 
-      // Set vehicle back to disponible
-      await supabase.from('vehicles').update({ status: 'disponible' as const }).eq('id', vehicleId);
+      // Set vehicle back to disponible and update odometer
+      const vehUpdate: Record<string, any> = { status: 'disponible' as const };
+      if (odometerEnd !== null) vehUpdate.odometer = odometerEnd;
+      await supabase.from('vehicles').update(vehUpdate).eq('id', vehicleId);
 
       // Log
       await supabase.from('emergency_log').insert({
@@ -107,6 +109,26 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
   // Only show when emergency is finalizada or en_cuartel
   if (!['finalizada', 'en_cuartel'].includes(emergencyStatus)) return null;
 
+  // Auto-close if finalizada with 0 vehicles or all already returned
+  const canAutoClose = emergencyStatus === 'finalizada' && (allVehicles.length === 0 || pending.length === 0);
+
+  const handleCloseEmergency = async () => {
+    await supabase.from('emergencies').update({
+      status: 'en_cuartel' as any,
+      in_quarters_at: new Date().toISOString(),
+    }).eq('id', emergencyId);
+
+    await supabase.from('emergency_log').insert({
+      emergency_id: emergencyId,
+      organization_id: orgId!,
+      message: 'Emergencia cerrada — todos los móviles en cuartel',
+      created_by: user?.id ?? null,
+    });
+
+    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+    toast.success('Emergencia cerrada');
+  };
+
   return (
     <div className="space-y-3">
       <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -115,6 +137,12 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
           {returned.length}/{allVehicles.length} en cuartel
         </span>
       </label>
+
+      {canAutoClose && (
+        <Button size="sm" className="w-full" onClick={handleCloseEmergency}>
+          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Cerrar Emergencia (En Cuartel)
+        </Button>
+      )}
 
       {/* Progress bar */}
       {allVehicles.length > 0 && (
