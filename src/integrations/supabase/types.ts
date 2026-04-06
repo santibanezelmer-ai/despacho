@@ -165,6 +165,7 @@ export type Database = {
           finished_at: string | null
           folio: string
           id: string
+          in_quarters_at: string | null
           latitude: number | null
           longitude: number | null
           observations: string | null
@@ -193,6 +194,7 @@ export type Database = {
           finished_at?: string | null
           folio: string
           id?: string
+          in_quarters_at?: string | null
           latitude?: number | null
           longitude?: number | null
           observations?: string | null
@@ -221,6 +223,7 @@ export type Database = {
           finished_at?: string | null
           folio?: string
           id?: string
+          in_quarters_at?: string | null
           latitude?: number | null
           longitude?: number | null
           observations?: string | null
@@ -1138,6 +1141,7 @@ export type Database = {
         | "en_trabajo"
         | "controlada"
         | "finalizada"
+        | "en_cuartel"
       invitation_status: "pending" | "accepted" | "expired" | "cancelled"
       org_member_status: "active" | "invited" | "suspended"
       org_role: "admin" | "operador" | "oficial" | "visor"
@@ -1283,6 +1287,7 @@ export const Constants = {
         "en_trabajo",
         "controlada",
         "finalizada",
+        "en_cuartel",
       ],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
       org_member_status: ["active", "invited", "suspended"],
