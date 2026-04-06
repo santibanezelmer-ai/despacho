@@ -58,7 +58,10 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
   const ek = emergency.emergency_keys;
   const status = statusConfig[emergency.status] ?? statusConfig.despacho;
   const currentIdx = STATUS_ORDER.indexOf(emergency.status);
-  const nextStatus = currentIdx < STATUS_ORDER.length - 1 ? STATUS_ORDER[currentIdx + 1] : null;
+  // en_cuartel is auto-managed by VehicleReturnManager, don't show advance button for it
+  const nextStatus = currentIdx < STATUS_ORDER.length - 1 && STATUS_ORDER[currentIdx + 1] !== 'en_cuartel'
+    ? STATUS_ORDER[currentIdx + 1]
+    : null;
   const [showActions, setShowActions] = useState(false);
 
   const flags = [
