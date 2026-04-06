@@ -13,6 +13,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   en_trabajo: { label: 'En Trabajo', color: 'hsl(0, 85%, 55%)' },
   controlada: { label: 'Controlada', color: 'hsl(210, 85%, 55%)' },
   finalizada: { label: 'Finalizada', color: 'hsl(145, 65%, 42%)' },
+  en_cuartel: { label: 'En Cuartel', color: 'hsl(200, 50%, 50%)' },
 };
 
 export default function ActiveEmergencies() {
@@ -25,28 +26,15 @@ export default function ActiveEmergencies() {
       en_trabajo: 'working_at',
       controlada: 'controlled_at',
       finalizada: 'finished_at',
+      en_cuartel: 'in_quarters_at',
     };
 
     const update: Record<string, any> = { status: newStatus };
     const field = timestampField[newStatus];
     if (field) update[field] = new Date().toISOString();
 
-    if (newStatus === 'finalizada') {
-      const { data: evs } = await supabase
-        .from('emergency_vehicles')
-        .select('vehicle_id')
-        .eq('emergency_id', emergencyId)
-        .is('released_at', null);
-      if (evs && evs.length > 0) {
-        const vehicleIds = evs.map(ev => ev.vehicle_id);
-        await supabase.from('vehicles').update({ status: 'disponible' as const }).in('id', vehicleIds);
-        await supabase
-          .from('emergency_vehicles')
-          .update({ released_at: new Date().toISOString() })
-          .eq('emergency_id', emergencyId)
-          .is('released_at', null);
-      }
-    }
+    // en_cuartel is handled automatically by VehicleReturnManager
+    if (newStatus === 'en_cuartel') return;
 
     const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
     if (error) {

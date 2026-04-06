@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation } from 'lucide-react';
+import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useVehicles } from '@/hooks/useVehicles';
@@ -7,6 +7,7 @@ import { useUpdateAddress, useUpdateLocation, useAssignVehicles, useToggleFlag }
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import { toast } from 'sonner';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
+import VehicleReturnManager from './VehicleReturnManager';
 
 interface Emergency {
   id: string;
@@ -225,6 +226,11 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
           {/* 4. Vehicle Personnel Manager */}
           <section>
             <VehiclePersonnelManager emergencyId={emergency.id} />
+          </section>
+
+          {/* 4b. Vehicle Return Manager */}
+          <section>
+            <VehicleReturnManager emergencyId={emergency.id} emergencyStatus={emergency.status} />
           </section>
 
           {/* 5. Action Buttons Grid */}
