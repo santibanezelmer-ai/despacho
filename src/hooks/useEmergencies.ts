@@ -15,7 +15,7 @@ export function useActiveEmergencies() {
       const q = supabase
         .from('emergencies')
         .select('*, emergency_keys(code, name, color)')
-        .not('status', 'eq', 'en_cuartel')
+        .not('status', 'in', '("en_cuartel")')
         .order('created_at', { ascending: false });
       const { data, error } = await (q as any).eq('organization_id', orgId);
       if (error) throw error;
