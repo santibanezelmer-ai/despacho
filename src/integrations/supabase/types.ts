@@ -981,6 +981,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
+          odometer: number | null
           organization_id: string
           plate: string | null
           status: Database["public"]["Enums"]["vehicle_status"]
@@ -994,6 +995,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          odometer?: number | null
           organization_id: string
           plate?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"]
@@ -1007,6 +1009,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          odometer?: number | null
           organization_id?: string
           plate?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"]
