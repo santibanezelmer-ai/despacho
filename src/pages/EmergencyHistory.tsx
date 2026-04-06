@@ -18,7 +18,7 @@ export default function EmergencyHistory() {
         .from('emergencies')
         .select('*, emergency_keys(code, name, color)')
         .eq('organization_id', orgId)
-        .eq('status', 'finalizada')
+        .in('status', ['finalizada', 'en_cuartel'])
         .order('finished_at', { ascending: false })
         .limit(200);
       if (error) throw error;

@@ -13,6 +13,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   en_trabajo: { label: 'En Trabajo', color: 'hsl(0, 85%, 55%)' },
   controlada: { label: 'Controlada', color: 'hsl(210, 85%, 55%)' },
   finalizada: { label: 'Finalizada', color: 'hsl(145, 65%, 42%)' },
+  en_cuartel: { label: 'En Cuartel', color: 'hsl(200, 50%, 50%)' },
 };
 
 export default function ActiveEmergencies() {
@@ -25,6 +26,7 @@ export default function ActiveEmergencies() {
       en_trabajo: 'working_at',
       controlada: 'controlled_at',
       finalizada: 'finished_at',
+      en_cuartel: 'in_quarters_at',
     };
 
     const update: Record<string, any> = { status: newStatus };

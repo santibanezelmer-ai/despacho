@@ -9,6 +9,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   en_trabajo: { label: 'EN TRABAJO', color: 'hsl(0, 85%, 55%)' },
   controlada: { label: 'CONTROLADA', color: 'hsl(210, 85%, 55%)' },
   finalizada: { label: 'FINALIZADA', color: 'hsl(145, 65%, 42%)' },
+  en_cuartel: { label: 'EN CUARTEL', color: 'hsl(200, 50%, 50%)' },
 };
 
 function useTimer(startTime: string) {
@@ -50,7 +51,7 @@ interface EmergencyCardProps {
   onAdvanceStatus?: (id: string, newStatus: string) => void;
 }
 
-const STATUS_ORDER = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada'];
+const STATUS_ORDER = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada', 'en_cuartel'];
 
 export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps) {
   const timer = useTimer(emergency.created_at);
