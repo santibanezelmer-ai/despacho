@@ -33,22 +33,8 @@ export default function ActiveEmergencies() {
     const field = timestampField[newStatus];
     if (field) update[field] = new Date().toISOString();
 
-    if (newStatus === 'finalizada') {
-      const { data: evs } = await supabase
-        .from('emergency_vehicles')
-        .select('vehicle_id')
-        .eq('emergency_id', emergencyId)
-        .is('released_at', null);
-      if (evs && evs.length > 0) {
-        const vehicleIds = evs.map(ev => ev.vehicle_id);
-        await supabase.from('vehicles').update({ status: 'disponible' as const }).in('id', vehicleIds);
-        await supabase
-          .from('emergency_vehicles')
-          .update({ released_at: new Date().toISOString() })
-          .eq('emergency_id', emergencyId)
-          .is('released_at', null);
-      }
-    }
+    // en_cuartel is handled automatically by VehicleReturnManager
+    if (newStatus === 'en_cuartel') return;
 
     const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
     if (error) {
