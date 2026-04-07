@@ -106,8 +106,8 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
   const returned = allVehicles.filter((v: any) => v.released_at);
   const pending = allVehicles.filter((v: any) => !v.released_at);
 
-  // Only show when emergency is finalizada or en_cuartel
-  if (!['finalizada', 'en_cuartel'].includes(emergencyStatus)) return null;
+  // Show when emergency is controlada, finalizada or en_cuartel
+  if (!['controlada', 'finalizada', 'en_cuartel'].includes(emergencyStatus)) return null;
 
   // Auto-close if finalizada with 0 vehicles or all already returned
   const canAutoClose = emergencyStatus === 'finalizada' && (allVehicles.length === 0 || pending.length === 0);

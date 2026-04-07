@@ -34,6 +34,9 @@ export default function DispatchConsole() {
   };
 
   const handleAdvanceStatus = async (emergencyId: string, newStatus: string) => {
+    // en_cuartel is auto-managed by VehicleReturnManager
+    if (newStatus === 'en_cuartel') return;
+
     const timestampField: Record<string, string> = {
       en_ruta: 'en_route_at',
       en_trabajo: 'working_at',
@@ -45,24 +48,7 @@ export default function DispatchConsole() {
     const field = timestampField[newStatus];
     if (field) update[field] = new Date().toISOString();
 
-    // If finishing, release vehicles
-    if (newStatus === 'finalizada') {
-      const { data: evs } = await supabase
-        .from('emergency_vehicles')
-        .select('vehicle_id')
-        .eq('emergency_id', emergencyId)
-        .is('released_at', null);
-
-      if (evs && evs.length > 0) {
-        const vehicleIds = evs.map(ev => ev.vehicle_id);
-        await supabase.from('vehicles').update({ status: 'disponible' as const }).in('id', vehicleIds);
-        await supabase
-          .from('emergency_vehicles')
-          .update({ released_at: new Date().toISOString() })
-          .eq('emergency_id', emergencyId)
-          .is('released_at', null);
-      }
-    }
+    // Do NOT auto-release vehicles on finalizada — VehicleReturnManager handles individual returns with km tracking
 
     const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
     if (error) {

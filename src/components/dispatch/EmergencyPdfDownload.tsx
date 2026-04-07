@@ -93,20 +93,26 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
 
       const vehicleRows = (evData ?? []).map((ev: any) => {
         const v = ev.vehicles;
+        const kmRecorrido = ev.odometer_start != null && ev.odometer_end != null
+          ? ev.odometer_end - ev.odometer_start
+          : '—';
         return [
           v?.code ?? '—',
           v?.type ?? '—',
           v?.plate ?? '—',
           v?.companies?.name ?? '—',
-          new Date(ev.assigned_at).toLocaleString('es-CL'),
+          ev.odometer_start ?? '—',
+          ev.odometer_end ?? '—',
+          kmRecorrido,
+          ev.released_at ? new Date(ev.released_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '—',
         ];
       });
 
       autoTable(doc, {
         startY: y,
-        head: [['Código', 'Tipo', 'Patente', 'Compañía', 'Asignado']],
-        body: vehicleRows.length > 0 ? vehicleRows : [['Sin móviles asignados', '', '', '', '']],
-        styles: { fontSize: 9 },
+        head: [['Código', 'Tipo', 'Patente', 'Compañía', 'Km Salida', 'Km Llegada', 'Recorrido', 'Retorno']],
+        body: vehicleRows.length > 0 ? vehicleRows : [['Sin móviles asignados', '', '', '', '', '', '', '']],
+        styles: { fontSize: 8 },
         headStyles: { fillColor: [30, 30, 30] },
       });
 

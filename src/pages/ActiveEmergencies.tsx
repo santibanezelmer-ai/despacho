@@ -21,20 +21,19 @@ export default function ActiveEmergencies() {
   const queryClient = useQueryClient();
 
   const handleAdvanceStatus = async (emergencyId: string, newStatus: string) => {
+    // en_cuartel is auto-managed by VehicleReturnManager
+    if (newStatus === 'en_cuartel') return;
+
     const timestampField: Record<string, string> = {
       en_ruta: 'en_route_at',
       en_trabajo: 'working_at',
       controlada: 'controlled_at',
       finalizada: 'finished_at',
-      en_cuartel: 'in_quarters_at',
     };
 
     const update: Record<string, any> = { status: newStatus };
     const field = timestampField[newStatus];
     if (field) update[field] = new Date().toISOString();
-
-    // en_cuartel is handled automatically by VehicleReturnManager
-    if (newStatus === 'en_cuartel') return;
 
     const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
     if (error) {
