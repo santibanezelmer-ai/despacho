@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { X, MapPin, Phone, User, MessageSquare, Truck, Send, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,55 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
+
+// ── Global tone player (survives component unmount) ──
+let globalAudio: HTMLAudioElement | null = null;
+let globalToneQueue: { url: string; label: string }[] = [];
+let globalToneIndex = 0;
+let globalOnUpdate: ((playing: boolean, label: string) => void) | null = null;
+
+function playNextGlobalTone() {
+  if (globalToneIndex >= globalToneQueue.length) {
+    globalOnUpdate?.(false, '');
+    globalToneQueue = [];
+    globalToneIndex = 0;
+    return;
+  }
+  const tone = globalToneQueue[globalToneIndex];
+  globalOnUpdate?.(true, tone.label);
+  const audio = new Audio(tone.url);
+  globalAudio = audio;
+  audio.onended = () => {
+    globalToneIndex++;
+    playNextGlobalTone();
+  };
+  audio.onerror = () => {
+    globalToneIndex++;
+    playNextGlobalTone();
+  };
+  audio.play().catch(() => {
+    globalToneIndex++;
+    playNextGlobalTone();
+  });
+}
+
+function startGlobalToneSequence(queue: { url: string; label: string }[]) {
+  stopGlobalTones();
+  if (queue.length === 0) return;
+  globalToneQueue = queue;
+  globalToneIndex = 0;
+  playNextGlobalTone();
+}
+
+function stopGlobalTones() {
+  if (globalAudio) {
+    globalAudio.pause();
+    globalAudio = null;
+  }
+  globalToneQueue = [];
+  globalToneIndex = 0;
+  globalOnUpdate?.(false, '');
+}
 
 interface Props {
   emergencyKey: EmergencyKeyRow;
@@ -35,39 +84,17 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const toneQueueRef = useRef<{ url: string; label: string }[]>([]);
-  const toneIndexRef = useRef(0);
 
-  // Sequential tone player
-  const playNextTone = useCallback(() => {
-    const queue = toneQueueRef.current;
-    const idx = toneIndexRef.current;
-    if (idx >= queue.length) {
-      setPlayingTones(false);
-      setCurrentTone('');
-      return;
-    }
-    const tone = queue[idx];
-    setCurrentTone(tone.label);
-    const audio = new Audio(tone.url);
-    audioRef.current = audio;
-    audio.onended = () => {
-      toneIndexRef.current++;
-      playNextTone();
+  // Register/unregister the global callback so UI updates while playing
+  useEffect(() => {
+    globalOnUpdate = (playing, label) => {
+      setPlayingTones(playing);
+      setCurrentTone(label);
     };
-    audio.onerror = () => {
-      toneIndexRef.current++;
-      playNextTone();
-    };
-    audio.play().catch(() => {
-      toneIndexRef.current++;
-      playNextTone();
-    });
+    return () => { globalOnUpdate = null; };
   }, []);
 
-  const startToneSequence = useCallback((vehicleIds: string[]) => {
-    // Get unique company IDs from selected vehicles, preserving order by company number
+  const buildToneQueue = useCallback((vehicleIds: string[]) => {
     const companyMap = new Map<string, { tone_url: string | null; name: string; number: number }>();
     for (const vid of vehicleIds) {
       const v = (allVehicles ?? []).find(veh => veh.id === vid);
@@ -83,12 +110,9 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       }
     }
 
-    // Sort companies by number (1ra, 2da, 3ra...)
     const sortedCompanies = Array.from(companyMap.values()).sort((a, b) => a.number - b.number);
-
     const queue: { url: string; label: string }[] = [];
 
-    // Add company tones in order
     for (const company of sortedCompanies) {
       if (company.tone_url) {
         queue.push({ url: company.tone_url, label: `Compañía ${company.name}` });
@@ -97,33 +121,12 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       }
     }
 
-    // Emergency key tone plays AFTER all company tones
     if (emergencyKey.tone_url) {
       queue.push({ url: emergencyKey.tone_url, label: `Clave ${emergencyKey.code}` });
     }
 
-    if (queue.length > 0) {
-      toneQueueRef.current = queue;
-      toneIndexRef.current = 0;
-      setPlayingTones(true);
-      playNextTone();
-    }
-  }, [allVehicles, companies, emergencyKey, playNextTone]);
-
-  const stopTones = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    toneQueueRef.current = [];
-    setPlayingTones(false);
-    setCurrentTone('');
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { if (audioRef.current) audioRef.current.pause(); };
-  }, []);
+    return queue;
+  }, [allVehicles, companies, emergencyKey]);
 
   const toggleVehicle = (id: string) => {
     setSelectedVehicleIds(prev =>
@@ -160,7 +163,6 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
       // 2. Assign vehicles
       if (selectedVehicleIds.length > 0) {
-        // Get current odometer for each vehicle
         const { data: vehicleData } = await supabase
           .from('vehicles')
           .select('id, odometer')
@@ -177,7 +179,6 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         const { error: vErr } = await supabase.from('emergency_vehicles').insert(vehicleInserts);
         if (vErr) throw vErr;
 
-        // Update vehicle status to en_servicio
         await supabase
           .from('vehicles')
           .update({ status: 'en_servicio' as const })
@@ -192,13 +193,13 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         created_by: user?.id ?? null,
       });
 
-      // Play tone sequence: company tones → key tone
-      startToneSequence(selectedVehicleIds);
+      // 4. Build tone queue BEFORE closing — then start global player
+      const toneQueue = buildToneQueue(selectedVehicleIds);
+      startGlobalToneSequence(toneQueue);
 
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
 
-      // Send push notifications to org devices
       sendPushToOrganization(
         orgId!,
         emergency.id,
@@ -232,7 +233,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </span>
             <h2 className="text-lg font-bold text-foreground">{emergencyKey.name}</h2>
           </div>
-          <button onClick={() => { stopTones(); onClose(); }} className="text-muted-foreground hover:text-foreground">
+          <button onClick={() => { stopGlobalTones(); onClose(); }} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -245,7 +246,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               <Volume2 className="h-3.5 w-3.5" />
               Reproduciendo: {currentTone}
             </div>
-            <button onClick={stopTones} className="hover:text-foreground">
+            <button onClick={stopGlobalTones} className="hover:text-foreground">
               <VolumeX className="h-4 w-4" />
             </button>
           </div>
