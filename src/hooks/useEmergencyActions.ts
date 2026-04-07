@@ -59,10 +59,18 @@ export function useAssignVehicles() {
   const log = useLog();
   return useMutation({
     mutationFn: async ({ emergencyId, vehicleIds }: { emergencyId: string; vehicleIds: string[] }) => {
+      // Get current odometer for each vehicle
+      const { data: vehicleData } = await supabase
+        .from('vehicles')
+        .select('id, odometer')
+        .in('id', vehicleIds);
+      const odometerMap = new Map((vehicleData ?? []).map(v => [v.id, v.odometer]));
+
       const inserts = vehicleIds.map(vid => ({
         emergency_id: emergencyId,
         vehicle_id: vid,
         organization_id: orgId!,
+        odometer_start: odometerMap.get(vid) ?? null,
       }));
       const { error } = await supabase.from('emergency_vehicles').insert(inserts);
       if (error) throw error;
