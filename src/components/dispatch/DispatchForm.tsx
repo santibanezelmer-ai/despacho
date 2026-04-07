@@ -13,58 +13,54 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 
-interface Props {
-  emergencyKey: EmergencyKeyRow;
-  onClose: () => void;
+// ── Global tone player (survives component unmount) ──
+let globalAudio: HTMLAudioElement | null = null;
+let globalToneQueue: { url: string; label: string }[] = [];
+let globalToneIndex = 0;
+let globalOnUpdate: ((playing: boolean, label: string) => void) | null = null;
+
+function playNextGlobalTone() {
+  if (globalToneIndex >= globalToneQueue.length) {
+    globalOnUpdate?.(false, '');
+    globalToneQueue = [];
+    globalToneIndex = 0;
+    return;
+  }
+  const tone = globalToneQueue[globalToneIndex];
+  globalOnUpdate?.(true, tone.label);
+  const audio = new Audio(tone.url);
+  globalAudio = audio;
+  audio.onended = () => {
+    globalToneIndex++;
+    playNextGlobalTone();
+  };
+  audio.onerror = () => {
+    globalToneIndex++;
+    playNextGlobalTone();
+  };
+  audio.play().catch(() => {
+    globalToneIndex++;
+    playNextGlobalTone();
+  });
 }
 
-export default function DispatchForm({ emergencyKey, onClose }: Props) {
-  const { user } = useAuth();
-  const { orgId } = useOrganization();
-  const queryClient = useQueryClient();
-  const { data: allVehicles } = useVehicles();
-  const { data: companies } = useCompanies();
-  const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
+function startGlobalToneSequence(queue: { url: string; label: string }[]) {
+  stopGlobalTones();
+  if (queue.length === 0) return;
+  globalToneQueue = queue;
+  globalToneIndex = 0;
+  playNextGlobalTone();
+}
 
-  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
-  const [address, setAddress] = useState('');
-  const [reference, setReference] = useState('');
-  const [callerName, setCallerName] = useState('');
-  const [callerPhone, setCallerPhone] = useState('');
-  const [observations, setObservations] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [playingTones, setPlayingTones] = useState(false);
-  const [currentTone, setCurrentTone] = useState('');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const toneQueueRef = useRef<{ url: string; label: string }[]>([]);
-  const toneIndexRef = useRef(0);
-
-  // Sequential tone player
-  const playNextTone = useCallback(() => {
-    const queue = toneQueueRef.current;
-    const idx = toneIndexRef.current;
-    if (idx >= queue.length) {
-      setPlayingTones(false);
-      setCurrentTone('');
-      return;
-    }
-    const tone = queue[idx];
-    setCurrentTone(tone.label);
-    const audio = new Audio(tone.url);
-    audioRef.current = audio;
-    audio.onended = () => {
-      toneIndexRef.current++;
-      playNextTone();
-    };
-    audio.onerror = () => {
-      toneIndexRef.current++;
-      playNextTone();
-    };
-    audio.play().catch(() => {
-      toneIndexRef.current++;
-      playNextTone();
-    });
-  }, []);
+function stopGlobalTones() {
+  if (globalAudio) {
+    globalAudio.pause();
+    globalAudio = null;
+  }
+  globalToneQueue = [];
+  globalToneIndex = 0;
+  globalOnUpdate?.(false, '');
+}
 
   const startToneSequence = useCallback((vehicleIds: string[]) => {
     // Get unique company IDs from selected vehicles, preserving order by company number
