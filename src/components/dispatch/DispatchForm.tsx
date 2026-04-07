@@ -160,10 +160,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
       // 2. Assign vehicles
       if (selectedVehicleIds.length > 0) {
+        // Get current odometer for each vehicle
+        const { data: vehicleData } = await supabase
+          .from('vehicles')
+          .select('id, odometer')
+          .in('id', selectedVehicleIds);
+
+        const odometerMap = new Map((vehicleData ?? []).map(v => [v.id, v.odometer]));
+
         const vehicleInserts = selectedVehicleIds.map(vid => ({
           emergency_id: emergency.id,
           vehicle_id: vid,
           organization_id: orgId!,
+          odometer_start: odometerMap.get(vid) ?? null,
         }));
         const { error: vErr } = await supabase.from('emergency_vehicles').insert(vehicleInserts);
         if (vErr) throw vErr;
