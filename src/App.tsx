@@ -86,6 +86,10 @@ function AppRoutes() {
     return <CentralScreen />;
   }
 
+  if (location.pathname === '/pantalla-mapa') {
+    return <MapScreen />;
+  }
+
   if (location.pathname.startsWith('/superadmin')) {
     if (!isSuperadmin) return <Navigate to="/" replace />;
     return (
