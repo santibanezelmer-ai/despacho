@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
-import { Radio, MapPin, Truck, Users, Clock, Shield, Activity } from 'lucide-react';
+import { Radio, MapPin, Truck, Users, Clock, Shield, Activity, Search, Map, QrCode, ExternalLink, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
@@ -25,18 +26,18 @@ const statusPillClass: Record<string, string> = {
 };
 
 const volunteerStatusLabel: Record<string, string> = {
-  en_emergencia: 'EN EMERGENCIA',
+  en_emergencia: 'EN EMERG.',
   activo: 'ACTIVO',
   inactivo: 'INACTIVO',
   licencia: 'LICENCIA',
 };
 
 const vehicleStatusLabel: Record<string, string> = {
-  en_emergencia: 'EN EMERGENCIA',
+  en_emergencia: 'EN EMERG.',
   disponible: 'DISPONIBLE',
   en_servicio: 'EN SERVICIO',
   mantencion: 'MANTENCIÓN',
-  fuera_servicio: 'FUERA DE SERVICIO',
+  fuera_servicio: 'FUERA SERV.',
 };
 
 function useTimer(startTime: string) {
@@ -76,12 +77,10 @@ function TVEmergencyCard({ emergency }: { emergency: any }) {
           {status.label}
         </span>
       </div>
-
       <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
         <MapPin className="h-4 w-4 shrink-0" />
         <span className="truncate">{emergency.address}</span>
       </div>
-
       <div className="mt-3 flex items-center justify-between text-sm">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Truck className="h-4 w-4 text-info" />
@@ -106,20 +105,11 @@ function useActiveAssignments(emergencyIds: string[]) {
     enabled: emergencyIds.length > 0,
     queryFn: async () => {
       const [personnelResult, vehiclesResult] = await Promise.all([
-        supabase
-          .from('emergency_personnel')
-          .select('volunteer_id')
-          .in('emergency_id', emergencyIds),
-        supabase
-          .from('emergency_vehicles')
-          .select('vehicle_id')
-          .in('emergency_id', emergencyIds)
-          .is('released_at', null),
+        supabase.from('emergency_personnel').select('volunteer_id').in('emergency_id', emergencyIds),
+        supabase.from('emergency_vehicles').select('vehicle_id').in('emergency_id', emergencyIds).is('released_at', null),
       ]);
-
       if (personnelResult.error) throw personnelResult.error;
       if (vehiclesResult.error) throw vehiclesResult.error;
-
       return {
         volunteerIds: [...new Set((personnelResult.data ?? []).map(row => row.volunteer_id))],
         vehicleIds: [...new Set((vehiclesResult.data ?? []).map(row => row.vehicle_id))],
@@ -129,11 +119,53 @@ function useActiveAssignments(emergencyIds: string[]) {
   });
 }
 
+function ShareModal({ onClose }: { onClose: () => void }) {
+  const currentUrl = window.location.origin + '/pantalla-central';
+  const mapUrl = window.location.origin + '/pantalla-mapa';
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-foreground">Compartir Pantallas</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Escanea el QR o copia el enlace para abrir en cualquier pantalla conectada a internet.
+        </p>
+
+        <div className="space-y-4">
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2"><Shield className="h-4 w-4 text-emergency" /> Vista Central</p>
+            <div className="flex justify-center"><QRCodeSVG value={currentUrl} size={140} bgColor="transparent" fgColor="hsl(var(--foreground))" /></div>
+            <div className="flex items-center gap-2">
+              <input readOnly value={currentUrl} className="flex-1 bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-foreground" />
+              <button onClick={() => { navigator.clipboard.writeText(currentUrl); }} className="shrink-0 px-3 py-1.5 rounded bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">Copiar</button>
+            </div>
+          </div>
+
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2"><Map className="h-4 w-4 text-info" /> Mapa Operativo</p>
+            <div className="flex justify-center"><QRCodeSVG value={mapUrl} size={140} bgColor="transparent" fgColor="hsl(var(--foreground))" /></div>
+            <div className="flex items-center gap-2">
+              <input readOnly value={mapUrl} className="flex-1 bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-foreground" />
+              <button onClick={() => { navigator.clipboard.writeText(mapUrl); }} className="shrink-0 px-3 py-1.5 rounded bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">Copiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CentralScreen() {
   const { data: emergencies } = useActiveEmergencies();
   const { data: vehicles } = useVehicles({ refetchInterval: 5000 });
   const { data: volunteers } = useVolunteers({ refetchInterval: 5000 });
   const [now, setNow] = useState(new Date());
+  const [volSearch, setVolSearch] = useState('');
+  const [vehSearch, setVehSearch] = useState('');
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -144,53 +176,71 @@ export default function CentralScreen() {
   const activeEmergencyIds = useMemo(() => active.map(e => e.id), [active]);
   const { data: assignments } = useActiveAssignments(activeEmergencyIds);
 
-  const assignedVolunteerIds = useMemo(
-    () => new Set(assignments?.volunteerIds ?? []),
-    [assignments]
-  );
-  const assignedVehicleIds = useMemo(
-    () => new Set(assignments?.vehicleIds ?? []),
-    [assignments]
-  );
+  const assignedVolunteerIds = useMemo(() => new Set(assignments?.volunteerIds ?? []), [assignments]);
+  const assignedVehicleIds = useMemo(() => new Set(assignments?.vehicleIds ?? []), [assignments]);
 
   const volunteerRows = useMemo(
     () =>
       (volunteers ?? [])
         .map((volunteer: any) => {
           const statusKey = assignedVolunteerIds.has(volunteer.id) ? 'en_emergencia' : volunteer.status;
-          return {
-            id: volunteer.id,
-            name: volunteer.name,
-            company: volunteer.companies?.name ?? 'Sin compañía',
-            statusKey,
-          };
+          return { id: volunteer.id, name: volunteer.name, company: volunteer.companies?.name ?? 'Sin compañía', statusKey };
         })
-        .sort((a, b) => a.name.localeCompare(b.name)),
+        .filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia')
+        .sort((a, b) => {
+          if (a.statusKey === 'en_emergencia' && b.statusKey !== 'en_emergencia') return -1;
+          if (a.statusKey !== 'en_emergencia' && b.statusKey === 'en_emergencia') return 1;
+          return a.name.localeCompare(b.name);
+        }),
     [volunteers, assignedVolunteerIds]
   );
+
+  const filteredVolunteers = useMemo(() => {
+    if (!volSearch) return volunteerRows;
+    const q = volSearch.toLowerCase();
+    return volunteerRows.filter(v => v.name.toLowerCase().includes(q) || v.company.toLowerCase().includes(q));
+  }, [volunteerRows, volSearch]);
+
+  // Group volunteers by company
+  const volunteersByCompany = useMemo(() => {
+    const groups: Record<string, typeof filteredVolunteers> = {};
+    filteredVolunteers.forEach(v => {
+      if (!groups[v.company]) groups[v.company] = [];
+      groups[v.company].push(v);
+    });
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filteredVolunteers]);
 
   const vehicleRows = useMemo(
     () =>
       (vehicles ?? [])
         .map((vehicle: any) => {
           const statusKey = assignedVehicleIds.has(vehicle.id) ? 'en_emergencia' : vehicle.status;
-          return {
-            id: vehicle.id,
-            code: vehicle.code,
-            type: vehicle.type,
-            company: vehicle.companies?.name ?? 'Sin compañía',
-            statusKey,
-          };
+          return { id: vehicle.id, code: vehicle.code, type: vehicle.type, company: vehicle.companies?.name ?? 'Sin compañía', statusKey, odometer: vehicle.odometer };
         })
-        .sort((a, b) => a.code.localeCompare(b.code)),
+        .filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia')
+        .sort((a, b) => {
+          if (a.statusKey === 'en_emergencia' && b.statusKey !== 'en_emergencia') return -1;
+          if (a.statusKey !== 'en_emergencia' && b.statusKey === 'en_emergencia') return 1;
+          return a.code.localeCompare(b.code);
+        }),
     [vehicles, assignedVehicleIds]
   );
 
-  const totalVehicles = vehicleRows.length;
-  const totalVolunteers = volunteerRows.length;
+  const filteredVehicles = useMemo(() => {
+    if (!vehSearch) return vehicleRows;
+    const q = vehSearch.toLowerCase();
+    return vehicleRows.filter(v => v.code.toLowerCase().includes(q) || v.company.toLowerCase().includes(q) || v.type.toLowerCase().includes(q));
+  }, [vehicleRows, vehSearch]);
+
+  const totalVehicles = (vehicles ?? []).length;
+  const totalVolunteers = (volunteers ?? []).length;
   const availableVehicles = vehicleRows.filter(v => v.statusKey === 'disponible').length;
   const vehiclesInEmergency = vehicleRows.filter(v => v.statusKey === 'en_emergencia').length;
-  const activeVolunteers = volunteerRows.filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia').length;
+
+  const openMapPopout = useCallback(() => {
+    window.open('/pantalla-mapa', '_blank', 'width=1200,height=800,toolbar=no,menubar=no');
+  }, []);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
@@ -200,7 +250,24 @@ export default function CentralScreen() {
           <Shield className="h-8 w-8 text-emergency" />
           <h1 className="text-3xl font-bold text-foreground">Central de Bomberos</h1>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={openMapPopout}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-info transition-colors"
+            title="Abrir mapa en ventana emergente"
+          >
+            <Map className="h-4 w-4 text-info" />
+            <span className="hidden md:inline">Mapa</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+          <button
+            onClick={() => setShowShare(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+            title="Compartir pantallas"
+          >
+            <QrCode className="h-4 w-4 text-primary" />
+            <span className="hidden md:inline">Compartir</span>
+          </button>
           {active.length > 0 && (
             <div className="flex items-center gap-2">
               <Radio className="h-5 w-5 text-emergency pulse-live" />
@@ -244,7 +311,7 @@ export default function CentralScreen() {
         <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
           <Users className="h-6 w-6 text-info" />
           <div>
-            <p className="text-2xl font-mono font-bold text-foreground">{activeVolunteers}<span className="text-sm text-muted-foreground">/{totalVolunteers}</span></p>
+            <p className="text-2xl font-mono font-bold text-foreground">{volunteerRows.length}<span className="text-sm text-muted-foreground">/{totalVolunteers}</span></p>
             <p className="text-xs text-muted-foreground">Voluntarios activos</p>
           </div>
         </div>
@@ -254,9 +321,7 @@ export default function CentralScreen() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Emergencias activas</h2>
         {active.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {active.map(e => (
-              <TVEmergencyCard key={e.id} emergency={e} />
-            ))}
+            {active.map(e => <TVEmergencyCard key={e.id} emergency={e} />)}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -268,70 +333,110 @@ export default function CentralScreen() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Voluntarios - solo disponibles (activos y en emergencia) */}
+        {/* Voluntarios - vista compacta agrupada por compañía */}
         <div className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Voluntarios disponibles</h2>
-            <span className="text-xs font-mono text-muted-foreground">
-              {volunteerRows.filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia').length} / {totalVolunteers}
-            </span>
+          <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Voluntarios</h2>
+            <div className="flex items-center gap-2 flex-1 max-w-xs">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={volSearch}
+                  onChange={e => setVolSearch(e.target.value)}
+                  className="w-full bg-muted border border-border rounded pl-7 pr-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <span className="text-xs font-mono text-muted-foreground shrink-0">{filteredVolunteers.length}</span>
+            </div>
           </div>
-          <div className="max-h-[38vh] overflow-y-auto">
-            {volunteerRows
-              .filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia')
-              .map(volunteer => (
-                <div key={volunteer.id} className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 last:border-0">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{volunteer.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{volunteer.company}</p>
+          <div className="max-h-[42vh] overflow-y-auto">
+            {volunteersByCompany.length > 0 ? (
+              volunteersByCompany.map(([company, vols]) => (
+                <div key={company}>
+                  <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-4 py-1.5 border-b border-border/40">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{company} ({vols.length})</span>
                   </div>
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                      statusPillClass[volunteer.statusKey] ?? statusPillClass.inactivo
-                    }`}
-                  >
-                    {volunteerStatusLabel[volunteer.statusKey] ?? volunteer.statusKey}
-                  </span>
+                  <div className="grid grid-cols-2 gap-px bg-border/30">
+                    {vols.map(volunteer => (
+                      <div key={volunteer.id} className="flex items-center justify-between gap-1 bg-card px-3 py-1.5">
+                        <p className="truncate text-xs font-medium text-foreground">{volunteer.name}</p>
+                        <span
+                          className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                            statusPillClass[volunteer.statusKey] ?? statusPillClass.inactivo
+                          }`}
+                        >
+                          {volunteerStatusLabel[volunteer.statusKey] ?? volunteer.statusKey}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            {volunteerRows.filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia').length === 0 && (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Sin voluntarios activos</p>
+              ))
+            ) : (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                {volSearch ? 'Sin resultados' : 'Sin voluntarios activos'}
+              </p>
             )}
           </div>
         </div>
 
-        {/* Móviles - solo disponibles y en emergencia */}
+        {/* Móviles - vista compacta con km */}
         <div className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Móviles operativos</h2>
-            <span className="text-xs font-mono text-muted-foreground">
-              {vehicleRows.filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia').length} / {totalVehicles}
-            </span>
+          <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Móviles</h2>
+            <div className="flex items-center gap-2 flex-1 max-w-xs">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={vehSearch}
+                  onChange={e => setVehSearch(e.target.value)}
+                  className="w-full bg-muted border border-border rounded pl-7 pr-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <span className="text-xs font-mono text-muted-foreground shrink-0">{filteredVehicles.length}</span>
+            </div>
           </div>
-          <div className="max-h-[38vh] overflow-y-auto">
-            {vehicleRows
-              .filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia')
-              .map(vehicle => (
-                <div key={vehicle.id} className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 last:border-0">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{vehicle.code} · {vehicle.type}</p>
-                    <p className="truncate text-xs text-muted-foreground">{vehicle.company}</p>
+          <div className="max-h-[42vh] overflow-y-auto">
+            {filteredVehicles.length > 0 ? (
+              <div className="divide-y divide-border/60">
+                {filteredVehicles.map(vehicle => (
+                  <div key={vehicle.id} className="flex items-center justify-between gap-3 px-4 py-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-foreground">{vehicle.code}</p>
+                        <span className="text-xs text-muted-foreground">· {vehicle.type}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{vehicle.company}</span>
+                        {vehicle.odometer != null && (
+                          <span className="font-mono">{vehicle.odometer.toLocaleString()} km</span>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        statusPillClass[vehicle.statusKey] ?? statusPillClass.fuera_servicio
+                      }`}
+                    >
+                      {vehicleStatusLabel[vehicle.statusKey] ?? vehicle.statusKey}
+                    </span>
                   </div>
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                      statusPillClass[vehicle.statusKey] ?? statusPillClass.fuera_servicio
-                    }`}
-                  >
-                    {vehicleStatusLabel[vehicle.statusKey] ?? vehicle.statusKey}
-                  </span>
-                </div>
-              ))}
-            {vehicleRows.filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia').length === 0 && (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Sin móviles operativos</p>
+                ))}
+              </div>
+            ) : (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                {vehSearch ? 'Sin resultados' : 'Sin móviles operativos'}
+              </p>
             )}
           </div>
         </div>
       </div>
+
+      {showShare && <ShareModal onClose={() => setShowShare(false)} />}
     </div>
   );
 }

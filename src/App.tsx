@@ -24,6 +24,7 @@ import AdminPanel from "@/pages/AdminPanel";
 import OperativeMap from "@/pages/OperativeMap";
 import EquipmentPage from "@/pages/Equipment";
 import CentralScreen from "@/pages/CentralScreen";
+import MapScreen from "@/pages/MapScreen";
 import AlertsPage from "@/pages/AlertsPage";
 import SimulationPage from "@/pages/SimulationPage";
 import TrainingPage from "@/pages/TrainingPage";
@@ -83,6 +84,10 @@ function AppRoutes() {
 
   if (location.pathname === '/pantalla-central') {
     return <CentralScreen />;
+  }
+
+  if (location.pathname === '/pantalla-mapa') {
+    return <MapScreen />;
   }
 
   if (location.pathname.startsWith('/superadmin')) {
