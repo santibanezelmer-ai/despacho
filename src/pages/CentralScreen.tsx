@@ -268,49 +268,67 @@ export default function CentralScreen() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {/* Voluntarios - solo disponibles (activos y en emergencia) */}
         <div className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Voluntarios · detalle operativo</h2>
+          <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Voluntarios disponibles</h2>
+            <span className="text-xs font-mono text-muted-foreground">
+              {volunteerRows.filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia').length} / {totalVolunteers}
+            </span>
           </div>
           <div className="max-h-[38vh] overflow-y-auto">
-            {volunteerRows.map(volunteer => (
-              <div key={volunteer.id} className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 last:border-0">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{volunteer.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{volunteer.company}</p>
+            {volunteerRows
+              .filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia')
+              .map(volunteer => (
+                <div key={volunteer.id} className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 last:border-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{volunteer.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{volunteer.company}</p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      statusPillClass[volunteer.statusKey] ?? statusPillClass.inactivo
+                    }`}
+                  >
+                    {volunteerStatusLabel[volunteer.statusKey] ?? volunteer.statusKey}
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                    statusPillClass[volunteer.statusKey] ?? statusPillClass.inactivo
-                  }`}
-                >
-                  {volunteerStatusLabel[volunteer.statusKey] ?? volunteer.statusKey}
-                </span>
-              </div>
-            ))}
+              ))}
+            {volunteerRows.filter(v => v.statusKey === 'activo' || v.statusKey === 'en_emergencia').length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Sin voluntarios activos</p>
+            )}
           </div>
         </div>
 
+        {/* Móviles - solo disponibles y en emergencia */}
         <div className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Móviles · detalle operativo</h2>
+          <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Móviles operativos</h2>
+            <span className="text-xs font-mono text-muted-foreground">
+              {vehicleRows.filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia').length} / {totalVehicles}
+            </span>
           </div>
           <div className="max-h-[38vh] overflow-y-auto">
-            {vehicleRows.map(vehicle => (
-              <div key={vehicle.id} className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 last:border-0">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{vehicle.code} · {vehicle.type}</p>
-                  <p className="truncate text-xs text-muted-foreground">{vehicle.company}</p>
+            {vehicleRows
+              .filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia')
+              .map(vehicle => (
+                <div key={vehicle.id} className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 last:border-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{vehicle.code} · {vehicle.type}</p>
+                    <p className="truncate text-xs text-muted-foreground">{vehicle.company}</p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      statusPillClass[vehicle.statusKey] ?? statusPillClass.fuera_servicio
+                    }`}
+                  >
+                    {vehicleStatusLabel[vehicle.statusKey] ?? vehicle.statusKey}
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                    statusPillClass[vehicle.statusKey] ?? statusPillClass.fuera_servicio
-                  }`}
-                >
-                  {vehicleStatusLabel[vehicle.statusKey] ?? vehicle.statusKey}
-                </span>
-              </div>
-            ))}
+              ))}
+            {vehicleRows.filter(v => v.statusKey === 'disponible' || v.statusKey === 'en_emergencia').length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Sin móviles operativos</p>
+            )}
           </div>
         </div>
       </div>

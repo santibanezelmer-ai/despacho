@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import DispatchForm from '@/components/dispatch/DispatchForm';
@@ -16,7 +16,13 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 
 export default function DispatchConsole() {
   const [selectedKey, setSelectedKey] = useState<EmergencyKeyRow | null>(null);
+  const [now, setNow] = useState(new Date());
   const { data: emergencies } = useActiveEmergencies();
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
   const queryClient = useQueryClient();
@@ -69,10 +75,15 @@ export default function DispatchConsole() {
             Consola de Despacho
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground font-mono">
-            {new Date().toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {now.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-4">
+          <div className="text-right mr-2">
+            <span className="text-xl font-mono font-bold text-foreground">
+              {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
           <Button
             variant="outline"
             size="sm"
