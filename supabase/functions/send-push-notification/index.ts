@@ -94,7 +94,9 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Push queued for ${tokenCount} devices`,
+        message: `Push sent: ${sent} delivered, ${failed} failed, ${tokenCount} total`,
+        sent,
+        failed,
         tokens_count: tokenCount,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
