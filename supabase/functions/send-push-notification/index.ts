@@ -56,33 +56,47 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // For now, log the tokens that would receive push.
-    // Real FCM/APNs integration requires Firebase server key or APNs credentials.
-    // This edge function is the hook point for that integration.
     const tokenCount = tokens?.length ?? 0;
-    console.log(`[Push] Would send to ${tokenCount} devices in org ${organization_id}`);
-    console.log(`[Push] Payload: title="${title}", body="${body}", emergencyId="${emergency_id}", type="${type}"`);
+    console.log(`[Push] Sending to ${tokenCount} devices in org ${organization_id}`);
 
-    // TODO: When FCM server key is configured, send actual push here:
-    // const fcmKey = Deno.env.get('FCM_SERVER_KEY');
-    // if (fcmKey && tokens?.length) {
-    //   for (const { token } of tokens) {
-    //     await fetch('https://fcm.googleapis.com/fcm/send', {
-    //       method: 'POST',
-    //       headers: { 'Content-Type': 'application/json', Authorization: `key=${fcmKey}` },
-    //       body: JSON.stringify({
-    //         to: token,
-    //         notification: { title, body },
-    //         data: { emergencyId: emergency_id, type },
-    //       }),
-    //     });
-    //   }
-    // }
+    const fcmKey = Deno.env.get('FCM_SERVER_KEY');
+    let sent = 0;
+    let failed = 0;
+
+    if (fcmKey && tokens?.length) {
+      for (const { token } of tokens) {
+        try {
+          const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `key=${fcmKey}` },
+            body: JSON.stringify({
+              to: token,
+              notification: { title, body },
+              data: { emergencyId: emergency_id, type },
+            }),
+          });
+          const result = await res.json();
+          if (result.success === 1) {
+            sent++;
+          } else {
+            failed++;
+            console.warn(`[Push] FCM error for token ${token.slice(0, 10)}...:`, result);
+          }
+        } catch (e) {
+          failed++;
+          console.error(`[Push] Fetch error for token ${token.slice(0, 10)}...:`, e);
+        }
+      }
+    } else if (!fcmKey) {
+      console.warn('[Push] FCM_SERVER_KEY not configured — skipping send');
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Push queued for ${tokenCount} devices`,
+        message: `Push sent: ${sent} delivered, ${failed} failed, ${tokenCount} total`,
+        sent,
+        failed,
         tokens_count: tokenCount,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
