@@ -1129,6 +1129,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_audit_log: {
+        Args: {
+          _action: string
+          _new_data?: Json
+          _old_data?: Json
+          _organization_id: string
+          _record_id?: string
+          _table_name?: string
+        }
+        Returns: string
+      }
       is_org_admin_of_user: {
         Args: { _target_user_id: string }
         Returns: boolean
