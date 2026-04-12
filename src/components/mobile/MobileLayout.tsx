@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import MobileBottomNav from './MobileBottomNav';
 import { Shield } from 'lucide-react';
@@ -8,6 +8,8 @@ import { registerForPushNotifications, setupPushListeners, removePushListeners }
 export default function MobileLayout({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMapRoute = location.pathname === '/mobile/map';
 
   // Push notifications setup
   useEffect(() => {
@@ -36,8 +38,11 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
         <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" title="Conectado" />
       </header>
 
-      {/* Content */}
-      <main className="flex-1 overflow-y-auto overscroll-y-contain">
+      {/* Content — no scroll for map route so Leaflet gets full height */}
+      <main
+        className={`flex-1 ${isMapRoute ? 'overflow-hidden' : 'overflow-y-auto overscroll-y-contain'}`}
+        style={{ minHeight: 0 }}
+      >
         {children}
       </main>
 
