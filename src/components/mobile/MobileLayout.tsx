@@ -1,22 +1,13 @@
-import { ReactNode, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import MobileBottomNav from './MobileBottomNav';
 import { Shield } from 'lucide-react';
-import { registerForPushNotifications, setupPushListeners, removePushListeners } from '@/services/pushService';
 
 export default function MobileLayout({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
-  const navigate = useNavigate();
   const location = useLocation();
   const isMapRoute = location.pathname === '/mobile/map';
-
-  // Push notifications setup
-  useEffect(() => {
-    registerForPushNotifications();
-    setupPushListeners(navigate);
-    return () => removePushListeners();
-  }, [navigate]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden">
