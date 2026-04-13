@@ -12,21 +12,22 @@ export function usePushNotifications() {
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current) return;
+    if (initialized.current) {
+      alert('[Push][Hook] already initialized — skipping');
+      return;
+    }
     initialized.current = true;
 
     const isNative = Capacitor.isNativePlatform();
-    console.log('[Push] usePushNotifications mounted, isNative:', isNative);
+    alert(`[Push][Hook] mounted | isNative: ${isNative}`);
 
     if (!isNative) {
-      console.log('[Push] skipping push setup — not native platform');
+      alert('[Push][Hook] NOT native — skipping push setup');
       return;
     }
 
-    // Register token
+    alert('[Push][Hook] calling registerForPushNotifications…');
     registerForPushNotifications();
-
-    // Set up foreground / tap listeners
     setupPushListeners(navigate);
 
     return () => {

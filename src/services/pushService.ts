@@ -18,14 +18,14 @@ let registrationAttempted = false;
  * Save or update the device token in Supabase.
  */
 async function saveTokenToSupabase(token: string, platform: string): Promise<void> {
-  console.log('[Push] saving token to Supabase…');
+  alert('[Push] saving token to Supabase…');
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.warn('[Push] ✗ No authenticated user — cannot save token');
+      alert('[Push] NO authenticated user — cannot save token');
       return;
     }
-    console.log('[Push] authenticated user:', user.id.slice(0, 8) + '…');
+    alert(`[Push] user: ${user.id.slice(0, 8)}…`);
 
     const { data: membership } = await (supabase as any)
       .from('organization_members')
@@ -36,10 +36,10 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
       .maybeSingle();
 
     if (!membership?.organization_id) {
-      console.warn('[Push] ✗ User has no active organization — cannot save token');
+      alert('[Push] NO active organization — cannot save token');
       return;
     }
-    console.log('[Push] organization_id:', membership.organization_id.slice(0, 8) + '…');
+    alert(`[Push] org: ${membership.organization_id.slice(0, 8)}…`);
 
     const payload = {
       user_id: user.id,
@@ -49,19 +49,18 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
       last_seen_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    console.log('[Push] upserting device_tokens with payload:', JSON.stringify({ ...payload, token: token.slice(0, 12) + '…' }));
 
     const { error } = await (supabase as any)
       .from('device_tokens')
       .upsert(payload, { onConflict: 'token' });
 
     if (error) {
-      console.error('[Push] ✗ Error saving token to DB:', JSON.stringify(error));
+      alert(`[Push] DB ERROR: ${JSON.stringify(error)}`);
     } else {
-      console.log('[Push] ✓ token saved to device_tokens:', token.slice(0, 12) + '…');
+      alert('[Push] token saved ✓');
     }
-  } catch (err) {
-    console.error('[Push] ✗ Exception in saveTokenToSupabase:', err);
+  } catch (err: any) {
+    alert(`[Push] saveToken EXCEPTION: ${err?.message || err}`);
   }
 }
 
@@ -70,58 +69,53 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
  * Safe to call multiple times — only executes once per session.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+  alert('[Push] init start');
   console.log('[Push] init start');
 
   if (registrationAttempted) {
-    console.log('[Push] already attempted registration this session — skipping');
+    alert('[Push] already attempted this session — skipping');
     return null;
   }
   registrationAttempted = true;
 
   const isNative = Capacitor.isNativePlatform();
   const platform = Capacitor.getPlatform();
-  console.log('[Push] platform:', platform, '| isNative:', isNative);
+  alert(`[Push] platform: ${platform} | isNative: ${isNative}`);
 
   if (!isNative) {
-    console.log('[Push] ✗ Not a native platform — skipping registration');
+    alert('[Push] NOT native — skipping registration');
     return null;
   }
-  console.log('[Push] ✓ native platform detected');
+  alert('[Push] native platform detected');
 
   try {
-    // 1. Check current permissions
-    console.log('[Push] checking permissions…');
+    alert('[Push] checking permissions…');
     let permStatus = await PushNotifications.checkPermissions();
-    console.log('[Push] permission status:', permStatus.receive);
+    alert(`[Push] permission status: ${permStatus.receive}`);
 
-    // 2. Request if needed
     if (permStatus.receive === 'prompt') {
-      console.log('[Push] requesting permissions…');
+      alert('[Push] requesting permissions…');
       permStatus = await PushNotifications.requestPermissions();
-      console.log('[Push] permission after request:', permStatus.receive);
+      alert(`[Push] permission after request: ${permStatus.receive}`);
     }
 
     if (permStatus.receive !== 'granted') {
-      console.warn('[Push] ✗ Permission denied:', permStatus.receive);
+      alert(`[Push] permission DENIED: ${permStatus.receive}`);
       toast.error('Permisos de notificación denegados');
       return null;
     }
-    console.log('[Push] ✓ permissions granted');
+    alert('[Push] permissions granted ✓');
 
-    // 3. Register listeners BEFORE calling register()
-    console.log('[Push] adding registration listeners…');
-
+    alert('[Push] adding registration listeners…');
     const tokenPromise = new Promise<string | null>((resolve) => {
-      // Timeout after 15s so we don't hang forever
       const timeout = setTimeout(() => {
-        console.error('[Push] ✗ registration timed out after 15s');
+        alert('[Push] registration timed out after 15s');
         resolve(null);
       }, 15000);
 
       PushNotifications.addListener('registration', async (tokenData) => {
         clearTimeout(timeout);
-        console.log('[Push] ✓ token received:', tokenData.value.slice(0, 12) + '…');
-        console.log('[Push] full token length:', tokenData.value.length);
+        alert(`[Push] token received: ${tokenData.value.slice(0, 20)}…`);
 
         await saveTokenToSupabase(tokenData.value, platform);
         toast.success('Notificaciones activadas');
@@ -130,22 +124,21 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
       PushNotifications.addListener('registrationError', (err) => {
         clearTimeout(timeout);
-        console.error('[Push] ✗ registration error:', JSON.stringify(err));
+        alert(`[Push] registration error: ${JSON.stringify(err)}`);
         toast.error('Error al registrar notificaciones');
         resolve(null);
       });
     });
 
-    // 4. Call register
-    console.log('[Push] calling PushNotifications.register()…');
+    alert('[Push] calling PushNotifications.register()…');
     await PushNotifications.register();
-    console.log('[Push] register() called — waiting for token…');
+    alert('[Push] register() called — waiting for token…');
 
     const token = await tokenPromise;
-    console.log('[Push] registration flow complete, token:', token ? token.slice(0, 12) + '…' : 'null');
+    alert(`[Push] flow complete, token: ${token ? token.slice(0, 20) + '…' : 'null'}`);
     return token;
-  } catch (err) {
-    console.error('[Push] ✗ Exception during registration:', err);
+  } catch (err: any) {
+    alert(`[Push] EXCEPTION: ${err?.message || err}`);
     return null;
   }
 }
