@@ -54,6 +54,9 @@ function AppRoutes() {
   const location = useLocation();
   const isNativeMobile = useIsNativeMobile();
 
+  // Init push notifications for any authenticated native user
+  usePushNotifications();
+
   if (authLoading || (user && orgLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
