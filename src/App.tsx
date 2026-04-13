@@ -44,6 +44,7 @@ import MobileMapPage from "@/pages/mobile/MobileMapPage";
 import OnboardingPage from "@/pages/admin/OnboardingPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const queryClient = new QueryClient();
 
