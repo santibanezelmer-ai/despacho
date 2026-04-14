@@ -109,26 +109,9 @@ Deno.serve(async (req: Request) => {
           headers: { 'Content-Type': 'application/json', Authorization: `key=${fcmKey}` },
           body: JSON.stringify(fcmPayload),
         });
+        const result = await res.json();
+        console.log(`[Push] FCM response for ${token.slice(0, 12)}…: ${JSON.stringify(result)}`);
 
-        const rawText = await res.text();
-        console.log(`[Push] FCM HTTP ${res.status} for ${token.slice(0, 12)}…`);
-
-        if (!res.ok) {
-          failed++;
-          console.error(`[Push] ✗ FCM HTTP error ${res.status}: ${rawText.slice(0, 500)}`);
-          continue;
-        }
-
-        let result: any;
-        try {
-          result = JSON.parse(rawText);
-        } catch {
-          failed++;
-          console.error(`[Push] ✗ FCM returned non-JSON: ${rawText.slice(0, 500)}`);
-          continue;
-        }
-
-        console.log(`[Push] FCM result: ${JSON.stringify(result)}`);
         if (result.success === 1) {
           sent++;
           console.log(`[Push] ✓ Delivered to ${token.slice(0, 12)}…`);
