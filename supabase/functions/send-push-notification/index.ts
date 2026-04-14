@@ -5,6 +5,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/* ── OAuth2 token generation for FCM HTTP v1 ── */
+
+function base64url(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  const b64 = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s/g, '');
+  const der = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    'pkcs8',
+    der,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+}
+
+async function getAccessToken(serviceAccount: {
+  client_email: string;
+  private_key: string;
+  token_uri: string;
+}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claim = {
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: serviceAccount.token_uri,
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const enc = new TextEncoder();
+  const headerB64 = base64url(enc.encode(JSON.stringify(header)));
+  const claimB64 = base64url(enc.encode(JSON.stringify(claim)));
+  const unsignedJwt = `${headerB64}.${claimB64}`;
+
+  const key = await importPrivateKey(serviceAccount.private_key);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, enc.encode(unsignedJwt));
+  const jwt = `${unsignedJwt}.${base64url(sig)}`;
+
+  const res = await fetch(serviceAccount.token_uri, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+  const data = await res.json();
+  if (!data.access_token) {
+    throw new Error(`OAuth2 token error: ${JSON.stringify(data)}`);
+  }
+  return data.access_token as string;
+}
+
+/* ── Edge function ── */
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -41,17 +103,16 @@ Deno.serve(async (req: Request) => {
     console.log(`[Push] ✓ Authenticated user: ${userData.user.id}`);
 
     const { organization_id, emergency_id, title, body, type } = await req.json();
-    console.log(`[Push] Payload: org=${organization_id} | emergency=${emergency_id} | title="${title}" | body="${body}" | type=${type}`);
+    console.log(`[Push] Payload: org=${organization_id} | emergency=${emergency_id} | title="${title}" | type=${type}`);
 
     if (!organization_id || !emergency_id || !title) {
-      console.error('[Push] Missing required fields');
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Use service role to read all org tokens
+    // Fetch tokens
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
     const { data: tokens, error: tokensError } = await serviceClient
       .from('device_tokens')
@@ -68,56 +129,65 @@ Deno.serve(async (req: Request) => {
 
     const tokenCount = tokens?.length ?? 0;
     console.log(`[Push] Found ${tokenCount} device tokens for org ${organization_id}`);
-    if (tokens && tokens.length > 0) {
-      for (const t of tokens) {
-        console.log(`[Push]   → token=${t.token.slice(0, 20)}… | platform=${t.platform} | user=${t.user_id}`);
-      }
-    }
 
     if (tokenCount === 0) {
-      console.warn('[Push] No device tokens — nothing to send');
       return new Response(
         JSON.stringify({ success: true, message: 'No devices registered', sent: 0, failed: 0, tokens_count: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    const fcmKey = Deno.env.get('FCM_SERVER_KEY');
-    if (!fcmKey) {
-      console.warn('[Push] FCM_SERVER_KEY not configured — skipping send');
+    // Load service account & get OAuth2 access token
+    const saJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
+    if (!saJson) {
+      console.warn('[Push] FCM_SERVICE_ACCOUNT_JSON not configured');
       return new Response(
-        JSON.stringify({ success: true, message: 'FCM_SERVER_KEY not set', sent: 0, failed: 0, tokens_count: tokenCount }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, message: 'FCM_SERVICE_ACCOUNT_JSON not set', sent: 0, failed: 0, tokens_count: tokenCount }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
-    console.log(`[Push] FCM_SERVER_KEY present (${fcmKey.length} chars)`);
+
+    const serviceAccount = JSON.parse(saJson);
+    const projectId = serviceAccount.project_id;
+    const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+    console.log(`[Push] FCM v1 endpoint: ${fcmEndpoint}`);
+
+    const accessToken = await getAccessToken(serviceAccount);
+    console.log('[Push] ✓ OAuth2 access token obtained');
 
     let sent = 0;
     let failed = 0;
 
     for (const { token, platform, user_id } of tokens!) {
       const fcmPayload = {
-        to: token,
-        notification: { title, body: body ?? '' },
-        data: { emergencyId: emergency_id, type: type ?? 'new_emergency' },
+        message: {
+          token,
+          notification: { title, body: body ?? '' },
+          data: { type: type ?? 'new_emergency', emergency_id: emergency_id },
+          android: { priority: 'high' },
+        },
       };
+
       console.log(`[Push] Sending to ${platform} token ${token.slice(0, 20)}… (user ${user_id})`);
 
       try {
-        const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+        const res = await fetch(fcmEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `key=${fcmKey}` },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify(fcmPayload),
         });
         const result = await res.json();
-        console.log(`[Push] FCM response for ${token.slice(0, 12)}…: ${JSON.stringify(result)}`);
+        console.log(`[Push] FCM v1 status=${res.status} response=${JSON.stringify(result)}`);
 
-        if (result.success === 1) {
+        if (res.ok) {
           sent++;
           console.log(`[Push] ✓ Delivered to ${token.slice(0, 12)}…`);
         } else {
           failed++;
-          console.warn(`[Push] ✗ FCM rejected ${token.slice(0, 12)}…: ${JSON.stringify(result.results)}`);
+          console.warn(`[Push] ✗ FCM rejected ${token.slice(0, 12)}…: ${JSON.stringify(result)}`);
         }
       } catch (e) {
         failed++;
@@ -125,12 +195,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const summary = `Push: ${sent} delivered, ${failed} failed, ${tokenCount} total`;
+    const summary = `Push v1: ${sent} delivered, ${failed} failed, ${tokenCount} total`;
     console.log(`[Push] ─── ${summary} ───`);
 
     return new Response(
       JSON.stringify({ success: true, message: summary, sent, failed, tokens_count: tokenCount }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (err) {
     console.error('[Push] Unhandled error:', err);
