@@ -152,7 +152,8 @@ export function setupPushListeners(navigate: NavigateFunction): void {
   if (!isNative) return;
 
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[Push] 📩 Received in foreground:', JSON.stringify(notification));
+    console.log('[Push] 📩 FOREGROUND notification received:', JSON.stringify(notification));
+    alert(`[Push] FOREGROUND: ${notification.title || 'sin título'}`);
     const payload = notification.data as PushPayload;
     toast.info(notification.title || payload.title || 'Nueva notificación', {
       description: notification.body || payload.body,
