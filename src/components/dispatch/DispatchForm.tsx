@@ -200,12 +200,14 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
 
+      console.log('[Dispatch] 📤 Calling sendPushToOrganization', { orgId, emergencyId: emergency.id });
       sendPushToOrganization(
         orgId!,
         emergency.id,
         `🚨 ${emergencyKey.code} — ${emergencyKey.name}`,
         `Dirección: ${address.trim()}`
-      );
+      ).then(() => console.log('[Dispatch] ✓ Push call completed'))
+       .catch(e => console.error('[Dispatch] ✗ Push call failed:', e));
 
       toast.success(`Emergencia ${emergencyKey.code} despachada correctamente`);
       onClose();

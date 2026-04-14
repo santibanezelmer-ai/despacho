@@ -152,7 +152,8 @@ export function setupPushListeners(navigate: NavigateFunction): void {
   if (!isNative) return;
 
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[Push] 📩 Received in foreground:', JSON.stringify(notification));
+    console.log('[Push] 📩 FOREGROUND notification received:', JSON.stringify(notification));
+    alert(`[Push] FOREGROUND: ${notification.title || 'sin título'}`);
     const payload = notification.data as PushPayload;
     toast.info(notification.title || payload.title || 'Nueva notificación', {
       description: notification.body || payload.body,
@@ -200,23 +201,26 @@ export async function sendPushToOrganization(
   title: string,
   body: string
 ): Promise<void> {
-  console.log('[Push] 📤 Sending push via edge function:', { organizationId, emergencyId, title });
+  const payload = {
+    organization_id: organizationId,
+    emergency_id: emergencyId,
+    title,
+    body,
+    type: 'new_emergency',
+  };
+  console.log('[Push] 📤 Invoking edge function send-push-notification');
+  console.log('[Push] 📤 Payload:', JSON.stringify(payload));
   try {
     const { data, error } = await supabase.functions.invoke('send-push-notification', {
-      body: {
-        organization_id: organizationId,
-        emergency_id: emergencyId,
-        title,
-        body,
-        type: 'new_emergency',
-      },
+      body: payload,
     });
     if (error) {
       console.error('[Push] ✗ Edge function error:', error);
+      console.error('[Push] ✗ Error name:', error.name, 'message:', error.message);
     } else {
       console.log('[Push] ✓ Edge function response:', JSON.stringify(data));
     }
-  } catch (err) {
-    console.error('[Push] ✗ Error invoking edge function:', err);
+  } catch (err: any) {
+    console.error('[Push] ✗ Exception invoking edge function:', err?.message || err);
   }
 }
