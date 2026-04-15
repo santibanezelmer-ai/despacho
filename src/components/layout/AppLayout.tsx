@@ -26,6 +26,7 @@ const navItems = [
   { path: '/simulacion', label: 'Simulación', icon: Play, section: 'Sistema' },
   { path: '/alertas', label: 'Alertas', icon: Bell, section: 'Sistema' },
   { path: '/claves', label: 'Claves Emergencia', icon: Siren, section: 'Sistema' },
+  { path: '/notificaciones', label: 'Notificaciones', icon: Bell, section: 'Sistema' },
   { path: '/admin', label: 'Administración', icon: Settings, section: 'Sistema' },
   { path: '/admin/onboarding', label: 'Configuración inicial', icon: ClipboardList, section: 'Sistema' },
 ];
