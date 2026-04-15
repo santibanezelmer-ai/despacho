@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "153774218499",
+    "project_id": "operix-dispatch",
+    "storage_bucket": "operix-dispatch.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:153774218499:android:5295e50178f48686a61d36",
+        "android_client_info": {
+          "package_name": "com.bomberos.monitor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjTn1xtSUwlWvA09OruJHzaOGEjGahJRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
