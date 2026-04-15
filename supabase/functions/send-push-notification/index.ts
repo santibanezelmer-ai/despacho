@@ -112,6 +112,24 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Verify caller is a member of the target organization
+    const { data: membership } = await anonClient
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', userData.user.id)
+      .eq('organization_id', organization_id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!membership) {
+      console.error(`[Push] User ${userData.user.id} is not a member of org ${organization_id}`);
+      return new Response(JSON.stringify({ error: 'Not a member of this organization' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    console.log(`[Push] ✓ Membership verified for org ${organization_id}`);
+
     // Fetch tokens
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
     const { data: tokens, error: tokensError } = await serviceClient
@@ -214,7 +232,7 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     console.error('[Push] Unhandled error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error', details: String(err) }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -16,9 +16,6 @@ const CHANNEL_ID = 'emergency_alerts';
 let registrationAttempted = false;
 let channelCreated = false;
 
-/**
- * Create the high-importance Android notification channel.
- */
 async function ensureNotificationChannel(): Promise<void> {
   if (channelCreated || Capacitor.getPlatform() !== 'android') return;
   try {
@@ -26,28 +23,24 @@ async function ensureNotificationChannel(): Promise<void> {
       id: CHANNEL_ID,
       name: 'Emergencias',
       description: 'Alertas de emergencia con sonido y vibración',
-      importance: 5, // max
-      visibility: 1, // public
+      importance: 5,
+      visibility: 1,
       sound: 'default',
       vibration: true,
       lights: true,
     });
     channelCreated = true;
     console.log(`[Push] ✓ Android channel "${CHANNEL_ID}" created (importance=max)`);
-    alert(`[Push] canal "${CHANNEL_ID}" creado`);
   } catch (err: any) {
     console.error('[Push] ✗ Channel creation error:', err);
   }
 }
 
-/**
- * Save or update the device token in the database.
- */
 async function saveTokenToSupabase(token: string, platform: string): Promise<void> {
-  alert('[Push] saving token…');
+  console.log('[Push] saving token…');
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { alert('[Push] NO user'); return; }
+    if (!user) { console.warn('[Push] NO user session'); return; }
 
     const { data: membership } = await (supabase as any)
       .from('organization_members')
@@ -57,7 +50,7 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
       .limit(1)
       .maybeSingle();
 
-    if (!membership?.organization_id) { alert('[Push] NO org'); return; }
+    if (!membership?.organization_id) { console.warn('[Push] NO org membership'); return; }
 
     const { error } = await (supabase as any)
       .from('device_tokens')
@@ -70,27 +63,23 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
         updated_at: new Date().toISOString(),
       }, { onConflict: 'token' });
 
-    if (error) alert(`[Push] DB ERROR: ${JSON.stringify(error)}`);
-    else alert('[Push] token saved ✓');
+    if (error) console.error('[Push] DB error saving token:', error.message);
+    else console.log('[Push] token saved ✓');
   } catch (err: any) {
-    alert(`[Push] saveToken EXCEPTION: ${err?.message || err}`);
+    console.error('[Push] saveToken exception:', err?.message || err);
   }
 }
 
-/**
- * Register for push notifications. Safe to call multiple times.
- */
 export async function registerForPushNotifications(): Promise<string | null> {
-  alert('[Push] init start');
+  console.log('[Push] init start');
   if (registrationAttempted) return null;
   registrationAttempted = true;
 
   const isNative = Capacitor.isNativePlatform();
   const platform = Capacitor.getPlatform();
-  alert(`[Push] platform: ${platform} | native: ${isNative}`);
+  console.log(`[Push] platform: ${platform} | native: ${isNative}`);
   if (!isNative) return null;
 
-  // Create channel before registering
   await ensureNotificationChannel();
 
   try {
@@ -99,18 +88,18 @@ export async function registerForPushNotifications(): Promise<string | null> {
       permStatus = await PushNotifications.requestPermissions();
     }
     if (permStatus.receive !== 'granted') {
-      alert(`[Push] permission DENIED: ${permStatus.receive}`);
+      console.warn(`[Push] permission denied: ${permStatus.receive}`);
       toast.error('Permisos de notificación denegados');
       return null;
     }
-    alert('[Push] permissions granted ✓');
+    console.log('[Push] permissions granted ✓');
 
     const tokenPromise = new Promise<string | null>((resolve) => {
-      const timeout = setTimeout(() => { alert('[Push] timeout 15s'); resolve(null); }, 15000);
+      const timeout = setTimeout(() => { console.warn('[Push] timeout 15s'); resolve(null); }, 15000);
 
       PushNotifications.addListener('registration', async (tokenData) => {
         clearTimeout(timeout);
-        alert(`[Push] token: ${tokenData.value.slice(0, 20)}…`);
+        console.log(`[Push] token received: ${tokenData.value.slice(0, 20)}…`);
         await saveTokenToSupabase(tokenData.value, platform);
         toast.success('Notificaciones activadas');
         resolve(tokenData.value);
@@ -118,7 +107,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
       PushNotifications.addListener('registrationError', (err) => {
         clearTimeout(timeout);
-        alert(`[Push] reg error: ${JSON.stringify(err)}`);
+        console.error('[Push] registration error:', err);
         toast.error('Error al registrar notificaciones');
         resolve(null);
       });
@@ -127,19 +116,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
     await PushNotifications.register();
     return await tokenPromise;
   } catch (err: any) {
-    alert(`[Push] EXCEPTION: ${err?.message || err}`);
+    console.error('[Push] exception:', err?.message || err);
     return null;
   }
 }
 
-/**
- * Show a local heads-up notification when the app is in the foreground.
- */
 async function showLocalNotification(title: string, body: string, data: Record<string, string>): Promise<void> {
   try {
     console.log('[Push] 📢 Firing local foreground notification via channel:', CHANNEL_ID);
-    alert(`[Push] foreground local notification → canal: ${CHANNEL_ID}`);
-
     await LocalNotifications.schedule({
       notifications: [{
         title,
@@ -156,13 +140,9 @@ async function showLocalNotification(title: string, body: string, data: Record<s
   }
 }
 
-/**
- * Set up listeners for incoming push notifications.
- */
 export function setupPushListeners(navigate: NavigateFunction): void {
   if (!Capacitor.isNativePlatform()) return;
 
-  // Foreground: show a real local notification (heads-up + sound)
   PushNotifications.addListener('pushNotificationReceived', async (notification) => {
     console.log('[Push] 📩 FOREGROUND:', JSON.stringify(notification));
     const payload = (notification.data ?? {}) as PushPayload;
@@ -175,7 +155,6 @@ export function setupPushListeners(navigate: NavigateFunction): void {
     });
   });
 
-  // Tap on notification (background / killed)
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     console.log('[Push] 👆 Tap:', JSON.stringify(action));
     const payload = action.notification.data as PushPayload;
@@ -184,7 +163,6 @@ export function setupPushListeners(navigate: NavigateFunction): void {
     }
   });
 
-  // Tap on local foreground notification
   LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
     console.log('[Push] 👆 Local tap:', JSON.stringify(action));
     const extra = action.notification.extra as PushPayload | undefined;
