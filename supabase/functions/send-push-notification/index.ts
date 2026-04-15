@@ -164,7 +164,17 @@ Deno.serve(async (req: Request) => {
           token,
           notification: { title, body: body ?? '' },
           data: { type: type ?? 'new_emergency', emergency_id: emergency_id },
-          android: { priority: 'high' },
+          android: {
+            priority: 'high',
+            notification: {
+              channel_id: 'emergency_alerts',
+              sound: 'default',
+              default_vibrate_timings: true,
+              default_sound: true,
+              notification_priority: 'PRIORITY_MAX',
+              visibility: 'PUBLIC',
+            },
+          },
         },
       };
 
