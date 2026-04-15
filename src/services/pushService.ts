@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import type { NavigateFunction } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,21 +12,42 @@ export interface PushPayload {
   type?: string;
 }
 
-/** Track whether we already attempted registration this session */
+const CHANNEL_ID = 'emergency_alerts';
 let registrationAttempted = false;
+let channelCreated = false;
 
 /**
- * Save or update the device token in Supabase.
+ * Create the high-importance Android notification channel.
+ */
+async function ensureNotificationChannel(): Promise<void> {
+  if (channelCreated || Capacitor.getPlatform() !== 'android') return;
+  try {
+    await LocalNotifications.createChannel({
+      id: CHANNEL_ID,
+      name: 'Emergencias',
+      description: 'Alertas de emergencia con sonido y vibración',
+      importance: 5, // max
+      visibility: 1, // public
+      sound: 'default',
+      vibration: true,
+      lights: true,
+    });
+    channelCreated = true;
+    console.log(`[Push] ✓ Android channel "${CHANNEL_ID}" created (importance=max)`);
+    alert(`[Push] canal "${CHANNEL_ID}" creado`);
+  } catch (err: any) {
+    console.error('[Push] ✗ Channel creation error:', err);
+  }
+}
+
+/**
+ * Save or update the device token in the database.
  */
 async function saveTokenToSupabase(token: string, platform: string): Promise<void> {
-  alert('[Push] saving token to Supabase…');
+  alert('[Push] saving token…');
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert('[Push] NO authenticated user — cannot save token');
-      return;
-    }
-    alert(`[Push] user: ${user.id.slice(0, 8)}…`);
+    if (!user) { alert('[Push] NO user'); return; }
 
     const { data: membership } = await (supabase as any)
       .from('organization_members')
@@ -35,70 +57,47 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
       .limit(1)
       .maybeSingle();
 
-    if (!membership?.organization_id) {
-      alert('[Push] NO active organization — cannot save token');
-      return;
-    }
-    alert(`[Push] org: ${membership.organization_id.slice(0, 8)}…`);
-
-    const payload = {
-      user_id: user.id,
-      organization_id: membership.organization_id,
-      token,
-      platform,
-      last_seen_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    if (!membership?.organization_id) { alert('[Push] NO org'); return; }
 
     const { error } = await (supabase as any)
       .from('device_tokens')
-      .upsert(payload, { onConflict: 'token' });
+      .upsert({
+        user_id: user.id,
+        organization_id: membership.organization_id,
+        token,
+        platform,
+        last_seen_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'token' });
 
-    if (error) {
-      alert(`[Push] DB ERROR: ${JSON.stringify(error)}`);
-    } else {
-      alert('[Push] token saved ✓');
-    }
+    if (error) alert(`[Push] DB ERROR: ${JSON.stringify(error)}`);
+    else alert('[Push] token saved ✓');
   } catch (err: any) {
     alert(`[Push] saveToken EXCEPTION: ${err?.message || err}`);
   }
 }
 
 /**
- * Request push notification permissions and register the device.
- * Safe to call multiple times — only executes once per session.
+ * Register for push notifications. Safe to call multiple times.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
   alert('[Push] init start');
-  console.log('[Push] init start');
-
-  if (registrationAttempted) {
-    alert('[Push] already attempted this session — skipping');
-    return null;
-  }
+  if (registrationAttempted) return null;
   registrationAttempted = true;
 
   const isNative = Capacitor.isNativePlatform();
   const platform = Capacitor.getPlatform();
-  alert(`[Push] platform: ${platform} | isNative: ${isNative}`);
+  alert(`[Push] platform: ${platform} | native: ${isNative}`);
+  if (!isNative) return null;
 
-  if (!isNative) {
-    alert('[Push] NOT native — skipping registration');
-    return null;
-  }
-  alert('[Push] native platform detected');
+  // Create channel before registering
+  await ensureNotificationChannel();
 
   try {
-    alert('[Push] checking permissions…');
     let permStatus = await PushNotifications.checkPermissions();
-    alert(`[Push] permission status: ${permStatus.receive}`);
-
     if (permStatus.receive === 'prompt') {
-      alert('[Push] requesting permissions…');
       permStatus = await PushNotifications.requestPermissions();
-      alert(`[Push] permission after request: ${permStatus.receive}`);
     }
-
     if (permStatus.receive !== 'granted') {
       alert(`[Push] permission DENIED: ${permStatus.receive}`);
       toast.error('Permisos de notificación denegados');
@@ -106,17 +105,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
     alert('[Push] permissions granted ✓');
 
-    alert('[Push] adding registration listeners…');
     const tokenPromise = new Promise<string | null>((resolve) => {
-      const timeout = setTimeout(() => {
-        alert('[Push] registration timed out after 15s');
-        resolve(null);
-      }, 15000);
+      const timeout = setTimeout(() => { alert('[Push] timeout 15s'); resolve(null); }, 15000);
 
       PushNotifications.addListener('registration', async (tokenData) => {
         clearTimeout(timeout);
-        alert(`[Push] token received: ${tokenData.value.slice(0, 20)}…`);
-
+        alert(`[Push] token: ${tokenData.value.slice(0, 20)}…`);
         await saveTokenToSupabase(tokenData.value, platform);
         toast.success('Notificaciones activadas');
         resolve(tokenData.value);
@@ -124,19 +118,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
       PushNotifications.addListener('registrationError', (err) => {
         clearTimeout(timeout);
-        alert(`[Push] registration error: ${JSON.stringify(err)}`);
+        alert(`[Push] reg error: ${JSON.stringify(err)}`);
         toast.error('Error al registrar notificaciones');
         resolve(null);
       });
     });
 
-    alert('[Push] calling PushNotifications.register()…');
     await PushNotifications.register();
-    alert('[Push] register() called — waiting for token…');
-
-    const token = await tokenPromise;
-    alert(`[Push] flow complete, token: ${token ? token.slice(0, 20) + '…' : 'null'}`);
-    return token;
+    return await tokenPromise;
   } catch (err: any) {
     alert(`[Push] EXCEPTION: ${err?.message || err}`);
     return null;
@@ -144,83 +133,91 @@ export async function registerForPushNotifications(): Promise<string | null> {
 }
 
 /**
+ * Show a local heads-up notification when the app is in the foreground.
+ */
+async function showLocalNotification(title: string, body: string, data: Record<string, string>): Promise<void> {
+  try {
+    console.log('[Push] 📢 Firing local foreground notification via channel:', CHANNEL_ID);
+    alert(`[Push] foreground local notification → canal: ${CHANNEL_ID}`);
+
+    await LocalNotifications.schedule({
+      notifications: [{
+        title,
+        body,
+        id: Date.now(),
+        channelId: CHANNEL_ID,
+        extra: data,
+        smallIcon: 'ic_notification',
+        largeIcon: 'ic_notification',
+      }],
+    });
+  } catch (err: any) {
+    console.error('[Push] ✗ Local notification error:', err);
+  }
+}
+
+/**
  * Set up listeners for incoming push notifications.
  */
 export function setupPushListeners(navigate: NavigateFunction): void {
-  const isNative = Capacitor.isNativePlatform();
-  console.log('[Push] setupPushListeners called, isNative:', isNative);
-  if (!isNative) return;
+  if (!Capacitor.isNativePlatform()) return;
 
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[Push] 📩 FOREGROUND notification received:', JSON.stringify(notification));
-    alert(`[Push] FOREGROUND: ${notification.title || 'sin título'}`);
-    const payload = notification.data as PushPayload;
-    toast.info(notification.title || payload.title || 'Nueva notificación', {
-      description: notification.body || payload.body,
+  // Foreground: show a real local notification (heads-up + sound)
+  PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+    console.log('[Push] 📩 FOREGROUND:', JSON.stringify(notification));
+    const payload = (notification.data ?? {}) as PushPayload;
+    const title = notification.title || payload.title || 'Nueva emergencia';
+    const body = notification.body || payload.body || '';
+
+    await showLocalNotification(title, body, {
+      type: payload.type || 'new_emergency',
+      emergencyId: payload.emergencyId || '',
     });
   });
 
+  // Tap on notification (background / killed)
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('[Push] 👆 Tap action:', JSON.stringify(action));
+    console.log('[Push] 👆 Tap:', JSON.stringify(action));
     const payload = action.notification.data as PushPayload;
     if (payload.emergencyId) {
       navigate(`/mobile/emergency/${payload.emergencyId}`);
     }
   });
+
+  // Tap on local foreground notification
+  LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+    console.log('[Push] 👆 Local tap:', JSON.stringify(action));
+    const extra = action.notification.extra as PushPayload | undefined;
+    if (extra?.emergencyId) {
+      navigate(`/mobile/emergency/${extra.emergencyId}`);
+    }
+  });
 }
 
-/**
- * Remove all push notification listeners.
- */
 export function removePushListeners(): void {
   if (!Capacitor.isNativePlatform()) return;
-  console.log('[Push] removing all listeners');
   PushNotifications.removeAllListeners();
+  LocalNotifications.removeAllListeners();
 }
 
-/**
- * Simulate a local push notification for development/testing.
- */
 export function simulatePushNotification(navigate: NavigateFunction, emergencyId: string): void {
   toast.info('🚨 Simulación: Nueva emergencia', {
     description: `Emergencia ${emergencyId.slice(0, 8)}... recibida`,
-    action: {
-      label: 'Ver detalle',
-      onClick: () => navigate(`/mobile/emergency/${emergencyId}`),
-    },
+    action: { label: 'Ver detalle', onClick: () => navigate(`/mobile/emergency/${emergencyId}`) },
     duration: 6000,
   });
 }
 
-/**
- * Send push notifications to all devices in an organization via edge function.
- */
 export async function sendPushToOrganization(
-  organizationId: string,
-  emergencyId: string,
-  title: string,
-  body: string
+  organizationId: string, emergencyId: string, title: string, body: string
 ): Promise<void> {
-  const payload = {
-    organization_id: organizationId,
-    emergency_id: emergencyId,
-    title,
-    body,
-    type: 'new_emergency',
-  };
-  console.log('[Push] 📤 Invoking edge function send-push-notification');
-  console.log('[Push] 📤 Payload:', JSON.stringify(payload));
+  const payload = { organization_id: organizationId, emergency_id: emergencyId, title, body, type: 'new_emergency' };
+  console.log('[Push] 📤 Invoking edge function:', JSON.stringify(payload));
   try {
-    const { data, error } = await supabase.functions.invoke('send-push-notification', {
-      body: payload,
-    });
-    if (error) {
-      console.error('[Push] ✗ Edge function error:', error);
-      console.error('[Push] ✗ Error name:', error.name, 'message:', error.message);
-    } else {
-      console.log('[Push] ✓ Edge function response:', JSON.stringify(data));
-    }
+    const { data, error } = await supabase.functions.invoke('send-push-notification', { body: payload });
+    if (error) console.error('[Push] ✗ Edge fn error:', error);
+    else console.log('[Push] ✓ Edge fn response:', JSON.stringify(data));
   } catch (err: any) {
-    console.error('[Push] ✗ Exception invoking edge function:', err?.message || err);
+    console.error('[Push] ✗ Exception:', err?.message || err);
   }
 }
