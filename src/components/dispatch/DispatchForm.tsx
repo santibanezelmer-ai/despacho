@@ -204,7 +204,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       sendPushToOrganization(
         orgId!,
         emergency.id,
-        `🚨 ${emergencyKey.code} — ${emergencyKey.name}`,
+        `${emergencyKey.code} — ${emergencyKey.name}`,
         `Dirección: ${address.trim()}`
       ).then(() => console.log('[Dispatch] ✓ Push call completed'))
        .catch(e => console.error('[Dispatch] ✗ Push call failed:', e));

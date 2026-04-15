@@ -30,6 +30,7 @@ import SimulationPage from "@/pages/SimulationPage";
 import TrainingPage from "@/pages/TrainingPage";
 import AuditPage from "@/pages/AuditPage";
 import ExportsPage from "@/pages/ExportsPage";
+import NotificationsPage from "@/pages/NotificationsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import SuperadminLayout from "@/pages/superadmin/SuperadminLayout";
 import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
@@ -168,6 +169,7 @@ function AppRoutes() {
         <Route path="/simulacion" element={<SimulationPage />} />
         <Route path="/alertas" element={<AlertsPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
+        <Route path="/notificaciones" element={<NotificationsPage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />

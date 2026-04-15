@@ -9,6 +9,7 @@ export interface PushPayload {
   title?: string;
   body?: string;
   emergencyId?: string;
+  emergency_id?: string;
   type?: string;
 }
 
@@ -121,6 +122,25 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 }
 
+async function markNotificationOpened(emergencyId: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !emergencyId) return;
+
+    const { error } = await (supabase as any)
+      .from('notification_log')
+      .update({ status: 'opened', opened_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .eq('emergency_id', emergencyId)
+      .eq('status', 'sent');
+
+    if (error) console.error('[Push] Failed to mark opened:', error.message);
+    else console.log(`[Push] ✓ Notification marked opened for emergency ${emergencyId}`);
+  } catch (err: any) {
+    console.error('[Push] markOpened exception:', err?.message || err);
+  }
+}
+
 async function showLocalNotification(title: string, body: string, data: Record<string, string>): Promise<void> {
   try {
     console.log('[Push] 📢 Firing local foreground notification via channel:', CHANNEL_ID);
@@ -148,26 +168,31 @@ export function setupPushListeners(navigate: NavigateFunction): void {
     const payload = (notification.data ?? {}) as PushPayload;
     const title = notification.title || payload.title || 'Nueva emergencia';
     const body = notification.body || payload.body || '';
+    const emergencyId = payload.emergencyId || payload.emergency_id || '';
 
     await showLocalNotification(title, body, {
       type: payload.type || 'new_emergency',
-      emergencyId: payload.emergencyId || '',
+      emergencyId,
     });
   });
 
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     console.log('[Push] 👆 Tap:', JSON.stringify(action));
     const payload = action.notification.data as PushPayload;
-    if (payload.emergencyId) {
-      navigate(`/mobile/emergency/${payload.emergencyId}`);
+    const emergencyId = payload?.emergencyId || payload?.emergency_id || '';
+    if (emergencyId) {
+      markNotificationOpened(emergencyId);
+      navigate(`/mobile/emergency/${emergencyId}`);
     }
   });
 
   LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
     console.log('[Push] 👆 Local tap:', JSON.stringify(action));
     const extra = action.notification.extra as PushPayload | undefined;
-    if (extra?.emergencyId) {
-      navigate(`/mobile/emergency/${extra.emergencyId}`);
+    const emergencyId = extra?.emergencyId || extra?.emergency_id || '';
+    if (emergencyId) {
+      markNotificationOpened(emergencyId);
+      navigate(`/mobile/emergency/${emergencyId}`);
     }
   });
 }
@@ -179,7 +204,7 @@ export function removePushListeners(): void {
 }
 
 export function simulatePushNotification(navigate: NavigateFunction, emergencyId: string): void {
-  toast.info('🚨 Simulación: Nueva emergencia', {
+  toast.info('Simulación: Nueva emergencia', {
     description: `Emergencia ${emergencyId.slice(0, 8)}... recibida`,
     action: { label: 'Ver detalle', onClick: () => navigate(`/mobile/emergency/${emergencyId}`) },
     duration: 6000,
