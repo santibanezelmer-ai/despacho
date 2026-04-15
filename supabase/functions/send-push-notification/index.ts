@@ -130,7 +130,7 @@ Deno.serve(async (req: Request) => {
     }
     console.log(`[Push] ✓ Membership verified for org ${organization_id}`);
 
-    // Fetch tokens
+    // Fetch tokens — ONLY from the dispatching organization
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
     const { data: tokens, error: tokensError } = await serviceClient
       .from('device_tokens')
@@ -175,13 +175,25 @@ Deno.serve(async (req: Request) => {
 
     let sent = 0;
     let failed = 0;
+    const logEntries: Array<{
+      organization_id: string;
+      emergency_id: string;
+      user_id: string;
+      device_token: string;
+      status: string;
+      error_message: string | null;
+    }> = [];
 
     for (const { token, platform, user_id } of tokens!) {
       const fcmPayload = {
         message: {
           token,
           notification: { title, body: body ?? '' },
-          data: { type: type ?? 'new_emergency', emergency_id: emergency_id },
+          data: {
+            type: type ?? 'new_emergency',
+            emergency_id: emergency_id,
+            emergencyId: emergency_id,
+          },
           android: {
             priority: 'high',
             notification: {
@@ -191,6 +203,7 @@ Deno.serve(async (req: Request) => {
               default_sound: true,
               notification_priority: 'PRIORITY_MAX',
               visibility: 'PUBLIC',
+              icon: 'ic_notification',
             },
           },
         },
@@ -212,14 +225,47 @@ Deno.serve(async (req: Request) => {
 
         if (res.ok) {
           sent++;
-          console.log(`[Push] ✓ Delivered to ${token.slice(0, 12)}…`);
+          logEntries.push({
+            organization_id,
+            emergency_id,
+            user_id,
+            device_token: token,
+            status: 'sent',
+            error_message: null,
+          });
         } else {
           failed++;
-          console.warn(`[Push] ✗ FCM rejected ${token.slice(0, 12)}…: ${JSON.stringify(result)}`);
+          logEntries.push({
+            organization_id,
+            emergency_id,
+            user_id,
+            device_token: token,
+            status: 'failed',
+            error_message: JSON.stringify(result).slice(0, 500),
+          });
         }
-      } catch (e) {
+      } catch (e: any) {
         failed++;
-        console.error(`[Push] ✗ Fetch error for ${token.slice(0, 12)}…:`, e);
+        logEntries.push({
+          organization_id,
+          emergency_id,
+          user_id,
+          device_token: token,
+          status: 'failed',
+          error_message: e?.message?.slice(0, 500) ?? 'fetch error',
+        });
+      }
+    }
+
+    // Insert tracking logs
+    if (logEntries.length > 0) {
+      const { error: logError } = await serviceClient
+        .from('notification_log')
+        .insert(logEntries);
+      if (logError) {
+        console.error('[Push] Failed to insert notification_log:', logError.message);
+      } else {
+        console.log(`[Push] ✓ ${logEntries.length} notification_log entries saved`);
       }
     }
 
