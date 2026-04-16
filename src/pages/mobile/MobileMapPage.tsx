@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { LocateFixed, Loader2, Flame, Droplets, Crosshair } from 'lucide-react';
+import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -81,39 +83,79 @@ function hydrantIcon(own: boolean) {
   });
 }
 
+/* ── Geolocation helper with Capacitor plugin ── */
+
+type GeoResult = { lat: number; lng: number } | null;
+
+async function requestGeolocation(): Promise<GeoResult> {
+  const isNative = Capacitor.isNativePlatform();
+  console.log(`[Geo] Requesting location (native=${isNative})`);
+
+  if (isNative) {
+    try {
+      let perm = await Geolocation.checkPermissions();
+      console.log(`[Geo] Current permission: ${perm.location}`);
+
+      if (perm.location === 'prompt' || perm.location === 'prompt-with-rationale') {
+        perm = await Geolocation.requestPermissions({ permissions: ['location'] });
+        console.log(`[Geo] After request: ${perm.location}`);
+      }
+
+      if (perm.location !== 'granted') {
+        console.warn(`[Geo] Permission denied: ${perm.location}`);
+        return null;
+      }
+
+      const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      console.log(`[Geo] Position: ${pos.coords.latitude}, ${pos.coords.longitude}`);
+      return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch (err: any) {
+      console.error('[Geo] Native error:', err?.message || err);
+      return null;
+    }
+  }
+
+  // Web fallback
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        console.log(`[Geo] Web position: ${pos.coords.latitude}, ${pos.coords.longitude}`);
+        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      (err) => {
+        console.warn(`[Geo] Web error: ${err.message}`);
+        resolve(null);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
 export default function MobileMapPage() {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const initRef = useRef(false);
   const [bounds, setBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [locating, setLocating] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
   const navigate = useNavigate();
 
   const { data: emergencies, isLoading: loadingEmg } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const { data: sharedHydrants } = useSharedHydrants(bounds);
 
-  // Init map — only once
+  // Init map
   useEffect(() => {
     if (initRef.current) return;
     const el = containerRef.current;
-    if (!el) {
-      console.warn('[MobileMap] Container ref not ready');
-      return;
-    }
+    if (!el) return;
 
-    // Ensure container has dimensions before initializing
     const rect = el.getBoundingClientRect();
-    console.log('[MobileMap] Container dimensions:', rect.width, 'x', rect.height);
     if (rect.width === 0 || rect.height === 0) {
-      console.warn('[MobileMap] Container has zero size, deferring init');
-      // Retry on next frame
       const raf = requestAnimationFrame(() => {
         const r2 = el.getBoundingClientRect();
-        console.log('[MobileMap] Retry dimensions:', r2.width, 'x', r2.height);
-        if (r2.width > 0 && r2.height > 0) {
-          initializeMap(el);
-        }
+        if (r2.width > 0 && r2.height > 0) initializeMap(el);
       });
       return () => cancelAnimationFrame(raf);
     }
@@ -122,7 +164,6 @@ export default function MobileMapPage() {
 
     return () => {
       if (mapRef.current) {
-        console.log('[MobileMap] Destroying map');
         mapRef.current.remove();
         mapRef.current = null;
         initRef.current = false;
@@ -134,7 +175,7 @@ export default function MobileMapPage() {
     if (initRef.current || mapRef.current) return;
     initRef.current = true;
 
-    console.log('[MobileMap] Initializing Leaflet map');
+    console.log('[MobileMap] Initializing');
     const map = L.map(el, {
       center: [-33.45, -70.65],
       zoom: 13,
@@ -150,24 +191,19 @@ export default function MobileMapPage() {
     };
     map.on('moveend', updateBounds);
     updateBounds();
-
     mapRef.current = map;
 
-    // Force invalidateSize after a tick (fixes grey tiles)
-    setTimeout(() => {
-      map.invalidateSize();
-      console.log('[MobileMap] invalidateSize called');
-    }, 200);
+    setTimeout(() => map.invalidateSize(), 200);
 
-    // Auto-geolocate
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        console.log('[MobileMap] Geolocation OK:', pos.coords.latitude, pos.coords.longitude);
-        map.setView([pos.coords.latitude, pos.coords.longitude], 14);
-      },
-      (err) => console.warn('[MobileMap] Geolocation error:', err.message),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+    // Auto-geolocate on init
+    requestGeolocation().then((geo) => {
+      if (geo) {
+        map.setView([geo.lat, geo.lng], 14);
+        setLocationDenied(false);
+      } else {
+        setLocationDenied(true);
+      }
+    });
   }
 
   // Fit to emergencies on first load
@@ -190,7 +226,6 @@ export default function MobileMapPage() {
 
     const markers: L.Marker[] = [];
     const emgWithCoords = (emergencies ?? []).filter(e => e.latitude && e.longitude);
-    console.log('[MobileMap] Rendering', emgWithCoords.length, 'emergency markers');
 
     emgWithCoords.forEach(e => {
       const color = e.emergency_keys?.color || '#dc2626';
@@ -201,7 +236,7 @@ export default function MobileMapPage() {
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:${color}">
               ${e.emergency_keys?.code || '?'} — ${e.emergency_keys?.name || 'Emergencia'}
             </div>
-            <div style="font-size:12px;margin-bottom:2px">📍 ${e.address}</div>
+            <div style="font-size:12px;margin-bottom:2px">${e.address}</div>
             <div style="font-size:11px;color:#999;margin-bottom:6px">Estado: ${statusLabels[e.status] || e.status}</div>
             <a href="/mobile/emergency/${e.id}" 
                onclick="event.preventDefault();window.__mobileMapNav && window.__mobileMapNav('${e.id}')" 
@@ -214,9 +249,7 @@ export default function MobileMapPage() {
       markers.push(m);
     });
 
-    (window as any).__mobileMapNav = (id: string) => {
-      navigate(`/mobile/emergency/${id}`);
-    };
+    (window as any).__mobileMapNav = (id: string) => navigate(`/mobile/emergency/${id}`);
 
     return () => {
       markers.forEach(m => m.remove());
@@ -234,12 +267,11 @@ export default function MobileMapPage() {
       ...(hydrants ?? []).map(h => ({ lat: h.latitude, lng: h.longitude, name: h.name || 'Grifo propio', own: true })),
       ...(sharedHydrants ?? []).map((h: any) => ({ lat: h.latitude, lng: h.longitude, name: h.ubicacion || 'Grifo compartido', own: false })),
     ];
-    console.log('[MobileMap] Rendering', allHydrants.length, 'hydrant markers');
 
     allHydrants.forEach(h => {
       const icon = hydrantIcon(h.own);
       const m = L.marker([h.lat, h.lng], { icon })
-        .bindPopup(`<div style="font-size:12px;font-family:system-ui"><b>💧 ${h.name}</b></div>`)
+        .bindPopup(`<div style="font-size:12px;font-family:system-ui"><b>${h.name}</b></div>`)
         .addTo(map);
       markers.push(m);
     });
@@ -247,18 +279,18 @@ export default function MobileMapPage() {
     return () => { markers.forEach(m => m.remove()); };
   }, [hydrants, sharedHydrants]);
 
-  const handleLocate = useCallback(() => {
+  const handleLocate = useCallback(async () => {
     const map = mapRef.current;
     if (!map) return;
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-        setLocating(false);
-      },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+    const geo = await requestGeolocation();
+    if (geo) {
+      map.setView([geo.lat, geo.lng], 15);
+      setLocationDenied(false);
+    } else {
+      setLocationDenied(true);
+    }
+    setLocating(false);
   }, []);
 
   const handleCenterEmergencies = useCallback(() => {
@@ -278,6 +310,18 @@ export default function MobileMapPage() {
         className="absolute inset-0"
         style={{ zIndex: 0, isolation: 'isolate' }}
       />
+
+      {/* Location denied banner */}
+      {locationDenied && (
+        <div className="absolute top-4 left-4 right-4 z-[1000]">
+          <div className="flex items-center gap-2 bg-destructive/90 backdrop-blur-sm border border-destructive rounded-xl px-3 py-2">
+            <MapPinOff className="w-4 h-4 text-destructive-foreground flex-shrink-0" />
+            <span className="text-xs text-destructive-foreground">
+              Permiso de ubicación denegado. Actívalo en Ajustes para ver tu posición.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Right-side buttons */}
       <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2">
