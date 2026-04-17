@@ -14,9 +14,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
       {/* Header */}
       <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-md safe-area-top">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-            <Shield className="w-4.5 h-4.5 text-primary" />
-          </div>
+          <img src="/favicon.png" alt="Operix" className="w-8 h-8 rounded-lg object-cover" />
           <div className="flex flex-col">
             <span className="text-sm font-bold tracking-tight text-foreground leading-none">Operix Dispatch</span>
             {currentOrg?.organization?.name && (
