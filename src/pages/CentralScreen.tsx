@@ -247,8 +247,8 @@ export default function CentralScreen() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Shield className="h-8 w-8 text-emergency" />
-          <h1 className="text-3xl font-bold text-foreground">Central de Bomberos</h1>
+          <img src="/favicon.png" alt="Operix" className="h-9 w-9 rounded-lg object-cover" />
+          <h1 className="text-3xl font-bold text-foreground">Operix</h1>
         </div>
         <div className="flex items-center gap-4">
           <button

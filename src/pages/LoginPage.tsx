@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Siren, LogIn, Loader2 } from 'lucide-react';
+import { LogIn, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -25,10 +25,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emergency">
-            <Siren className="h-7 w-7 text-emergency-foreground" />
-          </div>
-          <h1 className="text-xl font-bold text-foreground">Central de Bomberos</h1>
+          <img src="/favicon.png" alt="Operix" className="mx-auto mb-3 h-14 w-14 rounded-2xl object-cover" />
+          <h1 className="text-xl font-bold text-foreground">Operix</h1>
           <p className="text-xs font-mono text-muted-foreground mt-1">v4.0 — Sistema de Despacho</p>
         </div>
 
