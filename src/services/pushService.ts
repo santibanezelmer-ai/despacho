@@ -173,7 +173,7 @@ async function showLocalNotification(title: string, body: string, data: Record<s
         id: Math.floor(Math.random() * 2147483647), // Random int32 to avoid collisions
         channelId: CHANNEL_ID,
         extra: data,
-        smallIcon: 'ic_launcher', // Use the app launcher icon
+        smallIcon: 'ic_notification', // White silhouette for status bar
         largeIcon: 'ic_launcher',
         sound: 'default',
       }],
