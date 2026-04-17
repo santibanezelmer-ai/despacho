@@ -44,15 +44,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <>
       {/* Logo + Org name */}
       <div className="flex items-center gap-2 border-b border-border px-3 py-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emergency">
-          <Siren className="h-5 w-5 text-emergency-foreground" />
-        </div>
+        <img
+          src="/favicon.png"
+          alt="Operix"
+          className="h-9 w-9 shrink-0 rounded-lg object-cover"
+        />
         {(!collapsed || isMobile) && (
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-sm font-bold text-foreground">
-              {currentOrg?.organization?.name ?? 'Central de Bomberos'}
+              {currentOrg?.organization?.name ?? 'Operix'}
             </h1>
-            <p className="text-[10px] font-mono text-muted-foreground">v4.0</p>
+            <p className="text-[10px] font-mono text-muted-foreground">Operix v4.0</p>
           </div>
         )}
         {isMobile && (
