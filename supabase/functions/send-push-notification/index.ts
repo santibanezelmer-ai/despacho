@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const EXPECTED_PROJECT_ID = 'operix-dispatch'; // Must match android/app/google-services.json
+
 /* ── OAuth2 token generation for FCM HTTP v1 ── */
 
 function base64url(buf: Uint8Array | ArrayBuffer): string {
@@ -18,8 +20,9 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   const b64 = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\\n/g, '')
     .replace(/\s/g, '');
-  const der = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const der = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   return crypto.subtle.importKey(
     'pkcs8',
     der,
@@ -60,9 +63,25 @@ async function getAccessToken(serviceAccount: {
   });
   const data = await res.json();
   if (!data.access_token) {
-    throw new Error(`OAuth2 token error: ${JSON.stringify(data)}`);
+    throw new Error(`OAuth2 token error (status ${res.status}): ${JSON.stringify(data)}`);
   }
   return data.access_token as string;
+}
+
+/* ── Helper: detect FCM errors that mean the token is dead ── */
+function isDeadTokenError(fcmResponse: any): boolean {
+  try {
+    const code = fcmResponse?.error?.status;
+    const errorCode = fcmResponse?.error?.details?.[0]?.errorCode;
+    return (
+      code === 'NOT_FOUND' ||
+      code === 'INVALID_ARGUMENT' ||
+      errorCode === 'UNREGISTERED' ||
+      errorCode === 'INVALID_ARGUMENT'
+    );
+  } catch {
+    return false;
+  }
 }
 
 /* ── Edge function ── */
@@ -79,7 +98,6 @@ Deno.serve(async (req: Request) => {
 
     console.log('[Push] ─── Request received ───');
 
-    // Validate auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       console.error('[Push] Missing Authorization header');
@@ -103,7 +121,9 @@ Deno.serve(async (req: Request) => {
     console.log(`[Push] ✓ Authenticated user: ${userData.user.id}`);
 
     const { organization_id, emergency_id, title, body, type } = await req.json();
-    console.log(`[Push] Payload: org=${organization_id} | emergency=${emergency_id} | title="${title}" | type=${type}`);
+    console.log(
+      `[Push] Payload: org=${organization_id} | emergency=${emergency_id} | title="${title}" | type=${type}`,
+    );
 
     if (!organization_id || !emergency_id || !title) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -130,11 +150,11 @@ Deno.serve(async (req: Request) => {
     }
     console.log(`[Push] ✓ Membership verified for org ${organization_id}`);
 
-    // Fetch tokens — ONLY from the dispatching organization
+    // Service role for tokens & cleanup
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
     const { data: tokens, error: tokensError } = await serviceClient
       .from('device_tokens')
-      .select('token, platform, user_id')
+      .select('id, token, platform, user_id')
       .eq('organization_id', organization_id);
 
     if (tokensError) {
@@ -150,31 +170,77 @@ Deno.serve(async (req: Request) => {
 
     if (tokenCount === 0) {
       return new Response(
-        JSON.stringify({ success: true, message: 'No devices registered', sent: 0, failed: 0, tokens_count: 0 }),
+        JSON.stringify({
+          success: true,
+          message: 'No devices registered',
+          sent: 0,
+          failed: 0,
+          tokens_count: 0,
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    // Load service account & get OAuth2 access token
+    // Load service account & validate
     const saJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
     if (!saJson) {
       console.warn('[Push] FCM_SERVICE_ACCOUNT_JSON not configured');
       return new Response(
-        JSON.stringify({ success: true, message: 'FCM_SERVICE_ACCOUNT_JSON not set', sent: 0, failed: 0, tokens_count: tokenCount }),
+        JSON.stringify({
+          success: true,
+          message: 'FCM_SERVICE_ACCOUNT_JSON not set',
+          sent: 0,
+          failed: 0,
+          tokens_count: tokenCount,
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    const serviceAccount = JSON.parse(saJson);
+    let serviceAccount: {
+      project_id: string;
+      client_email: string;
+      private_key: string;
+      token_uri: string;
+    };
+    try {
+      serviceAccount = JSON.parse(saJson);
+    } catch (e) {
+      console.error('[Push] FCM_SERVICE_ACCOUNT_JSON is not valid JSON:', (e as Error).message);
+      return new Response(
+        JSON.stringify({ error: 'FCM_SERVICE_ACCOUNT_JSON invalid JSON' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     const projectId = serviceAccount.project_id;
+    console.log(`[Push] Service account project_id=${projectId} | client_email=${serviceAccount.client_email}`);
+
+    if (projectId !== EXPECTED_PROJECT_ID) {
+      console.error(
+        `[Push] ⚠️ project_id mismatch! SA="${projectId}" but Android app expects "${EXPECTED_PROJECT_ID}". ` +
+          `Tokens were generated for "${EXPECTED_PROJECT_ID}" so all sends will fail with SenderId mismatch.`,
+      );
+    }
+
     const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
     console.log(`[Push] FCM v1 endpoint: ${fcmEndpoint}`);
 
-    const accessToken = await getAccessToken(serviceAccount);
-    console.log('[Push] ✓ OAuth2 access token obtained');
+    let accessToken: string;
+    try {
+      accessToken = await getAccessToken(serviceAccount);
+      console.log(`[Push] ✓ OAuth2 access token obtained (length=${accessToken.length})`);
+    } catch (e) {
+      console.error('[Push] ✗ Failed to obtain OAuth2 token:', (e as Error).message);
+      return new Response(
+        JSON.stringify({ error: 'OAuth2 failure', detail: (e as Error).message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     let sent = 0;
     let failed = 0;
+    const deadTokenIds: string[] = [];
     const logEntries: Array<{
       organization_id: string;
       emergency_id: string;
@@ -184,18 +250,18 @@ Deno.serve(async (req: Request) => {
       error_message: string | null;
     }> = [];
 
-    for (const { token, platform, user_id } of tokens!) {
+    for (const { id: tokenId, token, platform, user_id } of tokens!) {
       const fcmPayload = {
         message: {
           token,
           notification: { title, body: body ?? '' },
           data: {
-            type: type ?? 'new_emergency',
-            emergency_id: emergency_id,
-            emergencyId: emergency_id,
+            type: String(type ?? 'new_emergency'),
+            emergency_id: String(emergency_id),
+            emergencyId: String(emergency_id),
           },
           android: {
-            priority: 'high',
+            priority: 'HIGH',
             notification: {
               channel_id: 'emergency_alerts',
               sound: 'default',
@@ -209,7 +275,9 @@ Deno.serve(async (req: Request) => {
         },
       };
 
-      console.log(`[Push] Sending to ${platform} token ${token.slice(0, 20)}… (user ${user_id})`);
+      console.log(
+        `[Push] → Sending to ${platform} | tokenId=${tokenId} | token=${token.slice(0, 25)}… | user=${user_id}`,
+      );
 
       try {
         const res = await fetch(fcmEndpoint, {
@@ -220,8 +288,15 @@ Deno.serve(async (req: Request) => {
           },
           body: JSON.stringify(fcmPayload),
         });
-        const result = await res.json();
-        console.log(`[Push] FCM v1 status=${res.status} response=${JSON.stringify(result)}`);
+        const resText = await res.text();
+        let result: any = {};
+        try {
+          result = JSON.parse(resText);
+        } catch {
+          result = { raw: resText };
+        }
+
+        console.log(`[Push] ← FCM status=${res.status} body=${resText}`);
 
         if (res.ok) {
           sent++;
@@ -235,33 +310,50 @@ Deno.serve(async (req: Request) => {
           });
         } else {
           failed++;
+          const dead = isDeadTokenError(result);
+          if (dead) {
+            console.log(`[Push] 💀 Dead token detected (${tokenId}). Will be removed from device_tokens.`);
+            deadTokenIds.push(tokenId);
+          }
           logEntries.push({
             organization_id,
             emergency_id,
             user_id,
             device_token: token,
-            status: 'failed',
-            error_message: JSON.stringify(result).slice(0, 500),
+            status: dead ? 'unregistered' : 'failed',
+            error_message: resText.slice(0, 500),
           });
         }
       } catch (e: any) {
         failed++;
+        console.error(`[Push] ✗ Network error sending to ${tokenId}:`, e?.message);
         logEntries.push({
           organization_id,
           emergency_id,
           user_id,
           device_token: token,
           status: 'failed',
-          error_message: e?.message?.slice(0, 500) ?? 'fetch error',
+          error_message: (e?.message ?? 'fetch error').slice(0, 500),
         });
+      }
+    }
+
+    // Cleanup dead tokens
+    if (deadTokenIds.length > 0) {
+      const { error: delError, count } = await serviceClient
+        .from('device_tokens')
+        .delete({ count: 'exact' })
+        .in('id', deadTokenIds);
+      if (delError) {
+        console.error('[Push] Failed to delete dead tokens:', delError.message);
+      } else {
+        console.log(`[Push] 🗑 Removed ${count ?? deadTokenIds.length} dead tokens`);
       }
     }
 
     // Insert tracking logs
     if (logEntries.length > 0) {
-      const { error: logError } = await serviceClient
-        .from('notification_log')
-        .insert(logEntries);
+      const { error: logError } = await serviceClient.from('notification_log').insert(logEntries);
       if (logError) {
         console.error('[Push] Failed to insert notification_log:', logError.message);
       } else {
@@ -269,18 +361,25 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const summary = `Push v1: ${sent} delivered, ${failed} failed, ${tokenCount} total`;
+    const summary = `Push v1: ${sent} delivered, ${failed} failed, ${tokenCount} total, ${deadTokenIds.length} pruned`;
     console.log(`[Push] ─── ${summary} ───`);
 
     return new Response(
-      JSON.stringify({ success: true, message: summary, sent, failed, tokens_count: tokenCount }),
+      JSON.stringify({
+        success: true,
+        message: summary,
+        sent,
+        failed,
+        tokens_count: tokenCount,
+        pruned: deadTokenIds.length,
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (err) {
     console.error('[Push] Unhandled error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', detail: (err as Error)?.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
 });
