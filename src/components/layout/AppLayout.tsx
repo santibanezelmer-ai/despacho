@@ -137,10 +137,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => isMobile && setMobileOpen(false)}
-                    className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ${
+                    className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-200 ${
                       isActive
-                        ? 'bg-emergency/15 text-emergency font-medium'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                        ? 'bg-gradient-to-r from-emergency/20 to-emergency/5 text-emergency font-medium shadow-sm border border-emergency/20'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5'
                     }`}
                     title={collapsed && !isMobile ? item.label : undefined}
                   >
