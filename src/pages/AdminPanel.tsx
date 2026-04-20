@@ -107,14 +107,56 @@ export default function AdminPanel() {
     );
   }
 
+  const totalUsers = users?.length ?? 0;
+  const adminCount = users?.filter(u => u.roles.includes('admin')).length ?? 0;
+  const noRoleCount = users?.filter(u => u.roles.length === 0).length ?? 0;
+
   return (
-    <div className="space-y-6 p-1">
-      <div className="flex items-center gap-3">
-        <Users className="h-5 w-5 text-emergency" />
-        <h1 className="text-lg font-bold text-foreground">Gestión de Usuarios y Roles</h1>
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Hero header with gradient */}
+      <div
+        className="relative overflow-hidden rounded-2xl border border-border/60 p-6"
+        style={{ background: 'var(--gradient-panel)', boxShadow: 'var(--shadow-lg)' }}
+      >
+        <div
+          className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-30 blur-3xl"
+          style={{ background: 'var(--gradient-emergency)' }}
+        />
+        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl shadow-lg"
+              style={{ background: 'var(--gradient-emergency)' }}
+            >
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">
+                Gestión de Usuarios y Roles
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Administra accesos y permisos de tu organización
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="stat-tile min-w-[110px]">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold text-foreground mt-0.5">{totalUsers}</p>
+            </div>
+            <div className="stat-tile min-w-[110px]">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Admins</p>
+              <p className="text-2xl font-bold text-emergency mt-0.5">{adminCount}</p>
+            </div>
+            <div className="stat-tile min-w-[110px] hidden sm:block">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sin rol</p>
+              <p className="text-2xl font-bold text-warning mt-0.5">{noRoleCount}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="console-panel overflow-hidden">
+      <div className="console-panel-elevated overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="border-border/50">
