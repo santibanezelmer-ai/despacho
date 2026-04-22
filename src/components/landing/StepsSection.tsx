@@ -3,49 +3,52 @@ import { motion } from 'framer-motion';
 
 const steps = [
   { n: '1', title: 'Solicita tu cuenta', desc: 'Registra tu cuerpo de bomberos con los datos de tu institución.', icon: Building2 },
-  { n: '2', title: 'Activación', desc: 'Nuestro equipo revisa y activa tu organización en el sistema.', icon: Zap },
-  { n: '3', title: 'Opera', desc: 'Invita a tu equipo, configura tus claves y comienza a operar.', icon: Radio },
+  { n: '2', title: 'Activación rápida', desc: 'Nuestro equipo revisa y activa tu organización en el sistema.', icon: Zap },
+  { n: '3', title: 'Comienza a operar', desc: 'Invita a tu equipo, configura tus claves y despacha emergencias.', icon: Radio },
 ];
 
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } };
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.45 } }),
+  hidden: { opacity: 0, y: 25 },
+  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.12, duration: 0.5 } }),
 };
 
 export default function StepsSection() {
   return (
-    <section className="border-y border-border/50 bg-card/30 px-4 sm:px-6 py-16 sm:py-24">
+    <section className="border-y border-border/40 bg-gradient-to-b from-card/20 to-background px-4 sm:px-6 py-20 sm:py-28">
       <div className="mx-auto max-w-4xl">
-        <motion.h2
-          initial="hidden"
-          whileInView="visible"
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          variants={fadeUp}
-          custom={0}
-          className="mb-10 sm:mb-14 text-center text-xl sm:text-3xl font-bold"
+          className="text-center mb-12 sm:mb-16"
         >
-          ¿Cómo funciona?
-        </motion.h2>
+          <h2 className="text-2xl sm:text-4xl font-bold">¿Cómo funciona?</h2>
+          <p className="mt-3 text-sm text-muted-foreground">Tres pasos para digitalizar tu central</p>
+        </motion.div>
 
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-40px' }}
           variants={stagger}
-          className="grid gap-8 sm:gap-6 sm:grid-cols-3"
+          className="grid gap-10 sm:gap-8 sm:grid-cols-3"
         >
           {steps.map((s, i) => (
             <motion.div key={s.n} variants={fadeUp} custom={i} className="text-center relative">
               {i < steps.length - 1 && (
-                <div className="hidden sm:block absolute top-6 left-[60%] w-[80%] h-px bg-gradient-to-r from-border to-transparent" />
+                <div className="hidden sm:block absolute top-7 left-[60%] w-[80%] h-px bg-gradient-to-r from-emergency/30 to-transparent" />
               )}
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emergency/10 border border-emergency/20">
-                <s.icon className="h-5 w-5 text-emergency" />
-              </div>
-              <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest">Paso {s.n}</span>
-              <h3 className="mt-1 text-sm font-semibold">{s.title}</h3>
-              <p className="mt-2 text-xs text-muted-foreground leading-relaxed max-w-[200px] mx-auto">{s.desc}</p>
+              <motion.div
+                whileHover={{ scale: 1.08, rotate: 3 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+                className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emergency/10 border border-emergency/20 shadow-[0_0_20px_hsl(0_85%_55%/0.1)]"
+              >
+                <s.icon className="h-6 w-6 text-emergency" />
+              </motion.div>
+              <span className="text-[10px] font-mono text-emergency/50 uppercase tracking-[0.2em]">Paso {s.n}</span>
+              <h3 className="mt-1.5 text-sm font-bold">{s.title}</h3>
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed max-w-[220px] mx-auto">{s.desc}</p>
             </motion.div>
           ))}
         </motion.div>
