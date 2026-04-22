@@ -1,49 +1,56 @@
-import { XCircle, CheckCircle2 } from 'lucide-react';
+import { XCircle, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.45 } }),
+  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.12, duration: 0.5 } }),
 };
 
 const problems = [
-  'Despachos lentos y manuales',
+  'Despachos lentos y dependientes de radio',
   'Información dispersa en múltiples canales',
-  'Falta de control y trazabilidad de móviles',
+  'Sin trazabilidad ni control de móviles',
 ];
 
 const solutions = [
   'Activación de emergencias en segundos',
-  'Información centralizada en una sola plataforma',
-  'Control y seguimiento de recursos en tiempo real',
+  'Todo centralizado en una sola plataforma',
+  'Control y seguimiento en tiempo real',
 ];
 
 export default function ProblemSolutionSection() {
   return (
-    <section className="mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-24">
-      <motion.h2
+    <section className="mx-auto max-w-5xl px-4 sm:px-6 py-20 sm:py-28">
+      <motion.div
         initial={{ opacity: 0, y: 15 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-xl sm:text-3xl font-bold text-center mb-10 sm:mb-14"
+        className="text-center mb-12 sm:mb-16"
       >
-        ¿Por qué Operix?
-      </motion.h2>
+        <h2 className="text-2xl sm:text-4xl font-bold">¿Por qué Operix?</h2>
+        <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">La diferencia entre reaccionar y gestionar profesionalmente</p>
+      </motion.div>
 
-      <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+      <div className="grid sm:grid-cols-2 gap-5 sm:gap-8">
         {/* Problem */}
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          className="console-panel p-5 sm:p-7 border-destructive/15"
+          viewport={{ once: true, margin: '-50px' }}
+          className="rounded-2xl border border-destructive/20 bg-destructive/[0.03] p-6 sm:p-8 relative overflow-hidden"
         >
-          <h3 className="text-sm font-semibold text-destructive mb-4 uppercase tracking-wider">El problema</h3>
-          <div className="space-y-3.5">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-destructive/60 via-destructive/30 to-transparent" />
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="h-9 w-9 rounded-lg bg-destructive/15 flex items-center justify-center">
+              <AlertTriangle className="h-4.5 w-4.5 text-destructive" />
+            </div>
+            <h3 className="text-sm font-bold text-destructive uppercase tracking-wider">El problema</h3>
+          </div>
+          <div className="space-y-4">
             {problems.map((p, i) => (
               <motion.div key={p} variants={fadeUp} custom={i} className="flex items-start gap-3">
-                <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                <span className="text-sm text-muted-foreground">{p}</span>
+                <XCircle className="h-5 w-5 text-destructive/80 shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground leading-relaxed">{p}</span>
               </motion.div>
             ))}
           </div>
@@ -53,15 +60,21 @@ export default function ProblemSolutionSection() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          className="console-panel p-5 sm:p-7 border-success/15"
+          viewport={{ once: true, margin: '-50px' }}
+          className="rounded-2xl border border-success/20 bg-success/[0.03] p-6 sm:p-8 relative overflow-hidden"
         >
-          <h3 className="text-sm font-semibold text-success mb-4 uppercase tracking-wider">La solución — Operix</h3>
-          <div className="space-y-3.5">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-success/60 via-success/30 to-transparent" />
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="h-9 w-9 rounded-lg bg-success/15 flex items-center justify-center">
+              <Zap className="h-4.5 w-4.5 text-success" />
+            </div>
+            <h3 className="text-sm font-bold text-success uppercase tracking-wider">La solución — Operix</h3>
+          </div>
+          <div className="space-y-4">
             {solutions.map((s, i) => (
               <motion.div key={s} variants={fadeUp} custom={i} className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                <span className="text-sm text-foreground">{s}</span>
+                <span className="text-sm text-foreground leading-relaxed">{s}</span>
               </motion.div>
             ))}
           </div>
