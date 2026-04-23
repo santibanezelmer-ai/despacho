@@ -554,22 +554,34 @@ export type Database = {
       }
       leads: {
         Row: {
+          city: string | null
           created_at: string
           email: string
           id: string
+          message: string | null
+          name: string | null
           source: string | null
+          station_size: string | null
         }
         Insert: {
+          city?: string | null
           created_at?: string
           email: string
           id?: string
+          message?: string | null
+          name?: string | null
           source?: string | null
+          station_size?: string | null
         }
         Update: {
+          city?: string | null
           created_at?: string
           email?: string
           id?: string
+          message?: string | null
+          name?: string | null
           source?: string | null
+          station_size?: string | null
         }
         Relationships: []
       }
