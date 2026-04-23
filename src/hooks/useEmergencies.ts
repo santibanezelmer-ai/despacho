@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useOfflineCache } from '@/hooks/useOfflineCache';
+import { addToSyncQueue, putCached } from '@/services/offlineDb';
 import type { Tables } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 export type EmergencyRow = Tables<'emergencies'> & {
   emergency_keys: { code: string; name: string; color: string } | null;
@@ -9,7 +13,9 @@ export type EmergencyRow = Tables<'emergencies'> & {
 
 export function useActiveEmergencies() {
   const { orgId } = useOrganization();
-  return useQuery({
+  const { isOnline } = useOnlineStatus();
+
+  const query = useQuery({
     queryKey: ['active-emergencies', orgId],
     queryFn: async () => {
       const q = supabase
@@ -44,6 +50,55 @@ export function useActiveEmergencies() {
       return enriched;
     },
     enabled: !!orgId,
-    refetchInterval: 5000,
+    refetchInterval: isOnline ? 5000 : false,
+    retry: isOnline ? 3 : 0,
   });
+
+  // Bridge to offline cache
+  useOfflineCache(
+    ['active-emergencies', orgId],
+    'emergencies',
+    query.data,
+    query.error as Error | null,
+    isOnline
+  );
+
+  return query;
+}
+
+/**
+ * Creates an emergency locally when offline and queues it for sync.
+ * Returns the temporary local ID.
+ */
+export async function createOfflineEmergency(
+  data: Record<string, unknown>,
+  orgId: string
+): Promise<string> {
+  const tempId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  const emergencyData = {
+    ...data,
+    id: tempId,
+    organization_id: orgId,
+    status: 'despacho',
+    created_at: now,
+    updated_at: now,
+    dispatched_at: now,
+    folio: `EMG-OFFLINE-${Date.now()}`,
+    _offline: true,
+  };
+
+  // Save to local IndexedDB
+  await putCached('emergencies', emergencyData as any);
+
+  // Queue for sync
+  await addToSyncQueue({
+    table: 'emergencies',
+    operation: 'insert',
+    data: emergencyData,
+  });
+
+  toast.info('Emergencia creada en modo offline. Se sincronizará al reconectar.');
+  return tempId;
 }
