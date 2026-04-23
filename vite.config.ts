@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,7 +13,42 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+    VitePWA({
+      registerType: "autoUpdate",
+      devOptions: { enabled: false },
+      workbox: {
+        navigateFallbackDenylist: [/^\/~oauth/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "supabase-api",
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
+              networkTimeoutSeconds: 5,
+            },
+          },
+        ],
+      },
+      manifest: {
+        name: "Operix — Despacho de Emergencias",
+        short_name: "Operix",
+        description: "Sistema de despacho en tiempo real para cuerpos de bomberos",
+        theme_color: "#0F172A",
+        background_color: "#0F172A",
+        display: "standalone",
+        orientation: "any",
+        start_url: "/",
+        icons: [
+          { src: "/favicon.png", sizes: "192x192", type: "image/png" },
+          { src: "/favicon.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+        ],
+      },
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
