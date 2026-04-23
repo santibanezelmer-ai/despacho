@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { startAutoSync } from '@/services/syncManager';
+import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
-  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive
+  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -39,6 +42,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, signOut, isSuperadmin } = useAuth();
   const { currentOrg, orgRole, memberships, setCurrentOrgId } = useOrganization();
+  const { isOnline } = useOnlineStatus();
+
+  useEffect(() => { startAutoSync(); }, []);
 
   const sidebarContent = (isMobile: boolean) => (
     <>
@@ -83,9 +89,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Live indicator */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <span className="pulse-live h-2 w-2 rounded-full bg-success" />
-        {(!collapsed || isMobile) && <span className="text-[11px] font-mono text-success">EN LÍNEA</span>}
+      <div className={`flex items-center gap-2 border-b border-border px-3 py-2 ${!isOnline ? 'bg-destructive/5' : ''}`}>
+        {isOnline ? (
+          <span className="pulse-live h-2 w-2 rounded-full bg-success" />
+        ) : (
+          <WifiOff className="h-3.5 w-3.5 text-destructive" />
+        )}
+        {(!collapsed || isMobile) && (
+          <span className={`text-[11px] font-mono ${isOnline ? 'text-success' : 'text-destructive'}`}>
+            {isOnline ? 'EN LÍNEA' : 'SIN CONEXIÓN'}
+          </span>
+        )}
       </div>
 
       {/* Nav */}
@@ -217,6 +231,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </span>
         </header>
 
+        <OfflineIndicator />
         <main className="flex-1 overflow-y-auto flex flex-col">{children}</main>
       </div>
     </div>
