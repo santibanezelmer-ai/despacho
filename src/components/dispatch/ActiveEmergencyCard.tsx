@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross } from 'lucide-react';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 
@@ -47,6 +47,7 @@ interface EmergencyCardProps {
     vehicleCodes: string[];
     vehicleIds: string[];
     personnelCount: number;
+    _offline?: boolean;
   };
   onAdvanceStatus?: (id: string, newStatus: string) => void;
 }
@@ -87,12 +88,23 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
               </span>
               <span className="text-xs font-mono text-muted-foreground">{emergency.folio}</span>
             </div>
-            <span
-              className="status-badge"
-              style={{ backgroundColor: `${status.color}20`, color: status.color }}
-            >
-              {status.label}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {emergency._offline && (
+                <span
+                  className="flex items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-mono font-bold text-warning"
+                  title="Pendiente de sincronización"
+                >
+                  <CloudUpload className="h-3 w-3" />
+                  SYNC
+                </span>
+              )}
+              <span
+                className="status-badge"
+                style={{ backgroundColor: `${status.color}20`, color: status.color }}
+              >
+                {status.label}
+              </span>
+            </div>
           </div>
 
           <h3 className="mt-2 font-semibold text-foreground text-sm">{ek?.name ?? 'Emergencia'}</h3>
