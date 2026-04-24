@@ -104,7 +104,9 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
               >
                 {status.label}
               </span>
+            </span>
             </div>
+          </div>
 
           <h3 className="mt-2 font-semibold text-foreground text-sm">{ek?.name ?? 'Emergencia'}</h3>
 
