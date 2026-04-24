@@ -13,6 +13,11 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  build: {
+    sourcemap: false,
+    minify: "esbuild",
+  },
+  esbuild: mode === "production" ? { drop: ["console", "debugger"], legalComments: "none" } : undefined,
   plugins: [
     react(),
     mode === "development" && componentTagger(),

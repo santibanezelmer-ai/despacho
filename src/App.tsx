@@ -46,6 +46,8 @@ import OnboardingPage from "@/pages/admin/OnboardingPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import SecurityGuard from "@/components/security/SecurityGuard";
+import UserWatermark from "@/components/security/UserWatermark";
 
 const queryClient = new QueryClient();
 
@@ -188,6 +190,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <OrganizationProvider>
+            <SecurityGuard />
+            <UserWatermark />
             <Routes>
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<AppRoutes />} />
