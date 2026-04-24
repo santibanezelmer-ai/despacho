@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useOfflineCache } from '@/hooks/useOfflineCache';
 
 export interface EmergencyKeyRow {
   id: string;
@@ -14,7 +16,9 @@ export interface EmergencyKeyRow {
 
 export function useEmergencyKeys() {
   const { orgId } = useOrganization();
-  return useQuery({
+  const { isOnline } = useOnlineStatus();
+
+  const query = useQuery({
     queryKey: ['emergency-keys', orgId],
     queryFn: async () => {
       const q = supabase.from('emergency_keys').select('*').eq('active', true);
@@ -23,5 +27,16 @@ export function useEmergencyKeys() {
       return data as EmergencyKeyRow[];
     },
     enabled: !!orgId,
+    retry: isOnline ? 3 : 0,
   });
+
+  useOfflineCache(
+    ['emergency-keys', orgId],
+    'emergency_keys',
+    query.data,
+    query.error as Error | null,
+    isOnline
+  );
+
+  return query;
 }
