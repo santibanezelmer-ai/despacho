@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineCache } from '@/hooks/useOfflineCache';
-import { addToSyncQueue, putCached, getCachedById } from '@/services/offlineDb';
+import { addToSyncQueue, putCached, getCachedById, getSyncQueue } from '@/services/offlineDb';
 import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
@@ -47,7 +47,19 @@ export function useActiveEmergencies() {
         })
       );
 
-      return enriched;
+      // Mark emergencies with pending offline operations
+      try {
+        const queue = await getSyncQueue();
+        const pendingIds = new Set(
+          queue
+            .filter(q => q.table === 'emergencies')
+            .map(q => (q.data as any)?.id)
+            .filter(Boolean)
+        );
+        return enriched.map(e => (pendingIds.has(e.id) ? { ...e, _offline: true } : e));
+      } catch {
+        return enriched;
+      }
     },
     enabled: !!orgId,
     refetchInterval: isOnline ? 5000 : false,
