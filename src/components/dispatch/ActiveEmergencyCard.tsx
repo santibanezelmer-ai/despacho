@@ -104,7 +104,6 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
               >
                 {status.label}
               </span>
-            </span>
             </div>
           </div>
 
