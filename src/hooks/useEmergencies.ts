@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineCache } from '@/hooks/useOfflineCache';
-import { addToSyncQueue, putCached } from '@/services/offlineDb';
+import { addToSyncQueue, putCached, getCachedById } from '@/services/offlineDb';
 import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
@@ -101,4 +101,31 @@ export async function createOfflineEmergency(
 
   toast.info('Emergencia creada en modo offline. Se sincronizará al reconectar.');
   return tempId;
+}
+
+/**
+ * Updates an emergency locally when offline and queues the update for sync.
+ */
+export async function updateOfflineEmergency(
+  emergencyId: string,
+  updates: Record<string, unknown>
+): Promise<void> {
+  const existing = await getCachedById<Record<string, unknown>>('emergencies', emergencyId);
+  const merged = {
+    ...(existing ?? { id: emergencyId }),
+    ...updates,
+    id: emergencyId,
+    updated_at: new Date().toISOString(),
+    _offline: true,
+  };
+
+  await putCached('emergencies', merged as any);
+
+  await addToSyncQueue({
+    table: 'emergencies',
+    operation: 'update',
+    data: merged,
+  });
+
+  toast.info('Cambio guardado en modo offline. Se sincronizará al reconectar.');
 }
