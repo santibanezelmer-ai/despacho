@@ -1,4 +1,5 @@
-import { useActiveEmergencies } from '@/hooks/useEmergencies';
+import { useActiveEmergencies, updateOfflineEmergency } from '@/hooks/useEmergencies';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
 import { Radio, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default function ActiveEmergencies() {
   const { data: emergencies, isLoading } = useActiveEmergencies();
+  const { isOnline } = useOnlineStatus();
   const queryClient = useQueryClient();
 
   const handleAdvanceStatus = async (emergencyId: string, newStatus: string) => {
@@ -34,6 +36,17 @@ export default function ActiveEmergencies() {
     const update: Record<string, any> = { status: newStatus };
     const field = timestampField[newStatus];
     if (field) update[field] = new Date().toISOString();
+
+    // Offline path: queue the update locally
+    if (!isOnline) {
+      try {
+        await updateOfflineEmergency(emergencyId, update);
+        queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+      } catch (e) {
+        toast.error('No se pudo guardar el cambio offline');
+      }
+      return;
+    }
 
     const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
     if (error) {
