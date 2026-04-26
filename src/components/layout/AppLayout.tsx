@@ -5,6 +5,8 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { startAutoSync } from '@/services/syncManager';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
+import DemoBanner from '@/components/demo/DemoBanner';
+import DemoExpiredOverlay from '@/components/demo/DemoExpiredOverlay';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
@@ -232,7 +234,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <OfflineIndicator />
+        <DemoBanner />
         <main className="flex-1 overflow-y-auto flex flex-col">{children}</main>
+        <DemoExpiredOverlay />
       </div>
     </div>
   );
