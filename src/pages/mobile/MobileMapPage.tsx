@@ -1,46 +1,12 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-
-function useHydrants() {
-  return useQuery({
-    queryKey: ['hydrants'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('hydrants').select('*').eq('active', true);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-}
-
-function useSharedHydrants(bounds: { north: number; south: number; east: number; west: number } | null) {
-  return useQuery({
-    queryKey: ['shared-hydrants', bounds?.north, bounds?.south, bounds?.east, bounds?.west],
-    queryFn: async () => {
-      if (!bounds) return [];
-      const { data, error } = await supabase
-        .from('shared_hydrants' as any)
-        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
-        .eq('active', true)
-        .gte('latitude', bounds.south)
-        .lte('latitude', bounds.north)
-        .gte('longitude', bounds.west)
-        .lte('longitude', bounds.east)
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: !!bounds,
-    staleTime: 30000,
-  });
-}
+import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 
 const statusLabels: Record<string, string> = {
   despacho: 'Despacho', en_ruta: 'En Ruta', en_trabajo: 'En Trabajo', controlada: 'Controlada',
@@ -120,11 +86,11 @@ async function requestGeolocation(): Promise<GeoResult> {
     if (!navigator.geolocation) { resolve(null); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        console.log(`[Geo] Web position: ${pos.coords.latitude}, ${pos.coords.longitude}`);
+        if (import.meta.env.DEV) console.log(`[Geo] Web position: ${pos.coords.latitude}, ${pos.coords.longitude}`);
         resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       (err) => {
-        console.warn(`[Geo] Web error: ${err.message}`);
+        if (import.meta.env.DEV) console.warn(`[Geo] Web error: ${err.message}`);
         resolve(null);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -175,7 +141,7 @@ export default function MobileMapPage() {
     if (initRef.current || mapRef.current) return;
     initRef.current = true;
 
-    console.log('[MobileMap] Initializing');
+    if (import.meta.env.DEV) console.log('[MobileMap] Initializing');
     const map = L.map(el, {
       center: [-33.45, -70.65],
       zoom: 13,
