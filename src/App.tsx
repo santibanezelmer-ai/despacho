@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { OrganizationProvider, useOrganization } from "@/contexts/OrganizationContext";
+import { OrganizationProvider, useOrganizationOptional } from "@/contexts/OrganizationContext";
+import RouteErrorBoundary from "@/components/error/RouteErrorBoundary";
 import AppLayout from "@/components/layout/AppLayout";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
@@ -53,12 +54,24 @@ const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
-  const { orgId, currentOrg, loading: orgLoading, memberships } = useOrganization();
+  const orgCtx = useOrganizationOptional();
   const location = useLocation();
   const isNativeMobile = useIsNativeMobile();
 
   // Init push notifications for any authenticated native user
   usePushNotifications();
+
+  // Fallback: if OrganizationProvider isn't mounted yet (or this tree was
+  // rendered outside it), show a loading screen instead of throwing.
+  if (!orgCtx) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-emergency" />
+      </div>
+    );
+  }
+
+  const { orgId, currentOrg, loading: orgLoading, memberships } = orgCtx;
 
   if (authLoading || (user && orgLoading)) {
     return (
@@ -188,16 +201,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <OrganizationProvider>
-            <SecurityGuard />
-            <UserWatermark />
-            <Routes>
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="*" element={<AppRoutes />} />
-            </Routes>
-          </OrganizationProvider>
-        </AuthProvider>
+        <RouteErrorBoundary>
+          <AuthProvider>
+            <OrganizationProvider>
+              <SecurityGuard />
+              <UserWatermark />
+              <Routes>
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="*" element={<AppRoutes />} />
+              </Routes>
+            </OrganizationProvider>
+          </AuthProvider>
+        </RouteErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
