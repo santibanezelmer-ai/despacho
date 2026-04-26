@@ -14,6 +14,8 @@ interface OrgMembership {
     slug: string;
     status: string;
     logo_url: string | null;
+    is_demo?: boolean;
+    demo_expires_at?: string | null;
   };
 }
 
@@ -48,7 +50,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from('organization_members')
-        .select('organization_id, role, status, organizations(id, name, slug, status, logo_url)')
+        .select('organization_id, role, status, organizations(id, name, slug, status, logo_url, is_demo, demo_expires_at)')
         .eq('user_id', user.id)
         .eq('status', 'active');
 

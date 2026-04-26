@@ -11,6 +11,7 @@ import { Shield, ShieldPlus, Trash2, Users } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 import RanksAdmin from '@/components/admin/RanksAdmin';
+import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -286,6 +287,10 @@ export default function AdminPanel() {
 
       <div className="border-t border-border pt-6">
         <SystemSoundsAdmin />
+      </div>
+
+      <div className="border-t border-border pt-6">
+        <DemoSettingsAdmin />
       </div>
     </div>
   );
