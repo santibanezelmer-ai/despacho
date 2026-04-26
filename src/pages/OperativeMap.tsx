@@ -11,47 +11,6 @@ import LeafletMapCanvas, { type MapEmergency, type MapHydrant } from '@/componen
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 
-function useHydrants() {
-  return useQuery({
-    queryKey: ['hydrants'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('hydrants').select('*').eq('active', true);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-}
-
-function useSharedHydrants(bounds: { north: number; south: number; east: number; west: number } | null) {
-  return useQuery({
-    queryKey: ['shared-hydrants', bounds?.north, bounds?.south, bounds?.east, bounds?.west],
-    queryFn: async () => {
-      if (!bounds) return [];
-      const { data, error } = await supabase
-        .from('shared_hydrants' as any)
-        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
-        .eq('active', true)
-        .gte('latitude', bounds.south)
-        .lte('latitude', bounds.north)
-        .gte('longitude', bounds.west)
-        .lte('longitude', bounds.east)
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
-        id: string;
-        latitude: number;
-        longitude: number;
-        ubicacion: string | null;
-        modelo: string | null;
-        diam_grifo: number | null;
-        diam_tub: number | null;
-        anio: number | null;
-      }>;
-    },
-    enabled: !!bounds,
-    staleTime: 30000,
-  });
-}
 
 const statusLabels: Record<string, string> = {
   despacho: 'DESPACHO',
