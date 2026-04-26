@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import LeafletMapCanvas, { type MapEmergency, type MapHydrant } from '@/components/map/LeafletMapCanvas';
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
+import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 
 function useHydrants() {
   return useQuery({
