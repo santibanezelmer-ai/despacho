@@ -1,6 +1,30 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { logClientError } from '@/lib/clientErrorLogger';
+
+// Dev-only: detect multiple copies of this module being loaded (e.g. mismatched
+// import paths like '@/contexts/OrganizationContext' vs a relative path), which
+// causes Provider/hook to use different Context instances and produce the
+// "must be used within OrganizationProvider" error.
+declare global {
+  // eslint-disable-next-line no-var
+  var __ORG_CONTEXT_MODULE_ID__: string | undefined;
+}
+if (import.meta.env.DEV) {
+  const moduleId = `${import.meta.url}#${Math.random().toString(36).slice(2, 8)}`;
+  if (globalThis.__ORG_CONTEXT_MODULE_ID__ && globalThis.__ORG_CONTEXT_MODULE_ID__ !== moduleId) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[OrganizationContext] ⚠️ Multiple copies of OrganizationContext detected!\n' +
+        `Previous: ${globalThis.__ORG_CONTEXT_MODULE_ID__}\n` +
+        `Current:  ${moduleId}\n` +
+        'Provider and useOrganization() must come from the same module path. ' +
+        "Check for mixed imports like '@/contexts/OrganizationContext' vs './OrganizationContext'."
+    );
+  }
+  globalThis.__ORG_CONTEXT_MODULE_ID__ = moduleId;
+}
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor';
 
@@ -92,6 +116,25 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
 export function useOrganization() {
   const ctx = useContext(OrganizationContext);
-  if (!ctx) throw new Error('useOrganization must be used within OrganizationProvider');
+  if (!ctx) {
+    const err = new Error('useOrganization must be used within OrganizationProvider');
+    // Fire-and-forget remote log (no orgId available, so this just hits console)
+    logClientError({
+      kind: 'missing_org_provider',
+      message: err.message,
+      stack: err.stack,
+      route: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    });
+    throw err;
+  }
   return ctx;
+}
+
+/**
+ * Safe variant: returns null instead of throwing when used outside of
+ * OrganizationProvider. Use this in components that may render before the
+ * provider tree is ready (e.g. very-early routes / fallback UIs).
+ */
+export function useOrganizationOptional() {
+  return useContext(OrganizationContext);
 }
