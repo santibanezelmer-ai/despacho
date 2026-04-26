@@ -55,25 +55,9 @@ export default function SecurityGuard() {
     document.addEventListener("contextmenu", onContextMenu);
     document.addEventListener("keydown", onKeyDown);
 
-    // Lightweight anti-debugger heartbeat
-    let interval: number | undefined;
-    if (import.meta.env.PROD) {
-      interval = window.setInterval(() => {
-        const t0 = performance.now();
-        // eslint-disable-next-line no-debugger
-        debugger;
-        const dt = performance.now() - t0;
-        if (dt > 150) {
-          // DevTools likely open — soft redirect to landing
-          window.location.replace("/landing");
-        }
-      }, 4000);
-    }
-
     return () => {
       document.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("keydown", onKeyDown);
-      if (interval) window.clearInterval(interval);
     };
   }, [location.pathname]);
 
