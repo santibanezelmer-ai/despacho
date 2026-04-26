@@ -3,7 +3,8 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Building2, Plus, Search, Pencil, Trash2, Loader2, Upload, Volume2 } from 'lucide-react';
+import { Building2, Plus, Search, Pencil, Trash2, Loader2, Volume2 } from 'lucide-react';
+import ToneUploadField from '@/components/admin/ToneUploadField';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -213,23 +214,14 @@ export default function Companies() {
                   <Label className="text-xs">Activa</Label>
                 </div>
               </div>
-              <div>
-                <Label className="text-xs">Tono de Compañía (MP3)</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={editing.tone_url} onChange={e => setEditing(f => f ? { ...f, tone_url: e.target.value } : f)} placeholder="URL o subir archivo" className="bg-muted/50 text-xs flex-1" />
-                  <label className="cursor-pointer">
-                    <input type="file" accept="audio/*" className="hidden" onChange={handleToneUpload} />
-                    <Button size="sm" variant="outline" className="h-8 px-2" asChild disabled={uploading}>
-                      <span>{uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}</span>
-                    </Button>
-                  </label>
-                  {editing.tone_url && (
-                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => playTone(editing.tone_url)}>
-                      <Volume2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <ToneUploadField
+                label="Tono de Compañía (MP3)"
+                value={editing.tone_url}
+                onChange={(v) => setEditing(f => f ? { ...f, tone_url: v } : f)}
+                onUpload={handleToneUpload}
+                onPlay={playTone}
+                uploading={uploading}
+              />
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1" disabled={saving}>Cancelar</Button>
                 <Button onClick={handleSave} className="flex-1 bg-emergency text-emergency-foreground hover:bg-emergency/90" disabled={saving}>
