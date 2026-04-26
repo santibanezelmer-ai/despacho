@@ -105,6 +105,33 @@ export type Database = {
           },
         ]
       }
+      demo_settings: {
+        Row: {
+          duration_days: number
+          enabled: boolean
+          id: string
+          max_emergencies: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          duration_days?: number
+          enabled?: boolean
+          id?: string
+          max_emergencies?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          duration_days?: number
+          enabled?: boolean
+          id?: string
+          max_emergencies?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       device_tokens: {
         Row: {
           created_at: string
@@ -780,8 +807,10 @@ export type Database = {
           country: string | null
           created_at: string
           created_by: string | null
+          demo_expires_at: string | null
           id: string
           institution_email: string | null
+          is_demo: boolean
           logo_url: string | null
           name: string
           phone: string | null
@@ -798,8 +827,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          demo_expires_at?: string | null
           id?: string
           institution_email?: string | null
+          is_demo?: boolean
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -816,8 +847,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          demo_expires_at?: string | null
           id?: string
           institution_email?: string | null
+          is_demo?: boolean
           logo_url?: string | null
           name?: string
           phone?: string | null
@@ -1194,6 +1227,7 @@ export type Database = {
     }
     Functions: {
       can_write_in_org: { Args: { _org_id: string }; Returns: boolean }
+      demo_emergency_count: { Args: { _org_id: string }; Returns: number }
       get_my_organization_ids: { Args: never; Returns: string[] }
       get_user_roles: {
         Args: { _user_id: string }
@@ -1224,6 +1258,7 @@ export type Database = {
         }
         Returns: string
       }
+      is_demo_org_active: { Args: { _org_id: string }; Returns: boolean }
       is_org_admin_of_user: {
         Args: { _target_user_id: string }
         Returns: boolean
