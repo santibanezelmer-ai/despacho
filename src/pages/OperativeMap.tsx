@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
@@ -9,48 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import LeafletMapCanvas, { type MapEmergency, type MapHydrant } from '@/components/map/LeafletMapCanvas';
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
+import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 
-function useHydrants() {
-  return useQuery({
-    queryKey: ['hydrants'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('hydrants').select('*').eq('active', true);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-}
-
-function useSharedHydrants(bounds: { north: number; south: number; east: number; west: number } | null) {
-  return useQuery({
-    queryKey: ['shared-hydrants', bounds?.north, bounds?.south, bounds?.east, bounds?.west],
-    queryFn: async () => {
-      if (!bounds) return [];
-      const { data, error } = await supabase
-        .from('shared_hydrants' as any)
-        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
-        .eq('active', true)
-        .gte('latitude', bounds.south)
-        .lte('latitude', bounds.north)
-        .gte('longitude', bounds.west)
-        .lte('longitude', bounds.east)
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
-        id: string;
-        latitude: number;
-        longitude: number;
-        ubicacion: string | null;
-        modelo: string | null;
-        diam_grifo: number | null;
-        diam_tub: number | null;
-        anio: number | null;
-      }>;
-    },
-    enabled: !!bounds,
-    staleTime: 30000,
-  });
-}
 
 const statusLabels: Record<string, string> = {
   despacho: 'DESPACHO',
