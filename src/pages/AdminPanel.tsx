@@ -12,6 +12,7 @@ import type { Database } from '@/integrations/supabase/types';
 import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 import RanksAdmin from '@/components/admin/RanksAdmin';
 import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
+import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
