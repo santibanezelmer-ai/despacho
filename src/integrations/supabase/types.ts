@@ -1226,8 +1226,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { _token: string }; Returns: Json }
       can_write_in_org: { Args: { _org_id: string }; Returns: boolean }
       demo_emergency_count: { Args: { _org_id: string }; Returns: number }
+      get_invitation_preview: { Args: { _token: string }; Returns: Json }
       get_my_organization_ids: { Args: never; Returns: string[] }
       get_user_roles: {
         Args: { _user_id: string }
