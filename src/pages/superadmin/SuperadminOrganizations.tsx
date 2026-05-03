@@ -80,7 +80,7 @@ function MembersRow({ orgId }: { orgId: string }) {
   if (isLoading) {
     return (
       <tr>
-        <td colSpan={6} className="px-8 py-3 bg-muted/20">
+        <td colSpan={7} className="px-8 py-3 bg-muted/20">
           <Skeleton className="h-4 w-48" />
         </td>
       </tr>
@@ -90,7 +90,7 @@ function MembersRow({ orgId }: { orgId: string }) {
   if (!members?.length) {
     return (
       <tr>
-        <td colSpan={6} className="px-8 py-3 bg-muted/20 text-xs text-muted-foreground italic">
+        <td colSpan={7} className="px-8 py-3 bg-muted/20 text-xs text-muted-foreground italic">
           Sin miembros asignados
         </td>
       </tr>
@@ -99,7 +99,7 @@ function MembersRow({ orgId }: { orgId: string }) {
 
   return (
     <tr>
-      <td colSpan={6} className="p-0">
+      <td colSpan={7} className="p-0">
         <div className="bg-muted/20 border-b border-border/50 px-8 py-3">
           <div className="flex items-center gap-2 mb-2 text-xs font-medium text-muted-foreground">
             <Users className="h-3.5 w-3.5" /> Miembros ({members.length})
@@ -313,7 +313,7 @@ export default function SuperadminOrganizations() {
           <tbody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                <tr key={i}><td colSpan={8} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
               ))
             ) : (
               filtered.flatMap((o: any) => {
