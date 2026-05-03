@@ -329,6 +329,11 @@ export default function SuperadminOrganizations() {
                     <td className="px-4 py-3 text-muted-foreground">{o.commune ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{o.region ?? '—'}</td>
                     <td className="px-4 py-3">
+                      <Badge variant="outline" className="gap-1">
+                        <Users className="h-3 w-3" /> {o.member_count ?? 0}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
                       <span className={`text-xs font-semibold ${st.color}`}>{st.label}</span>
                     </td>
                     <td className="px-4 py-3 text-right space-x-1" onClick={e => e.stopPropagation()}>
