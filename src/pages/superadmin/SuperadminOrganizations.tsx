@@ -80,7 +80,7 @@ function MembersRow({ orgId }: { orgId: string }) {
   if (isLoading) {
     return (
       <tr>
-        <td colSpan={6} className="px-8 py-3 bg-muted/20">
+        <td colSpan={7} className="px-8 py-3 bg-muted/20">
           <Skeleton className="h-4 w-48" />
         </td>
       </tr>
@@ -90,7 +90,7 @@ function MembersRow({ orgId }: { orgId: string }) {
   if (!members?.length) {
     return (
       <tr>
-        <td colSpan={6} className="px-8 py-3 bg-muted/20 text-xs text-muted-foreground italic">
+        <td colSpan={7} className="px-8 py-3 bg-muted/20 text-xs text-muted-foreground italic">
           Sin miembros asignados
         </td>
       </tr>
@@ -99,7 +99,7 @@ function MembersRow({ orgId }: { orgId: string }) {
 
   return (
     <tr>
-      <td colSpan={6} className="p-0">
+      <td colSpan={7} className="p-0">
         <div className="bg-muted/20 border-b border-border/50 px-8 py-3">
           <div className="flex items-center gap-2 mb-2 text-xs font-medium text-muted-foreground">
             <Users className="h-3.5 w-3.5" /> Miembros ({members.length})
@@ -147,7 +147,18 @@ export default function SuperadminOrganizations() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as any[];
+      const orgsList = (data ?? []) as any[];
+      // Fetch member counts per org (active members only)
+      const { data: members } = await (supabase as any)
+        .from('organization_members')
+        .select('organization_id, status');
+      const counts = new Map<string, number>();
+      (members ?? []).forEach((m: any) => {
+        if (m.status === 'active') {
+          counts.set(m.organization_id, (counts.get(m.organization_id) ?? 0) + 1);
+        }
+      });
+      return orgsList.map(o => ({ ...o, member_count: counts.get(o.id) ?? 0 }));
     },
   });
 
@@ -294,6 +305,7 @@ export default function SuperadminOrganizations() {
               <th className="px-4 py-3 text-left font-medium">Slug</th>
               <th className="px-4 py-3 text-left font-medium">Comuna</th>
               <th className="px-4 py-3 text-left font-medium">Región</th>
+              <th className="px-4 py-3 text-left font-medium">Usuarios</th>
               <th className="px-4 py-3 text-left font-medium">Estado</th>
               <th className="px-4 py-3 text-right font-medium">Acciones</th>
             </tr>
@@ -301,7 +313,7 @@ export default function SuperadminOrganizations() {
           <tbody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                <tr key={i}><td colSpan={8} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
               ))
             ) : (
               filtered.flatMap((o: any) => {
@@ -316,6 +328,11 @@ export default function SuperadminOrganizations() {
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{o.slug}</td>
                     <td className="px-4 py-3 text-muted-foreground">{o.commune ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{o.region ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className="gap-1">
+                        <Users className="h-3 w-3" /> {o.member_count ?? 0}
+                      </Badge>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold ${st.color}`}>{st.label}</span>
                     </td>
