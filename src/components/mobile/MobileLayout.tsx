@@ -1,13 +1,22 @@
 import { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import MobileBottomNav from './MobileBottomNav';
-import { Shield } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export default function MobileLayout({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
+  const { signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isMapRoute = location.pathname === '/mobile/map';
+
+  const handleSignOut = async () => {
+    if (!confirm('¿Cerrar sesión?')) return;
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden">
