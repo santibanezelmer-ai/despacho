@@ -283,6 +283,10 @@ export default function AdminPanel() {
       </p>
 
       <div className="border-t border-border pt-6">
+        <InvitationsAdmin />
+      </div>
+
+      <div className="border-t border-border pt-6">
         <RanksAdmin />
       </div>
 
