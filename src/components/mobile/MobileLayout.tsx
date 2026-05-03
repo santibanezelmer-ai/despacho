@@ -1,13 +1,22 @@
 import { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import MobileBottomNav from './MobileBottomNav';
-import { Shield } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export default function MobileLayout({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
+  const { signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isMapRoute = location.pathname === '/mobile/map';
+
+  const handleSignOut = async () => {
+    if (!confirm('¿Cerrar sesión?')) return;
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden">
@@ -24,7 +33,17 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
             )}
           </div>
         </div>
-        <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" title="Conectado" />
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" title="Conectado" />
+          <button
+            type="button"
+            onClick={handleSignOut}
+            aria-label="Cerrar sesión"
+            className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 active:text-foreground transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       {/* Content — no scroll for map route so Leaflet gets full height */}
