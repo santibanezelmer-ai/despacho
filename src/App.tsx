@@ -209,6 +209,7 @@ const App = () => (
               <UserWatermark />
               <Routes>
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/invite/:token" element={<AcceptInvitation />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>
             </OrganizationProvider>
