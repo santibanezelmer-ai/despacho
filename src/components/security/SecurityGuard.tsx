@@ -12,7 +12,7 @@ import { useLocation } from "react-router-dom";
  * Real protection lives in the backend (RLS, edge functions, secrets).
  */
 
-const PUBLIC_ROUTES = ["/landing", "/login", "/register", "/reset-password", "/pending"];
+const PUBLIC_ROUTES = ["/landing", "/login", "/register", "/reset-password", "/pending", "/invite"];
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
