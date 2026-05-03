@@ -12,6 +12,7 @@ import type { Database } from '@/integrations/supabase/types';
 import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 import RanksAdmin from '@/components/admin/RanksAdmin';
 import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
+import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -280,6 +281,10 @@ export default function AdminPanel() {
         <Shield className="inline h-3 w-3 mr-1" />
         Haz clic en un rol para quitarlo. Los cambios se aplican inmediatamente.
       </p>
+
+      <div className="border-t border-border pt-6">
+        <InvitationsAdmin />
+      </div>
 
       <div className="border-t border-border pt-6">
         <RanksAdmin />

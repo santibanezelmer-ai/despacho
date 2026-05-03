@@ -12,6 +12,7 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterOrganization from "@/pages/RegisterOrganization";
 import PendingApproval from "@/pages/PendingApproval";
 import ResetPassword from "@/pages/ResetPassword";
+import AcceptInvitation from "@/pages/AcceptInvitation";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
 import EmergencyHistory from "@/pages/EmergencyHistory";
@@ -208,6 +209,7 @@ const App = () => (
               <UserWatermark />
               <Routes>
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/invite/:token" element={<AcceptInvitation />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>
             </OrganizationProvider>
