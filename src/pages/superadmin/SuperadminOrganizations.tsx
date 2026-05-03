@@ -147,7 +147,18 @@ export default function SuperadminOrganizations() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as any[];
+      const orgsList = (data ?? []) as any[];
+      // Fetch member counts per org (active members only)
+      const { data: members } = await (supabase as any)
+        .from('organization_members')
+        .select('organization_id, status');
+      const counts = new Map<string, number>();
+      (members ?? []).forEach((m: any) => {
+        if (m.status === 'active') {
+          counts.set(m.organization_id, (counts.get(m.organization_id) ?? 0) + 1);
+        }
+      });
+      return orgsList.map(o => ({ ...o, member_count: counts.get(o.id) ?? 0 }));
     },
   });
 
