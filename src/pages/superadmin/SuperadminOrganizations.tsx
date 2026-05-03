@@ -305,6 +305,7 @@ export default function SuperadminOrganizations() {
               <th className="px-4 py-3 text-left font-medium">Slug</th>
               <th className="px-4 py-3 text-left font-medium">Comuna</th>
               <th className="px-4 py-3 text-left font-medium">Región</th>
+              <th className="px-4 py-3 text-left font-medium">Usuarios</th>
               <th className="px-4 py-3 text-left font-medium">Estado</th>
               <th className="px-4 py-3 text-right font-medium">Acciones</th>
             </tr>
