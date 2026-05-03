@@ -33,7 +33,17 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
             )}
           </div>
         </div>
-        <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" title="Conectado" />
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" title="Conectado" />
+          <button
+            type="button"
+            onClick={handleSignOut}
+            aria-label="Cerrar sesión"
+            className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 active:text-foreground transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       {/* Content — no scroll for map route so Leaflet gets full height */}
