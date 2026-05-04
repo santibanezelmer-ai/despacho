@@ -176,7 +176,9 @@ export async function registerForPushNotifications(options: { force?: boolean; s
     }
     if (permStatus.receive !== 'granted') {
       console.warn(`[Push] Permission denied: ${permStatus.receive}`);
-      toast.error('Permisos de notificación denegados');
+      if (!silent) {
+        toast.error('Permisos de notificación denegados');
+      }
       return null;
     }
     console.log('[Push] Permissions granted');

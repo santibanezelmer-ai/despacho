@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearNativeAuthSession, persistNativeAuthSession, restoreNativeAuthSession } from '@/services/nativeAuthStorage';
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const authBootstrappedRef = useRef(false);
 
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase.rpc('get_user_roles', { _user_id: userId });
@@ -42,10 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      void persistNativeAuthSession(session ?? null);
+
+      if (session) {
+        void persistNativeAuthSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        void clearNativeAuthSession();
+      }
+
       if (session?.user) {
         setTimeout(() => {
           fetchRoles(session.user.id);
@@ -55,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRoles([]);
         setIsSuperadmin(false);
       }
+
+      authBootstrappedRef.current = true;
       setLoading(false);
     });
 
@@ -65,12 +74,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session = await restoreNativeAuthSession();
       }
 
+      if (session) {
+        await persistNativeAuthSession(session);
+      } else if (!authBootstrappedRef.current) {
+        console.warn('[Auth] No active session found during bootstrap');
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchRoles(session.user.id);
         fetchSuperadmin(session.user.id);
       }
+      authBootstrappedRef.current = true;
       setLoading(false);
     })();
 
