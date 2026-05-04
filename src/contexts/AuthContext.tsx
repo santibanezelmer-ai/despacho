@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { clearNativeAuthSession, persistNativeAuthSession, restoreNativeAuthSession } from '@/services/nativeAuthStorage';
 
 type AppRole = 'admin' | 'operador' | 'oficial' | 'visor';
 
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      void persistNativeAuthSession(session ?? null);
       if (session?.user) {
         setTimeout(() => {
           fetchRoles(session.user.id);
@@ -56,7 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (async () => {
+      let { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        session = await restoreNativeAuthSession();
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -64,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchSuperadmin(session.user.id);
       }
       setLoading(false);
-    });
+    })();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -85,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    await clearNativeAuthSession();
     setRoles([]);
     setIsSuperadmin(false);
   };
