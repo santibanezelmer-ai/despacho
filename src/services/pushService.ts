@@ -61,6 +61,15 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
 
     if (!membership?.organization_id) { console.warn('[Push] No org membership'); return; }
 
+    // Limpia tokens viejos del mismo usuario+plataforma para evitar zombies
+    const { error: delError } = await (supabase as any)
+      .from('device_tokens')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('platform', platform)
+      .neq('token', token);
+    if (delError) console.warn('[Push] Could not clean stale tokens:', delError.message);
+
     const { error } = await (supabase as any)
       .from('device_tokens')
       .upsert({
@@ -73,7 +82,7 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
       }, { onConflict: 'token' });
 
     if (error) console.error('[Push] DB error saving token:', error.message);
-    else console.log('[Push] Token saved OK');
+    else console.log('[Push] Token saved OK (stale cleaned)');
   } catch (err: any) {
     console.error('[Push] saveToken exception:', err?.message || err);
   }
