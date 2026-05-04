@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { supabase } from '@/integrations/supabase/client';
 import { registerForPushNotifications, setupPushListeners, removePushListeners } from '@/services/pushService';
+import { restoreNativeAuthSession } from '@/services/nativeAuthStorage';
 
 export function usePushNotifications() {
   const navigate = useNavigate();
@@ -19,7 +20,10 @@ export function usePushNotifications() {
     setupPushListeners(navigate);
 
     const syncRegistration = async (force = false, silent = true) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        session = await restoreNativeAuthSession();
+      }
       if (!session?.user) return;
       await registerForPushNotifications({ force, silent });
     };
