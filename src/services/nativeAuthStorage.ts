@@ -53,7 +53,6 @@ export async function restoreNativeAuthSession(): Promise<Session | null> {
 
     if (error) {
       console.warn('[Auth] Native session restore failed:', error.message);
-      await clearNativeAuthSession();
       return null;
     }
 
