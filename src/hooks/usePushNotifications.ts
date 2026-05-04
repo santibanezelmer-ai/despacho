@@ -26,7 +26,7 @@ export function usePushNotifications() {
 
     syncRegistration(false, false);
 
-    const { data: authSubscription } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) void syncRegistration(false, true);
       }
@@ -37,7 +37,7 @@ export function usePushNotifications() {
     });
 
     return () => {
-      authSubscription.subscription.unsubscribe();
+      subscription.unsubscribe();
       void appStateListener.then((listener) => listener.remove());
       removePushListeners();
       initialized.current = false;
