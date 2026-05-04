@@ -329,8 +329,8 @@ Deno.serve(async (req: Request) => {
             emergency_id,
             user_id,
             device_token: token,
-            status: dead ? 'unregistered' : 'failed',
-            error_message: resText.slice(0, 500),
+            status: 'failed',
+            error_message: `${dead ? '[UNREGISTERED] ' : ''}${resText}`.slice(0, 500),
           });
         }
       } catch (e: any) {

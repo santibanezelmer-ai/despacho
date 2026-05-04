@@ -14,9 +14,27 @@ export interface PushPayload {
 }
 
 const CHANNEL_ID = 'emergency_alerts';
-let registrationAttempted = false;
 let channelCreated = false;
 let listenersSetup = false;
+let registrationListenersSetup = false;
+let registrationInFlight: Promise<string | null> | null = null;
+let registrationTimeout: ReturnType<typeof setTimeout> | null = null;
+let pendingRegistrationResolve: ((value: string | null) => void) | null = null;
+let pendingRegistrationSilent = false;
+let lastRegisteredToken: string | null = null;
+
+function finishRegistration(value: string | null) {
+  if (registrationTimeout) {
+    clearTimeout(registrationTimeout);
+    registrationTimeout = null;
+  }
+
+  const resolve = pendingRegistrationResolve;
+  pendingRegistrationResolve = null;
+  pendingRegistrationSilent = false;
+  registrationInFlight = null;
+  resolve?.(value);
+}
 
 /* ── Android notification channel ── */
 
@@ -45,11 +63,14 @@ async function ensureNotificationChannel(): Promise<void> {
 
 /* ── Save FCM token ── */
 
-async function saveTokenToSupabase(token: string, platform: string): Promise<void> {
+async function saveTokenToSupabase(token: string, platform: string): Promise<boolean> {
   console.log('[Push] Saving token…');
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { console.warn('[Push] No user session'); return; }
+    if (!user) {
+      console.warn('[Push] No user session; token not saved');
+      return false;
+    }
 
     const { data: membership } = await (supabase as any)
       .from('organization_members')
@@ -59,7 +80,10 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
       .limit(1)
       .maybeSingle();
 
-    if (!membership?.organization_id) { console.warn('[Push] No org membership'); return; }
+    if (!membership?.organization_id) {
+      console.warn('[Push] No org membership; token not saved');
+      return false;
+    }
 
     // Limpia tokens viejos del mismo usuario+plataforma para evitar zombies
     const { error: delError } = await (supabase as any)
@@ -81,24 +105,59 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<voi
         updated_at: new Date().toISOString(),
       }, { onConflict: 'token' });
 
-    if (error) console.error('[Push] DB error saving token:', error.message);
-    else console.log('[Push] Token saved OK (stale cleaned)');
+    if (error) {
+      console.error('[Push] DB error saving token:', error.message);
+      return false;
+    }
+
+    console.log(`[Push] Token saved OK for user=${user.id} org=${membership.organization_id}`);
+    return true;
   } catch (err: any) {
     console.error('[Push] saveToken exception:', err?.message || err);
+    return false;
   }
+}
+
+function setupRegistrationListeners(): void {
+  if (!Capacitor.isNativePlatform() || registrationListenersSetup) return;
+  registrationListenersSetup = true;
+
+  PushNotifications.addListener('registration', async (tokenData) => {
+    lastRegisteredToken = tokenData.value;
+    console.log(`[Push] Token: ${tokenData.value.slice(0, 20)}…`);
+
+    const saved = await saveTokenToSupabase(tokenData.value, Capacitor.getPlatform());
+    if (saved && !pendingRegistrationSilent) {
+      toast.success('Notificaciones activadas');
+    }
+
+    finishRegistration(tokenData.value);
+  });
+
+  PushNotifications.addListener('registrationError', (err) => {
+    console.error('[Push] Registration error:', err);
+    if (!pendingRegistrationSilent) {
+      toast.error('Error al registrar notificaciones');
+    }
+    finishRegistration(null);
+  });
 }
 
 /* ── Registration ── */
 
-export async function registerForPushNotifications(): Promise<string | null> {
-  console.log('[Push] Init start');
-  if (registrationAttempted) return null;
-  registrationAttempted = true;
-
+export async function registerForPushNotifications(options: { force?: boolean; silent?: boolean } = {}): Promise<string | null> {
+  const { force = false, silent = false } = options;
+  console.log(`[Push] Init start force=${force} silent=${silent}`);
   const isNative = Capacitor.isNativePlatform();
   const platform = Capacitor.getPlatform();
   console.log(`[Push] platform=${platform} native=${isNative}`);
   if (!isNative) return null;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) {
+    console.warn('[Push] Skipping registration: no authenticated session yet');
+    return null;
+  }
 
   await ensureNotificationChannel();
 
@@ -122,29 +181,30 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
     console.log('[Push] Permissions granted');
 
-    const tokenPromise = new Promise<string | null>((resolve) => {
-      const timeout = setTimeout(() => { console.warn('[Push] Token timeout 15s'); resolve(null); }, 15000);
+    setupRegistrationListeners();
 
-      PushNotifications.addListener('registration', async (tokenData) => {
-        clearTimeout(timeout);
-        console.log(`[Push] Token: ${tokenData.value.slice(0, 20)}…`);
-        await saveTokenToSupabase(tokenData.value, platform);
-        toast.success('Notificaciones activadas');
-        resolve(tokenData.value);
-      });
+    if (!force && lastRegisteredToken) {
+      console.log('[Push] Reusing token already obtained in this session');
+      await saveTokenToSupabase(lastRegisteredToken, platform);
+      return lastRegisteredToken;
+    }
 
-      PushNotifications.addListener('registrationError', (err) => {
-        clearTimeout(timeout);
-        console.error('[Push] Registration error:', err);
-        toast.error('Error al registrar notificaciones');
-        resolve(null);
-      });
+    if (registrationInFlight) return registrationInFlight;
+
+    pendingRegistrationSilent = silent;
+    registrationInFlight = new Promise<string | null>((resolve) => {
+      pendingRegistrationResolve = resolve;
+      registrationTimeout = setTimeout(() => {
+        console.warn('[Push] Token timeout 15s');
+        finishRegistration(lastRegisteredToken);
+      }, 15000);
     });
 
     await PushNotifications.register();
-    return await tokenPromise;
+    return await registrationInFlight;
   } catch (err: any) {
     console.error('[Push] Exception:', err?.message || err);
+    finishRegistration(null);
     return null;
   }
 }
@@ -242,6 +302,8 @@ export function removePushListeners(): void {
   PushNotifications.removeAllListeners();
   LocalNotifications.removeAllListeners();
   listenersSetup = false;
+  registrationListenersSetup = false;
+  finishRegistration(null);
 }
 
 /* ── Helpers ── */
