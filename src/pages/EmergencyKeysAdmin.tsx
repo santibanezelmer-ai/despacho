@@ -64,8 +64,9 @@ export default function EmergencyKeysAdmin() {
     if (!file) return;
     setUploading(true);
     try {
+      if (!orgId) throw new Error('Organización no disponible');
       const ext = file.name.split('.').pop();
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const path = `${orgId}/keys/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from('tones').upload(path, file);
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from('tones').getPublicUrl(path);
