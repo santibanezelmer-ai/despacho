@@ -11,18 +11,19 @@ import { toast } from 'sonner';
 import { Mail, Copy, Trash2, Send, UserPlus } from 'lucide-react';
 import { z } from 'zod';
 
-type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor';
+type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
 const ROLE_LABELS: Record<OrgRole, string> = {
   admin: 'Administrador',
   operador: 'Operador',
   oficial: 'Oficial',
   visor: 'Visor',
+  voluntario: 'Voluntario (PWA)',
 };
 
 const inviteSchema = z.object({
   email: z.string().trim().email('Email inválido').max(255),
-  role: z.enum(['admin', 'operador', 'oficial', 'visor']),
+  role: z.enum(['admin', 'operador', 'oficial', 'visor', 'voluntario']),
 });
 
 export default function InvitationsAdmin() {
@@ -142,7 +143,7 @@ export default function InvitationsAdmin() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {(['admin', 'operador', 'oficial', 'visor'] as OrgRole[]).map(r => (
+            {(['admin', 'operador', 'oficial', 'visor', 'voluntario'] as OrgRole[]).map(r => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
