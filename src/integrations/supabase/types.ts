@@ -1415,7 +1415,7 @@ export type Database = {
         | "en_cuartel"
       invitation_status: "pending" | "accepted" | "expired" | "cancelled"
       org_member_status: "active" | "invited" | "suspended"
-      org_role: "admin" | "operador" | "oficial" | "visor"
+      org_role: "admin" | "operador" | "oficial" | "visor" | "voluntario"
       org_status: "pending" | "active" | "suspended" | "rejected"
       request_status: "pending" | "approved" | "rejected"
       vehicle_status:
@@ -1562,7 +1562,7 @@ export const Constants = {
       ],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
       org_member_status: ["active", "invited", "suspended"],
-      org_role: ["admin", "operador", "oficial", "visor"],
+      org_role: ["admin", "operador", "oficial", "visor", "voluntario"],
       org_status: ["pending", "active", "suspended", "rejected"],
       request_status: ["pending", "approved", "rejected"],
       vehicle_status: [
