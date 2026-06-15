@@ -45,6 +45,7 @@ import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage"
 import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
 import MobileMapPage from "@/pages/mobile/MobileMapPage";
 import OnboardingPage from "@/pages/admin/OnboardingPage";
+import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -123,6 +124,12 @@ function AppRoutes() {
         </Routes>
       </SuperadminLayout>
     );
+  }
+
+  // If user is voluntario-only (no admin/operador/oficial/visor membership), redirect to /voluntario
+  const nonVolunteerMemberships = memberships.filter(m => m.role !== 'voluntario');
+  if (memberships.length > 0 && nonVolunteerMemberships.length === 0 && !isSuperadmin) {
+    return <Navigate to="/voluntario" replace />;
   }
 
   if (memberships.length === 0 && !isSuperadmin) {
@@ -210,6 +217,7 @@ const App = () => (
               <Routes>
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/invite/:token" element={<AcceptInvitation />} />
+                <Route path="/voluntario/*" element={<VoluntarioApp />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>
             </OrganizationProvider>

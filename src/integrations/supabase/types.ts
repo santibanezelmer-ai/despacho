@@ -365,6 +365,64 @@ export type Database = {
           },
         ]
       }
+      emergency_attendance: {
+        Row: {
+          confirmed_at: string
+          created_at: string
+          emergency_id: string
+          id: string
+          organization_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          volunteer_id: string | null
+        }
+        Insert: {
+          confirmed_at?: string
+          created_at?: string
+          emergency_id: string
+          id?: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          volunteer_id?: string | null
+        }
+        Update: {
+          confirmed_at?: string
+          created_at?: string
+          emergency_id?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          volunteer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_attendance_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_attendance_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_attendance_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emergency_keys: {
         Row: {
           active: boolean
@@ -1269,14 +1327,17 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          invitation_sent_at: string | null
           name: string
           organization_id: string
           phone: string | null
+          pwa_enabled: boolean
           rank_id: string | null
           rut: string | null
           specialties: string[] | null
           status: Database["public"]["Enums"]["volunteer_status"]
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           available?: boolean
@@ -1284,14 +1345,17 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invitation_sent_at?: string | null
           name: string
           organization_id: string
           phone?: string | null
+          pwa_enabled?: boolean
           rank_id?: string | null
           rut?: string | null
           specialties?: string[] | null
           status?: Database["public"]["Enums"]["volunteer_status"]
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           available?: boolean
@@ -1299,14 +1363,17 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invitation_sent_at?: string | null
           name?: string
           organization_id?: string
           phone?: string | null
+          pwa_enabled?: boolean
           rank_id?: string | null
           rut?: string | null
           specialties?: string[] | null
           status?: Database["public"]["Enums"]["volunteer_status"]
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1385,6 +1452,7 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      is_org_volunteer: { Args: { _org_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
@@ -1415,7 +1483,7 @@ export type Database = {
         | "en_cuartel"
       invitation_status: "pending" | "accepted" | "expired" | "cancelled"
       org_member_status: "active" | "invited" | "suspended"
-      org_role: "admin" | "operador" | "oficial" | "visor"
+      org_role: "admin" | "operador" | "oficial" | "visor" | "voluntario"
       org_status: "pending" | "active" | "suspended" | "rejected"
       request_status: "pending" | "approved" | "rejected"
       vehicle_status:
@@ -1562,7 +1630,7 @@ export const Constants = {
       ],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
       org_member_status: ["active", "invited", "suspended"],
-      org_role: ["admin", "operador", "oficial", "visor"],
+      org_role: ["admin", "operador", "oficial", "visor", "voluntario"],
       org_status: ["pending", "active", "suspended", "rejected"],
       request_status: ["pending", "approved", "rejected"],
       vehicle_status: [

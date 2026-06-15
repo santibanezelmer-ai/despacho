@@ -26,7 +26,7 @@ if (import.meta.env.DEV) {
   globalThis.__ORG_CONTEXT_MODULE_ID__ = moduleId;
 }
 
-type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor';
+type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
 interface OrgMembership {
   organization_id: string;

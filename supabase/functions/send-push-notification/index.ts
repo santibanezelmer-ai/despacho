@@ -260,7 +260,9 @@ Deno.serve(async (req: Request) => {
     }> = [];
 
     for (const { id: tokenId, token, platform, user_id } of tokens!) {
-      const fcmPayload = {
+      const isWeb = platform === 'web';
+      const emergencyPath = `/voluntario/emergencia/${emergency_id}`;
+      const fcmPayload: any = {
         message: {
           token,
           notification: { title, body: body ?? '' },
@@ -269,20 +271,34 @@ Deno.serve(async (req: Request) => {
             emergency_id: String(emergency_id),
             emergencyId: String(emergency_id),
           },
-          android: {
-            priority: 'HIGH',
-            notification: {
-              channel_id: 'emergency_alerts',
-              sound: 'default',
-              default_vibrate_timings: true,
-              default_sound: true,
-              notification_priority: 'PRIORITY_MAX',
-              visibility: 'PUBLIC',
-              icon: 'ic_notification',
-            },
-          },
         },
       };
+      if (isWeb) {
+        fcmPayload.message.webpush = {
+          headers: { Urgency: 'high', TTL: '600' },
+          notification: {
+            icon: '/voluntario-icon-512.png',
+            badge: '/voluntario-icon-512.png',
+            vibrate: [400, 200, 400, 200, 400],
+            requireInteraction: true,
+            tag: `emg-${emergency_id}`,
+          },
+          fcm_options: { link: emergencyPath },
+        };
+      } else {
+        fcmPayload.message.android = {
+          priority: 'HIGH',
+          notification: {
+            channel_id: 'emergency_alerts',
+            sound: 'default',
+            default_vibrate_timings: true,
+            default_sound: true,
+            notification_priority: 'PRIORITY_MAX',
+            visibility: 'PUBLIC',
+            icon: 'ic_notification',
+          },
+        };
+      }
 
       console.log(
         `[Push] → Sending to ${platform} | tokenId=${tokenId} | token=${token.slice(0, 25)}… | user=${user_id}`,
