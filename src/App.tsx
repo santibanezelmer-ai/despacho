@@ -94,6 +94,7 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterOrganization />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/invite/:token" element={<AcceptInvitation />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
