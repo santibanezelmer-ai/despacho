@@ -27,8 +27,9 @@ export default function VoluntarioLayout({ children }: { children: React.ReactNo
 
       {!hideNav && (
         <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur safe-bottom">
-          <div className="mx-auto max-w-md grid grid-cols-3">
+          <div className="mx-auto max-w-md grid grid-cols-4">
             <Tab to="/voluntario" icon={<Siren className="h-6 w-6" />} label="Activas" exact />
+            <Tab to="/voluntario/mapa" icon={<MapIcon className="h-6 w-6" />} label="Mapa" />
             <Tab to="/voluntario/historial" icon={<Clock className="h-6 w-6" />} label="Historial" />
             <Tab to="/voluntario/perfil" icon={<User className="h-6 w-6" />} label="Perfil" />
           </div>
