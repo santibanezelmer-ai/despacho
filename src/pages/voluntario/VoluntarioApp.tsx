@@ -130,6 +130,7 @@ export default function VoluntarioApp() {
       <Routes>
         <Route index element={<VoluntarioFeed organizationId={membership.organization_id} />} />
         <Route path="historial" element={<VoluntarioHistory organizationId={membership.organization_id} />} />
+        <Route path="mapa" element={<VoluntarioMap />} />
         <Route path="perfil" element={<VoluntarioProfile organizationId={membership.organization_id} orgName={membership.org_name} />} />
         <Route path="emergencia/:id" element={<VoluntarioDetail organizationId={membership.organization_id} />} />
         <Route path="login" element={<Navigate to="/voluntario" replace />} />
