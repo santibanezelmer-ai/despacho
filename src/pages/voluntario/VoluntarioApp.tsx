@@ -10,6 +10,7 @@ import VoluntarioFeed from './VoluntarioFeed';
 import VoluntarioDetail from './VoluntarioDetail';
 import VoluntarioHistory from './VoluntarioHistory';
 import VoluntarioProfile from './VoluntarioProfile';
+import VoluntarioMap from './VoluntarioMap';
 import { listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
 import { toast } from 'sonner';
 
