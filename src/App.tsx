@@ -128,7 +128,7 @@ function AppRoutes() {
   }
 
   // If user is voluntario-only (no admin/operador/oficial/visor membership), redirect to /voluntario
-  const nonVolunteerMemberships = memberships.filter(m => m.role !== 'voluntario');
+  const nonVolunteerMemberships = memberships.filter(m => m.role !== 'voluntario' && m.role !== 'visor');
   if (memberships.length > 0 && nonVolunteerMemberships.length === 0 && !isSuperadmin) {
     return <Navigate to="/voluntario" replace />;
   }
