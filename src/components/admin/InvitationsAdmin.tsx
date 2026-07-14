@@ -17,7 +17,7 @@ const ROLE_LABELS: Record<OrgRole, string> = {
   admin: 'Administrador',
   operador: 'Operador',
   oficial: 'Oficial',
-  visor: 'Visor',
+  visor: 'Voluntario (PWA)',
   voluntario: 'Voluntario (PWA)',
 };
 
@@ -30,7 +30,7 @@ export default function InvitationsAdmin() {
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<OrgRole>('visor');
+  const [role, setRole] = useState<OrgRole>('voluntario');
 
   const { data: invitations, isLoading } = useQuery({
     queryKey: ['org-invitations', orgId],
