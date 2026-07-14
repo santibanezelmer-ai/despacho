@@ -143,7 +143,7 @@ export default function InvitationsAdmin() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {(['admin', 'operador', 'oficial', 'visor', 'voluntario'] as OrgRole[]).map(r => (
+            {(['admin', 'operador', 'oficial', 'voluntario'] as OrgRole[]).map(r => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
