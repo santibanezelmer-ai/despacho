@@ -17,7 +17,7 @@ const ROLE_LABELS: Record<OrgRole, string> = {
   admin: 'Administrador',
   operador: 'Operador',
   oficial: 'Oficial',
-  visor: 'Visor',
+  visor: 'Voluntario (PWA)',
   voluntario: 'Voluntario (PWA)',
 };
 
@@ -30,7 +30,7 @@ export default function InvitationsAdmin() {
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<OrgRole>('visor');
+  const [role, setRole] = useState<OrgRole>('voluntario');
 
   const { data: invitations, isLoading } = useQuery({
     queryKey: ['org-invitations', orgId],
@@ -143,7 +143,7 @@ export default function InvitationsAdmin() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {(['admin', 'operador', 'oficial', 'visor', 'voluntario'] as OrgRole[]).map(r => (
+            {(['admin', 'operador', 'oficial', 'voluntario'] as OrgRole[]).map(r => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
