@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Bell, Clock, User, Siren } from 'lucide-react';
+import { Bell, Clock, User, Siren, Map as MapIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 
