@@ -39,7 +39,7 @@ export default function VoluntarioApp() {
         .select('organization_id, role, status, organizations(id, name, status)')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .eq('role', 'voluntario');
+        .in('role', ['voluntario', 'visor']);
 
       if (err) { setError(err.message); setChecking(false); return; }
       if (!data?.length) {
