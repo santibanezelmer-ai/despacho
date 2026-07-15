@@ -55,20 +55,35 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 export async function registerVolunteerPush(organizationId: string, userId: string): Promise<string | null> {
+  if (!isSupported()) {
+    console.warn('[FCM Web] Not supported in this browser (missing SW / Notification / PushManager).');
+    return null;
+  }
   const m = getMessagingInstance();
-  if (!m || !VAPID_KEY) return null;
+  if (!m || !VAPID_KEY) {
+    console.warn('[FCM Web] Messaging instance unavailable.');
+    return null;
+  }
 
   const perm = await requestNotificationPermission();
+  console.log('[FCM Web] Notification permission:', perm);
   if (perm !== 'granted') return null;
 
   const swReg = await ensureServiceWorker();
-  if (!swReg) return null;
+  if (!swReg) {
+    console.error('[FCM Web] Service worker registration failed.');
+    return null;
+  }
 
   try {
     const token = await getToken(m, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-    if (!token) return null;
+    if (!token) {
+      console.error('[FCM Web] getToken returned empty. Check that a Web App is registered in Firebase Console for project operix-dispatch and that apiKey/appId are the WEB values (not Android).');
+      return null;
+    }
+    console.log('[FCM Web] ✓ Token obtained:', token.slice(0, 25) + '…');
 
-    await (supabase as any).from('device_tokens').upsert(
+    const { error } = await (supabase as any).from('device_tokens').upsert(
       {
         user_id: userId,
         organization_id: organizationId,
@@ -78,10 +93,12 @@ export async function registerVolunteerPush(organizationId: string, userId: stri
       },
       { onConflict: 'token' },
     );
+    if (error) console.error('[FCM Web] device_tokens upsert failed:', error.message);
+    else console.log('[FCM Web] ✓ Token stored for user', userId);
 
     return token;
-  } catch (e) {
-    console.error('[FCM Web] getToken failed', e);
+  } catch (e: any) {
+    console.error('[FCM Web] getToken failed:', e?.message || e);
     return null;
   }
 }
