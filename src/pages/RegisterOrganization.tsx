@@ -28,25 +28,40 @@ export default function RegisterOrganization() {
       const { error: signUpError } = await signUp(form.email, form.password, form.name);
       if (signUpError) throw signUpError;
 
-      // Try to submit org request - will work if auto-confirm is on
-      // If email confirmation is needed, user can submit after confirming
-      try {
-        await (supabase as any).from('organization_requests').insert({
-          organization_name: form.orgName,
-          applicant_name: form.name,
-          applicant_email: form.email,
-          phone: form.phone || null,
-          commune: form.commune || null,
-          region: form.region || null,
-          message: form.message || null,
+      // Try to get session (works if auto-confirm is on). If email confirmation is required,
+      // sign in explicitly to obtain a session so RLS lets us insert the request.
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email: form.email,
+          password: form.password,
         });
-      } catch {
-        // Request will be created after email confirmation
+        session = signInData?.session ?? null;
       }
+
+      if (!session?.user) {
+        // Email confirmation flow: user must confirm first, then request will be created on next login.
+        toast.info('Revisa tu correo para confirmar tu cuenta antes de continuar.');
+        setStep('success');
+        return;
+      }
+
+      const { error: reqError } = await (supabase as any).from('organization_requests').insert({
+        user_id: session.user.id,
+        organization_name: form.orgName,
+        applicant_name: form.name,
+        applicant_email: form.email,
+        phone: form.phone || null,
+        commune: form.commune || null,
+        region: form.region || null,
+        message: form.message || null,
+      });
+      if (reqError) throw reqError;
 
       setStep('success');
     } catch (err: any) {
-      toast.error(err.message || 'Error al registrar');
+      console.error('[RegisterOrg] Error:', err);
+      toast.error(err?.message || 'Error al registrar la organización');
     } finally {
       setLoading(false);
     }
