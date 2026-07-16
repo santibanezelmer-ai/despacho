@@ -4,12 +4,12 @@ import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/mess
 import { supabase } from '@/integrations/supabase/client';
 
 const firebaseConfig = {
-  apiKey: 'WnlBXg-R1gEVhJpLFsaEXeFLhDZym-XY2JMzO44q0f8',
+  apiKey: 'AIzaSyAXYx-peJdXuuGd_byQvtWJqLRYuJ7ZAKk',
   authDomain: 'operix-dispatch.firebaseapp.com',
   projectId: 'operix-dispatch',
   storageBucket: 'operix-dispatch.firebasestorage.app',
   messagingSenderId: '153774218499',
-  appId: '1:153774218499:android:5295e50178f48686a61d36',
+  appId: '1:153774218499:web:60b0c200ec2e5957a61d36',
 };
 
 const VAPID_KEY = 'BMQbEtdZaI13l21Czf-WTTDGUGb3JfDdHi_5kUTQG_-ZcwjFYr4ucBZpKzQM5NgHCzb8Yk1yMgsROwpIJChKjlQ';
