@@ -14,12 +14,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-com
 // Hardcoded duplicate here because the SW cannot read import.meta.env.
 // These values are publishable (project-id + messagingSenderId + appId).
 const FIREBASE_CONFIG = {
-  apiKey: 'WnlBXg-R1gEVhJpLFsaEXeFLhDZym-XY2JMzO44q0f8',
+  apiKey: 'AIzaSyAXYx-peJdXuuGd_byQvtWJqLRYuJ7ZAKk',
   authDomain: 'operix-dispatch.firebaseapp.com',
   projectId: 'operix-dispatch',
   storageBucket: 'operix-dispatch.firebasestorage.app',
   messagingSenderId: '153774218499',
-  appId: '1:153774218499:android:5295e50178f48686a61d36',
+  appId: '1:153774218499:web:60b0c200ec2e5957a61d36',
 };
 
 try {
