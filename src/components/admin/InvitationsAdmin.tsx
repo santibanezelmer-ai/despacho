@@ -52,25 +52,26 @@ export default function InvitationsAdmin() {
       const parsed = inviteSchema.safeParse({ email, role });
       if (!parsed.success) throw new Error(parsed.error.errors[0].message);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await (supabase as any)
-        .from('organization_invitations')
-        .insert({
+      const { data, error } = await supabase.functions.invoke('send-invitation', {
+        body: {
           organization_id: orgId,
-          email: parsed.data.email.toLowerCase(),
+          email: parsed.data.email,
           role: parsed.data.role,
-          invited_by: user?.id,
-        })
-        .select()
-        .single();
-      if (error) throw error;
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
       return data;
     },
-    onSuccess: (inv: any) => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
-      const url = `${window.location.origin}/invite/${inv.token}`;
-      navigator.clipboard?.writeText(url).catch(() => {});
-      toast.success('Invitación creada y link copiado al portapapeles');
+      const url = res?.invite_url;
+      if (url) navigator.clipboard?.writeText(url).catch(() => {});
+      if (res?.email_sent) {
+        toast.success('Invitación enviada por email · link copiado');
+      } else {
+        toast.warning(res?.warning ?? 'Invitación creada — envía el link manualmente');
+      }
       setEmail('');
     },
     onError: (e: Error) => toast.error(e.message),
