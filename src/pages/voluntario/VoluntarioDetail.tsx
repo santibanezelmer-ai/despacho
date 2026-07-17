@@ -46,6 +46,20 @@ export default function VoluntarioDetail({ organizationId }: Props) {
     enabled: !!user && !!id,
   });
 
+  const { data: vehicles } = useQuery({
+    queryKey: ['vol-emg-vehicles', id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('emergency_vehicles')
+        .select('id, status, vehicles(code, type)')
+        .eq('emergency_id', id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!id,
+    refetchInterval: 15_000,
+  });
+
   const confirm = async (status: 'going' | 'not_going') => {
     if (!user || !id || !emg) return;
     setSaving(true);
