@@ -13,7 +13,8 @@ export default function VoluntarioHistory({ organizationId }: Props) {
         .from('emergencies')
         .select('id, folio, address, status, created_at, finished_at, emergency_keys(code, name, color)')
         .eq('organization_id', organizationId)
-        .order('created_at', { ascending: false })
+        .eq('status', 'finalizada')
+        .order('finished_at', { ascending: false, nullsFirst: false })
         .limit(100);
       if (error) throw error;
       return data;
@@ -22,11 +23,12 @@ export default function VoluntarioHistory({ organizationId }: Props) {
 
   return (
     <div className="px-4 py-4 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold text-foreground mb-4">Historial</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-1">Historial</h1>
+      <p className="text-xs text-muted-foreground mb-4">Emergencias finalizadas</p>
       {isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>
       ) : !data?.length ? (
-        <p className="text-center text-muted-foreground text-sm py-10">Sin registros.</p>
+        <p className="text-center text-muted-foreground text-sm py-10">Sin emergencias finalizadas.</p>
       ) : (
         <ul className="space-y-2">
           {data.map((e: any) => (
@@ -41,7 +43,7 @@ export default function VoluntarioHistory({ organizationId }: Props) {
                   <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                     <MapPin className="h-3 w-3" />{e.address}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{e.folio} · {new Date(e.created_at).toLocaleDateString('es-CL')}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{e.folio} · {new Date(e.finished_at || e.created_at).toLocaleDateString('es-CL')}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Link>
