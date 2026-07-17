@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useState } from 'react';
