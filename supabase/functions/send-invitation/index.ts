@@ -37,8 +37,11 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: parsed.error.errors[0].message }, 400);
-    const { organization_id, role } = parsed.data;
+    const { organization_id, role, expires_in_days } = parsed.data;
     const email = parsed.data.email.toLowerCase().trim();
+    const ttlDays = expires_in_days ?? 7;
+    const newExpiresAt = new Date(Date.now() + ttlDays * 24 * 3600 * 1000).toISOString();
+    const nowIso = new Date().toISOString();
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
