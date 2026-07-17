@@ -10,6 +10,8 @@ const BodySchema = z.object({
   organization_id: z.string().uuid(),
   email: z.string().email().max(255),
   role: z.enum(['admin', 'operador', 'oficial', 'visor', 'voluntario']),
+  expires_in_days: z.number().int().min(1).max(90).optional(),
+  resend: z.boolean().optional(),
 });
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
