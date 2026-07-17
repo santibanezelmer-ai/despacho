@@ -90,7 +90,10 @@ Deno.serve(async (req) => {
         .update({
           role,
           invited_by: caller.id,
-          expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+          expires_at: newExpiresAt,
+          last_sent_at: nowIso,
+          resend_count: (invitation.resend_count ?? 0) + 1,
+          status: 'pending',
         })
         .eq('id', invitation.id)
         .select()
@@ -100,7 +103,10 @@ Deno.serve(async (req) => {
     } else {
       const { data: ins, error: insErr } = await admin
         .from('organization_invitations')
-        .insert({ organization_id, email, role, invited_by: caller.id })
+        .insert({
+          organization_id, email, role, invited_by: caller.id,
+          expires_at: newExpiresAt, last_sent_at: nowIso, resend_count: 0,
+        })
         .select()
         .single();
       if (insErr) return json({ error: insErr.message }, 500);
