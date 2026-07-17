@@ -816,7 +816,9 @@ export type Database = {
           expires_at: string
           id: string
           invited_by: string | null
+          last_sent_at: string | null
           organization_id: string
+          resend_count: number
           role: Database["public"]["Enums"]["org_role"]
           status: Database["public"]["Enums"]["invitation_status"]
           token: string
@@ -828,7 +830,9 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string | null
+          last_sent_at?: string | null
           organization_id: string
+          resend_count?: number
           role?: Database["public"]["Enums"]["org_role"]
           status?: Database["public"]["Enums"]["invitation_status"]
           token?: string
@@ -840,7 +844,9 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string | null
+          last_sent_at?: string | null
           organization_id?: string
+          resend_count?: number
           role?: Database["public"]["Enums"]["org_role"]
           status?: Database["public"]["Enums"]["invitation_status"]
           token?: string
