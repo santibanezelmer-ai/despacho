@@ -131,6 +131,29 @@ export default function VoluntarioDetail({ organizationId }: Props) {
           {emg.finished_at && <Row k="Finalizada" v={fmt(emg.finished_at)} />}
         </Section>
 
+        <Section icon={<Truck className="h-4 w-4" />} label={`Móviles asignados${vehicles?.length ? ` (${vehicles.length})` : ''}`}>
+          {!vehicles?.length ? (
+            <p className="text-xs text-muted-foreground">Sin móviles asignados aún.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {vehicles.map((v: any) => (
+                <li key={v.id} className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-foreground">{v.vehicles?.code ?? '—'}</span>
+                  <span className="flex items-center gap-2">
+                    {v.vehicles?.type && <span className="text-xs text-muted-foreground">{v.vehicles.type}</span>}
+                    {v.status && (
+                      <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                        {v.status}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+
         {emg.observations && (
           <Section icon={<FileText className="h-4 w-4" />} label="Observaciones">
             <p className="text-foreground whitespace-pre-wrap text-sm">{emg.observations}</p>
