@@ -10,6 +10,8 @@ const BodySchema = z.object({
   organization_id: z.string().uuid(),
   email: z.string().email().max(255),
   role: z.enum(['admin', 'operador', 'oficial', 'visor', 'voluntario']),
+  expires_in_days: z.number().int().min(1).max(90).optional(),
+  resend: z.boolean().optional(),
 });
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -35,8 +37,11 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: parsed.error.errors[0].message }, 400);
-    const { organization_id, role } = parsed.data;
+    const { organization_id, role, expires_in_days } = parsed.data;
     const email = parsed.data.email.toLowerCase().trim();
+    const ttlDays = expires_in_days ?? 7;
+    const newExpiresAt = new Date(Date.now() + ttlDays * 24 * 3600 * 1000).toISOString();
+    const nowIso = new Date().toISOString();
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -85,7 +90,10 @@ Deno.serve(async (req) => {
         .update({
           role,
           invited_by: caller.id,
-          expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+          expires_at: newExpiresAt,
+          last_sent_at: nowIso,
+          resend_count: (invitation.resend_count ?? 0) + 1,
+          status: 'pending',
         })
         .eq('id', invitation.id)
         .select()
@@ -95,7 +103,10 @@ Deno.serve(async (req) => {
     } else {
       const { data: ins, error: insErr } = await admin
         .from('organization_invitations')
-        .insert({ organization_id, email, role, invited_by: caller.id })
+        .insert({
+          organization_id, email, role, invited_by: caller.id,
+          expires_at: newExpiresAt, last_sent_at: nowIso, resend_count: 0,
+        })
         .select()
         .single();
       if (insErr) return json({ error: insErr.message }, 500);

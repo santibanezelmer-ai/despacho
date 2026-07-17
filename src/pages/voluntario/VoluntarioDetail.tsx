@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -44,6 +44,20 @@ export default function VoluntarioDetail({ organizationId }: Props) {
       return data;
     },
     enabled: !!user && !!id,
+  });
+
+  const { data: vehicles } = useQuery({
+    queryKey: ['vol-emg-vehicles', id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('emergency_vehicles')
+        .select('id, status, vehicles(code, type)')
+        .eq('emergency_id', id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!id,
+    refetchInterval: 15_000,
   });
 
   const confirm = async (status: 'going' | 'not_going') => {
@@ -116,6 +130,29 @@ export default function VoluntarioDetail({ organizationId }: Props) {
           {emg.controlled_at && <Row k="Controlada" v={fmt(emg.controlled_at)} />}
           {emg.finished_at && <Row k="Finalizada" v={fmt(emg.finished_at)} />}
         </Section>
+
+        <Section icon={<Truck className="h-4 w-4" />} label={`Móviles asignados${vehicles?.length ? ` (${vehicles.length})` : ''}`}>
+          {!vehicles?.length ? (
+            <p className="text-xs text-muted-foreground">Sin móviles asignados aún.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {vehicles.map((v: any) => (
+                <li key={v.id} className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-foreground">{v.vehicles?.code ?? '—'}</span>
+                  <span className="flex items-center gap-2">
+                    {v.vehicles?.type && <span className="text-xs text-muted-foreground">{v.vehicles.type}</span>}
+                    {v.status && (
+                      <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                        {v.status}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
 
         {emg.observations && (
           <Section icon={<FileText className="h-4 w-4" />} label="Observaciones">

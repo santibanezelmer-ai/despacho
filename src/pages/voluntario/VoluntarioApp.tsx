@@ -12,6 +12,7 @@ import VoluntarioHistory from './VoluntarioHistory';
 import VoluntarioProfile from './VoluntarioProfile';
 import VoluntarioMap from './VoluntarioMap';
 import { listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
+import { playDefaultDispatchTone } from '@/services/defaultDispatchTone';
 import { toast } from 'sonner';
 
 interface VolunteerMembership {
@@ -80,6 +81,7 @@ export default function VoluntarioApp() {
     if (!user || !membership) return;
     registerVolunteerPush(membership.organization_id, user.id).catch(() => {});
     const unsub = listenForeground((p) => {
+      playDefaultDispatchTone();
       toast(p.title || 'Nueva emergencia', {
         description: p.body,
         action: p.emergency_id

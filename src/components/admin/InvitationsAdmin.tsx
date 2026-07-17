@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Mail, Copy, Trash2, Send, UserPlus } from 'lucide-react';
+import { Mail, Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
 import { z } from 'zod';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
@@ -24,6 +24,7 @@ const ROLE_LABELS: Record<OrgRole, string> = {
 const inviteSchema = z.object({
   email: z.string().trim().email('Email inválido').max(255),
   role: z.enum(['admin', 'operador', 'oficial', 'visor', 'voluntario']),
+  expires_in_days: z.number().int().min(1).max(90),
 });
 
 export default function InvitationsAdmin() {
@@ -31,6 +32,7 @@ export default function InvitationsAdmin() {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrgRole>('voluntario');
+  const [expiresDays, setExpiresDays] = useState<number>(7);
 
   const { data: invitations, isLoading } = useQuery({
     queryKey: ['org-invitations', orgId],
@@ -47,9 +49,9 @@ export default function InvitationsAdmin() {
     enabled: !!orgId && isOrgAdmin,
   });
 
-  const createInvitation = useMutation({
-    mutationFn: async () => {
-      const parsed = inviteSchema.safeParse({ email, role });
+  const sendInvite = useMutation({
+    mutationFn: async (opts: { email: string; role: OrgRole; expires_in_days: number; resend?: boolean }) => {
+      const parsed = inviteSchema.safeParse(opts);
       if (!parsed.success) throw new Error(parsed.error.errors[0].message);
 
       const { data, error } = await supabase.functions.invoke('send-invitation', {
@@ -57,27 +59,44 @@ export default function InvitationsAdmin() {
           organization_id: orgId,
           email: parsed.data.email,
           role: parsed.data.role,
+          expires_in_days: parsed.data.expires_in_days,
+          resend: !!opts.resend,
         },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       return data;
     },
-    onSuccess: (res: any) => {
+    onSuccess: (res: any, vars) => {
       queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
       const url = res?.invite_url;
       if (url) navigator.clipboard?.writeText(url).catch(() => {});
       if (res?.email_sent) {
-        toast.success('Invitación enviada por email · link copiado');
+        toast.success(vars.resend ? 'Invitación reenviada · link copiado' : 'Invitación enviada · link copiado');
       } else {
         toast.warning(res?.warning ?? 'Invitación creada — envía el link manualmente');
       }
-      setEmail('');
+      if (!vars.resend) setEmail('');
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const revokeInvitation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from('organization_invitations')
+        .update({ status: 'revoked', expires_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
+      toast.success('Invitación revocada — el link ya no funciona');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteInvitation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any)
         .from('organization_invitations')
@@ -87,7 +106,7 @@ export default function InvitationsAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
-      toast.success('Invitación revocada');
+      toast.success('Invitación eliminada');
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -117,6 +136,12 @@ export default function InvitationsAdmin() {
       revoked: 'bg-red-500/20 text-red-400 border-red-500/30',
     };
     return map[status] ?? '';
+  };
+
+  const fmtRel = (d?: string | null) => {
+    if (!d) return '—';
+    const date = new Date(d);
+    return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -149,9 +174,21 @@ export default function InvitationsAdmin() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min={1}
+            max={90}
+            value={expiresDays}
+            onChange={e => setExpiresDays(Math.max(1, Math.min(90, Number(e.target.value) || 7)))}
+            className="w-20 bg-muted/50"
+            title="Días hasta expirar"
+          />
+          <span className="text-xs text-muted-foreground">días</span>
+        </div>
         <Button
-          onClick={() => createInvitation.mutate()}
-          disabled={!email || createInvitation.isPending}
+          onClick={() => sendInvite.mutate({ email, role, expires_in_days: expiresDays })}
+          disabled={!email || sendInvite.isPending}
         >
           <Send className="h-4 w-4 mr-2" />
           Invitar
@@ -165,42 +202,68 @@ export default function InvitationsAdmin() {
               <TableHead className="text-xs">Email</TableHead>
               <TableHead className="text-xs">Rol</TableHead>
               <TableHead className="text-xs">Estado</TableHead>
+              <TableHead className="text-xs">Último envío</TableHead>
               <TableHead className="text-xs">Expira</TableHead>
               <TableHead className="text-xs text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-6">Cargando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground text-sm py-6">Cargando...</TableCell></TableRow>
             ) : !invitations?.length ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-6">Sin invitaciones aún</TableCell></TableRow>
-            ) : invitations.map((inv: any) => (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground text-sm py-6">Sin invitaciones aún</TableCell></TableRow>
+            ) : invitations.map((inv: any) => {
+              const isExpired = new Date(inv.expires_at) < new Date();
+              const effectiveStatus = inv.status === 'pending' && isExpired ? 'expired' : inv.status;
+              return (
               <TableRow key={inv.id} className="border-border/30">
                 <TableCell className="text-sm">{inv.email}</TableCell>
                 <TableCell><Badge variant="outline" className="text-[10px]">{ROLE_LABELS[inv.role as OrgRole]}</Badge></TableCell>
-                <TableCell><Badge variant="outline" className={`text-[10px] ${statusBadge(inv.status)}`}>{inv.status}</Badge></TableCell>
+                <TableCell><Badge variant="outline" className={`text-[10px] ${statusBadge(effectiveStatus)}`}>{effectiveStatus}</Badge></TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {fmtRel(inv.last_sent_at ?? inv.created_at)}
+                  {inv.resend_count > 0 && <span className="ml-1 text-[10px] text-primary">·{inv.resend_count}x</span>}
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground">{new Date(inv.expires_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     {inv.status === 'pending' && (
                       <>
+                        <Button
+                          size="sm" variant="ghost" className="h-7 px-2"
+                          onClick={() => sendInvite.mutate({ email: inv.email, role: inv.role, expires_in_days: expiresDays, resend: true })}
+                          disabled={sendInvite.isPending}
+                          title="Reenviar email"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                        </Button>
                         <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copyLink(inv.token)} title="Copiar link">
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => sendByEmail(inv)} title="Enviar por email">
+                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => sendByEmail(inv)} title="Enviar por email (cliente)">
                           <Mail className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => {
-                          if (confirm(`¿Revocar invitación a ${inv.email}?`)) revokeInvitation.mutate(inv.id);
-                        }} title="Revocar">
-                          <Trash2 className="h-3.5 w-3.5" />
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-7 px-2 text-amber-500 hover:text-amber-500"
+                          onClick={() => {
+                            if (confirm(`¿Revocar el link enviado a ${inv.email}? Dejará de funcionar de inmediato.`)) revokeInvitation.mutate(inv.id);
+                          }}
+                          title="Revocar link"
+                        >
+                          <Ban className="h-3.5 w-3.5" />
                         </Button>
                       </>
                     )}
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => {
+                      if (confirm(`¿Eliminar registro de invitación de ${inv.email}?`)) deleteInvitation.mutate(inv.id);
+                    }} title="Eliminar registro">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
       </div>
