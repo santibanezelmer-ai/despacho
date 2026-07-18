@@ -265,27 +265,26 @@ Deno.serve(async (req: Request) => {
       const fcmPayload: any = {
         message: {
           token,
-          notification: { title, body: body ?? '' },
           data: {
             type: String(type ?? 'new_emergency'),
             emergency_id: String(emergency_id),
             emergencyId: String(emergency_id),
+            title: String(title),
+            body: String(body ?? ''),
           },
         },
       };
       if (isWeb) {
+        // IMPORTANT: data-only (no top-level `notification`) so the SW's
+        // onBackgroundMessage fires and can play the custom dispatch tone
+        // instead of the browser/OS default notification sound.
         fcmPayload.message.webpush = {
           headers: { Urgency: 'high', TTL: '600' },
-          notification: {
-            icon: '/voluntario-icon-512.png',
-            badge: '/voluntario-icon-512.png',
-            vibrate: [400, 200, 400, 200, 400],
-            requireInteraction: true,
-            tag: `emg-${emergency_id}`,
-          },
           fcm_options: { link: emergencyPath },
         };
       } else {
+        // Native Android: keep notification block so system tray shows it.
+        fcmPayload.message.notification = { title, body: body ?? '' };
         fcmPayload.message.android = {
           priority: 'HIGH',
           notification: {
