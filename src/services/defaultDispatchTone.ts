@@ -1,49 +1,34 @@
-// Default dispatch tone for the Voluntario PWA — played on every mobile
-// when a new emergency arrives, regardless of org-specific sound config.
-// Uses the Web Audio API so it works without shipping an MP3 asset.
+// Default dispatch tone for the Voluntario PWA.
+// Plays a preloaded MP3 by default; users can override the tone URL
+// per-device via localStorage ('voluntario_custom_tone_url').
 
-let ctx: AudioContext | null = null;
+import defaultToneAsset from '@/assets/dispatch-tone.mp3.asset.json';
 
-function getCtx(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
+export const DEFAULT_DISPATCH_TONE_URL = defaultToneAsset.url;
+export const CUSTOM_TONE_KEY = 'voluntario_custom_tone_url';
+const SOUND_ENABLED_KEY = 'voluntario_sound_enabled';
+
+export function getActiveDispatchToneUrl(): string {
   try {
-    const Ctor = (window as any).AudioContext || (window as any).webkitAudioContext;
-    if (!Ctor) return null;
-    if (!ctx) ctx = new Ctor();
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    return ctx;
-  } catch { return null; }
+    const custom = localStorage.getItem(CUSTOM_TONE_KEY);
+    if (custom && custom.trim()) return custom;
+  } catch { /* ignore */ }
+  return DEFAULT_DISPATCH_TONE_URL;
 }
 
-/** Play a two-tone siren-like alert. Safe to call from foreground handlers. */
+/** Play the configured dispatch tone. Safe to call from foreground handlers. */
 export function playDefaultDispatchTone() {
-  const ac = getCtx();
-  if (!ac) return;
-  const now = ac.currentTime;
-  const gain = ac.createGain();
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.connect(ac.destination);
+  try {
+    if (localStorage.getItem(SOUND_ENABLED_KEY) === 'false') return;
+  } catch { /* ignore */ }
 
-  const beeps: Array<[number, number]> = [
-    [880, 0.35],
-    [660, 0.35],
-    [880, 0.35],
-    [660, 0.35],
-  ];
-  let t = now;
-  for (const [freq, dur] of beeps) {
-    const osc = ac.createOscillator();
-    osc.type = 'square';
-    osc.frequency.value = freq;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g).connect(ac.destination);
-    osc.start(t);
-    osc.stop(t + dur + 0.02);
-    t += dur + 0.05;
-  }
+  try {
+    const audio = new Audio(getActiveDispatchToneUrl());
+    audio.volume = 1;
+    audio.play().catch(() => {
+      // Autoplay blocked — fallback silent
+    });
+  } catch { /* ignore */ }
 
   if ('vibrate' in navigator) {
     try { navigator.vibrate([400, 150, 400, 150, 400]); } catch { /* ignore */ }

@@ -7,15 +7,14 @@ interface Props { organizationId: string }
 
 export default function VoluntarioHistory({ organizationId }: Props) {
   const { data, isLoading } = useQuery({
-    queryKey: ['vol-history', organizationId],
+    queryKey: ['vol-history-all', organizationId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('emergencies')
         .select('id, folio, address, status, created_at, finished_at, emergency_keys(code, name, color)')
         .eq('organization_id', organizationId)
-        .eq('status', 'finalizada')
-        .order('finished_at', { ascending: false, nullsFirst: false })
-        .limit(100);
+        .order('created_at', { ascending: false })
+        .limit(200);
       if (error) throw error;
       return data;
     },
@@ -24,7 +23,8 @@ export default function VoluntarioHistory({ organizationId }: Props) {
   return (
     <div className="px-4 py-4 max-w-md mx-auto">
       <h1 className="text-2xl font-bold text-foreground mb-1">Historial</h1>
-      <p className="text-xs text-muted-foreground mb-4">Emergencias finalizadas</p>
+      <p className="text-xs text-muted-foreground mb-4">Todas las emergencias</p>
+
       {isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>
       ) : !data?.length ? (
