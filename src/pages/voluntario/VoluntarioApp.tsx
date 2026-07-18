@@ -89,7 +89,18 @@ export default function VoluntarioApp() {
           : undefined,
       });
     });
-    return () => { unsub(); };
+
+    // Background pushes are data-only; the SW asks us to play the custom tone.
+    const onSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'operix-play-dispatch-tone') {
+        playDefaultDispatchTone();
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', onSwMessage);
+    return () => {
+      unsub();
+      navigator.serviceWorker?.removeEventListener('message', onSwMessage);
+    };
   }, [user, membership, nav]);
 
   if (loading || checking) {
