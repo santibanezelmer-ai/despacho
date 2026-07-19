@@ -127,6 +127,8 @@ export default function DispatchConsole() {
         <EmergencyKeyGrid onSelectKey={handleSelectKey} />
       </div>
 
+      <DispatchNotesPanel />
+
       {activeCount > 0 && (
         <div>
           <h2 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
