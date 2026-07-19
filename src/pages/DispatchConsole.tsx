@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
+import DispatchNotesPanel from '@/components/dispatch/DispatchNotesPanel';
 import DispatchForm from '@/components/dispatch/DispatchForm';
 import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
 import StatsCard from '@/components/dashboard/StatsCard';
@@ -125,6 +126,8 @@ export default function DispatchConsole() {
         </h2>
         <EmergencyKeyGrid onSelectKey={handleSelectKey} />
       </div>
+
+      <DispatchNotesPanel />
 
       {activeCount > 0 && (
         <div>
