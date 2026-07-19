@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload } from 'lucide-react';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 
@@ -43,6 +43,8 @@ interface EmergencyCardProps {
     declared?: boolean;
     carabineros_requested?: boolean;
     ambulance_requested?: boolean;
+    false_alarm?: boolean;
+    pre_report?: string | null;
     emergency_keys: { code: string; name: string; color: string } | null;
     vehicleCodes: string[];
     vehicleIds: string[];
@@ -70,6 +72,7 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
     emergency.declared && { icon: Megaphone, label: 'DECL', color: 'text-emergency' },
     emergency.carabineros_requested && { icon: Shield, label: '1-0', color: 'text-info' },
     emergency.ambulance_requested && { icon: Cross, label: '1-2', color: 'text-success' },
+    emergency.false_alarm && { icon: Ban, label: '6-16', color: 'text-muted-foreground' },
   ].filter(Boolean) as { icon: any; label: string; color: string }[];
 
   return (
