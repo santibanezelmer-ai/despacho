@@ -173,6 +173,47 @@ export type Database = {
           },
         ]
       }
+      dispatch_notes: {
+        Row: {
+          active: boolean
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -276,6 +317,7 @@ export type Database = {
           emergency_key_id: string
           en_route_at: string | null
           external_support: boolean
+          false_alarm: boolean
           finished_at: string | null
           folio: string
           id: string
@@ -305,6 +347,7 @@ export type Database = {
           emergency_key_id: string
           en_route_at?: string | null
           external_support?: boolean
+          false_alarm?: boolean
           finished_at?: string | null
           folio: string
           id?: string
@@ -334,6 +377,7 @@ export type Database = {
           emergency_key_id?: string
           en_route_at?: string | null
           external_support?: boolean
+          false_alarm?: boolean
           finished_at?: string | null
           folio?: string
           id?: string
