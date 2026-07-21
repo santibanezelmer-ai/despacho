@@ -94,7 +94,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     if (!L) return;
 
     const center = mapCoords ?? { lat: -33.45, lng: -70.65 };
-    const map = L.map(mapRef.current, { zoomControl: true }).setView([center.lat, center.lng], 15);
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([center.lat, center.lng], mapCoords ? 15 : 12);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '© CartoDB',
     }).addTo(map);
@@ -107,6 +107,24 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       setMapCoords({ lat, lng });
       placeMarker(lat, lng);
     });
+
+    // Auto-geolocate when opening the map without pre-existing coords
+    if (!mapCoords && navigator.geolocation) {
+      setLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setMapCoords({ lat, lng });
+          map.setView([lat, lng], 16);
+          placeMarker(lat, lng);
+          setLocating(false);
+          toast.success('Ubicación detectada — arrastra el marcador para ajustar');
+        },
+        () => { setLocating(false); },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
 
     return () => { map.remove(); leafletMapRef.current = null; markerRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -272,7 +290,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={handleGeolocate} disabled={locating}>
                     {locating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Crosshair className="mr-1 h-4 w-4" />}
-                    Usar mi ubicación
+                    Geolocalizarme
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setShowMap(false)}>Cancelar</Button>
                   <Button size="sm" onClick={handleSaveLocation} disabled={!mapCoords || updateLocation.isPending}>
