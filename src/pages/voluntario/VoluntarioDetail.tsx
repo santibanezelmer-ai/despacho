@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -106,6 +106,27 @@ export default function VoluntarioDetail({ organizationId }: Props) {
           <p className="text-xs uppercase tracking-wide opacity-80">Clave {emg.emergency_keys?.code}</p>
           <p className="text-xl font-bold">{emg.emergency_keys?.name || 'Emergencia'}</p>
         </div>
+
+        {(emg.declared || emg.false_alarm) && (
+          <div className="flex flex-wrap gap-2">
+            {emg.declared && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emergency/20 border border-emergency/40 text-emergency px-3 py-1 text-xs font-semibold">
+                <Megaphone className="h-3.5 w-3.5" /> Declarado
+              </span>
+            )}
+            {emg.false_alarm && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border text-foreground px-3 py-1 text-xs font-semibold">
+                <Ban className="h-3.5 w-3.5" /> 6-16 Falsa Alarma
+              </span>
+            )}
+          </div>
+        )}
+
+        {emg.pre_report && (
+          <Section icon={<FileText className="h-4 w-4" />} label="Preinforme">
+            <p className="text-foreground whitespace-pre-wrap text-sm">{emg.pre_report}</p>
+          </Section>
+        )}
 
         <Section icon={<MapPin className="h-4 w-4" />} label="Dirección">
           <p className="text-foreground">{emg.address}</p>
