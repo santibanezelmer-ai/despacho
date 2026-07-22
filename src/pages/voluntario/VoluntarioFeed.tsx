@@ -1,19 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Loader2, MapPin, Clock, ChevronRight, Truck, Megaphone, Ban, FileText } from 'lucide-react';
+import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, CheckCircle2, XCircle, Navigation } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface Props { organizationId: string }
-
-const STATUS_COLORS: Record<string, string> = {
-  despacho: 'bg-emergency/20 text-emergency',
-  en_camino: 'bg-amber-500/20 text-amber-400',
-  trabajando: 'bg-orange-500/20 text-orange-400',
-  controlada: 'bg-blue-500/20 text-blue-400',
-  finalizada: 'bg-muted text-muted-foreground',
-};
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho',
@@ -23,7 +18,18 @@ const STATUS_LABEL: Record<string, string> = {
   finalizada: 'Finalizada',
 };
 
+const STATUS_TONE: Record<string, string> = {
+  despacho: 'bg-emergency text-emergency-foreground',
+  en_camino: 'bg-amber-500 text-black',
+  trabajando: 'bg-orange-500 text-black',
+  controlada: 'bg-blue-500 text-white',
+  finalizada: 'bg-muted text-muted-foreground',
+};
+
 export default function VoluntarioFeed({ organizationId }: Props) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
   const { data, isLoading } = useQuery({
     queryKey: ['vol-feed', organizationId],
     queryFn: async () => {
@@ -36,7 +42,6 @@ export default function VoluntarioFeed({ organizationId }: Props) {
         .limit(50);
       if (error) throw error;
 
-      // Enrich with assigned vehicle codes
       const enriched = await Promise.all(
         (data ?? []).map(async (e: any) => {
           const { data: ev } = await (supabase as any)
@@ -47,7 +52,7 @@ export default function VoluntarioFeed({ organizationId }: Props) {
             ...e,
             vehicleCodes: (ev ?? []).map((r: any) => r.vehicles?.code).filter(Boolean),
           };
-        })
+        }),
       );
       return enriched;
     },
@@ -70,109 +75,261 @@ export default function VoluntarioFeed({ organizationId }: Props) {
     refetchInterval: 10_000,
   });
 
+  const ids = (data ?? []).map((e: any) => e.id);
+  const { data: attendance } = useQuery({
+    queryKey: ['vol-att-batch', user?.id, ids.join(',')],
+    queryFn: async () => {
+      if (!user || !ids.length) return {};
+      const { data } = await (supabase as any)
+        .from('emergency_attendance')
+        .select('emergency_id, status')
+        .eq('user_id', user.id)
+        .in('emergency_id', ids);
+      const map: Record<string, string> = {};
+      for (const r of data ?? []) map[r.emergency_id] = r.status;
+      return map;
+    },
+    enabled: !!user && ids.length > 0,
+    refetchInterval: 15_000,
+  });
+
+  const confirm = async (emg: any, status: 'going' | 'not_going') => {
+    if (!user) return;
+    try { navigator.vibrate?.(status === 'going' ? [30, 30, 30] : 30); } catch { /* noop */ }
+    const { error } = await (supabase as any).from('emergency_attendance').upsert(
+      {
+        emergency_id: emg.id,
+        organization_id: emg.organization_id ?? organizationId,
+        user_id: user.id,
+        status,
+        confirmed_at: new Date().toISOString(),
+      },
+      { onConflict: 'emergency_id,user_id' },
+    );
+    if (error) return toast.error(error.message);
+    toast.success(status === 'going' ? 'Voy confirmado' : 'Marcado: no voy');
+    qc.invalidateQueries({ queryKey: ['vol-att-batch'] });
+  };
+
+  const [latest, ...rest] = data ?? [];
+
   return (
-    <div className="px-4 py-4 max-w-md mx-auto">
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold text-foreground">Emergencias Activas</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Recibirás una alerta por cada despacho nuevo</p>
+    <div className="max-w-md mx-auto">
+      {/* Header */}
+      <header className="px-5 pt-6 pb-4">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-cond">
+          <span className="vol-live-dot" /> En vivo · alerta por cada despacho
+        </div>
+        <h1 className="text-4xl mt-1 leading-none text-foreground">Emergencias Activas</h1>
       </header>
 
+      {/* Comunicados */}
       {!!notes?.length && (
-        <div className="mb-4 space-y-2">
+        <div className="px-5 mb-4 space-y-2">
           {notes.map((n: any) => (
-            <div key={n.id} className="rounded-xl border border-info/40 bg-info/10 p-4">
+            <div key={n.id} className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <Megaphone className="h-4 w-4 text-info" />
-                <span className="text-[10px] uppercase tracking-wide font-semibold text-info">Comunicado</span>
+                <Megaphone className="h-3.5 w-3.5 text-amber-400" />
+                <span className="font-cond text-[10px] uppercase tracking-widest text-amber-400">Comunicado</span>
                 <span className="ml-auto text-[10px] text-muted-foreground">
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: es })}
                 </span>
               </div>
               {n.title && <p className="font-semibold text-foreground text-sm">{n.title}</p>}
-              <p className="text-sm text-foreground whitespace-pre-wrap">{n.content}</p>
+              <p className="text-sm text-foreground/90 whitespace-pre-wrap">{n.content}</p>
             </div>
           ))}
         </div>
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>
+        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>
       ) : !data?.length ? (
-        <div className="text-center py-16 text-muted-foreground text-sm">
-          Sin emergencias activas en este momento.
+        <div className="px-5">
+          <div className="rounded-2xl border border-dashed border-border/70 bg-card/40 py-14 text-center">
+            <p className="font-cond uppercase tracking-widest text-xs text-muted-foreground">Sin actividad</p>
+            <p className="text-sm text-foreground/80 mt-1">No hay emergencias activas.</p>
+          </div>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {data.map((e: any) => (
-            <li key={e.id}>
-              <Link
-                to={`/voluntario/emergencia/${e.id}`}
-                className="block bg-card border border-border rounded-xl p-4 active:scale-[0.98] transition-transform"
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-bold text-white text-sm"
-                    style={{ backgroundColor: e.emergency_keys?.color || '#dc2626' }}
-                  >
-                    {e.emergency_keys?.code || '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-foreground truncate">{e.emergency_keys?.name || 'Emergencia'}</p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[e.status] || ''}`}>
-                        {STATUS_LABEL[e.status] || e.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1 flex items-start gap-1">
-                      <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> <span className="line-clamp-2">{e.address}</span>
-                    </p>
+        <div className="space-y-3 px-5 pb-6">
+          {/* Hero — latest emergency */}
+          <HotCard emg={latest} myStatus={attendance?.[latest.id]} onConfirm={confirm} />
 
-                    {(e.declared || e.false_alarm) && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {e.declared && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emergency/20 text-emergency text-[10px] px-2 py-0.5 font-semibold">
-                            <Megaphone className="h-3 w-3" /> Declarado
-                          </span>
-                        )}
-                        {e.false_alarm && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted text-foreground text-[10px] px-2 py-0.5 font-semibold">
-                            <Ban className="h-3 w-3" /> 6-16 Falsa Alarma
-                          </span>
-                        )}
-                      </div>
-                    )}
+          {rest.length > 0 && (
+            <p className="font-cond uppercase tracking-widest text-[10px] text-muted-foreground pt-3 pl-1">
+              También activas · {rest.length}
+            </p>
+          )}
 
-                    {!!e.vehicleCodes?.length && (
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Truck className="h-3 w-3 text-muted-foreground" />
-                        {e.vehicleCodes.map((code: string) => (
-                          <span key={code} className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-muted text-foreground">
-                            {code}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {e.pre_report && (
-                      <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2 flex items-start gap-1">
-                        <FileText className="h-3 w-3 mt-0.5 shrink-0" /> {e.pre_report}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(e.dispatched_at || e.created_at), { addSuffix: true, locale: es })}
-                      </span>
-                      <span className="font-mono">{e.folio}</span>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground self-center" />
-                </div>
-              </Link>
-            </li>
+          {rest.map((e: any) => (
+            <RowCard key={e.id} emg={e} myStatus={attendance?.[e.id]} onConfirm={confirm} />
           ))}
-        </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- Cards ---------------- */
+
+function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; onConfirm: (e: any, s: 'going' | 'not_going') => void }) {
+  const mapsUrl = emg.latitude && emg.longitude
+    ? `https://www.google.com/maps/dir/?api=1&destination=${emg.latitude},${emg.longitude}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(emg.address)}`;
+
+  return (
+    <div className="vol-card-hot rounded-2xl p-4">
+      <Link to={`/voluntario/emergencia/${emg.id}`} className="block active:scale-[0.99] transition-transform">
+        <div className="flex items-start gap-3">
+          <div
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
+          >
+            <div className="text-center leading-none">
+              <div className="text-[9px] uppercase tracking-widest opacity-80 font-cond">Clave</div>
+              <div className="font-display text-2xl">{emg.emergency_keys?.code || '?'}</div>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className={`font-cond uppercase tracking-widest text-[10px] px-2 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
+                {STATUS_LABEL[emg.status] || emg.status}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono truncate">{emg.folio}</span>
+            </div>
+            <p className="text-xl leading-tight text-foreground font-display uppercase truncate">
+              {emg.emergency_keys?.name || 'Emergencia'}
+            </p>
+            <p className="text-sm text-foreground/85 mt-1 flex items-start gap-1.5">
+              <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-emergency" />
+              <span className="line-clamp-2">{emg.address}</span>
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1 font-cond uppercase tracking-wider">
+              Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
+            </p>
+          </div>
+        </div>
+
+        <Badges emg={emg} />
+
+        {!!emg.vehicleCodes?.length && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+            {emg.vehicleCodes.map((code: string) => (
+              <span key={code} className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-foreground/10 text-foreground">
+                {code}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {emg.pre_report && (
+          <p className="mt-3 text-[12px] text-foreground/80 line-clamp-2 flex items-start gap-1.5 border-l-2 border-emergency/50 pl-2">
+            <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0 text-emergency" /> {emg.pre_report}
+          </p>
+        )}
+      </Link>
+
+      {/* Speed actions — no drill-down needed */}
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <button
+          onClick={() => onConfirm(emg, 'going')}
+          className={`h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 active:scale-95 transition ${
+            myStatus === 'going' ? 'bg-success text-success-foreground' : 'bg-emergency text-emergency-foreground'
+          }`}
+        >
+          <CheckCircle2 className="h-4 w-4" /> Voy
+        </button>
+        <button
+          onClick={() => onConfirm(emg, 'not_going')}
+          className={`h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 active:scale-95 transition ${
+            myStatus === 'not_going' ? 'bg-muted text-foreground' : 'bg-card border border-border text-foreground/80'
+          }`}
+        >
+          <XCircle className="h-4 w-4" /> No voy
+        </button>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener"
+          className="h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 bg-foreground text-background active:scale-95 transition"
+        >
+          <Navigation className="h-4 w-4" /> Ir
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; onConfirm: (e: any, s: 'going' | 'not_going') => void }) {
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
+        <div className="flex items-start gap-3">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display text-lg"
+            style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
+          >
+            {emg.emergency_keys?.code || '?'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-display uppercase text-lg leading-none text-foreground truncate">
+                {emg.emergency_keys?.name || 'Emergencia'}
+              </p>
+              <span className={`ml-auto font-cond uppercase tracking-widest text-[9px] px-1.5 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
+                {STATUS_LABEL[emg.status] || emg.status}
+              </span>
+            </div>
+            <p className="text-[13px] text-foreground/80 mt-0.5 flex items-start gap-1 line-clamp-1">
+              <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+              {emg.address}
+            </p>
+            <div className="flex items-center justify-between mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
+              <span>Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}</span>
+              <span className="font-mono normal-case tracking-normal">{emg.folio}</span>
+            </div>
+          </div>
+        </div>
+        <Badges emg={emg} compact />
+      </Link>
+
+      <div className="grid grid-cols-2 border-t border-border/60">
+        <button
+          onClick={() => onConfirm(emg, 'going')}
+          className={`h-11 font-cond uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 active:scale-95 transition border-r border-border/60 ${
+            myStatus === 'going' ? 'bg-success/20 text-success' : 'text-foreground/80'
+          }`}
+        >
+          <CheckCircle2 className="h-4 w-4" /> Voy
+        </button>
+        <button
+          onClick={() => onConfirm(emg, 'not_going')}
+          className={`h-11 font-cond uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 active:scale-95 transition ${
+            myStatus === 'not_going' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+          }`}
+        >
+          <XCircle className="h-4 w-4" /> No voy
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Badges({ emg, compact }: { emg: any; compact?: boolean }) {
+  if (!emg.declared && !emg.false_alarm) return null;
+  return (
+    <div className={`flex flex-wrap gap-1.5 ${compact ? 'mt-2' : 'mt-3'}`}>
+      {emg.declared && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emergency/20 text-emergency text-[10px] px-2 py-0.5 font-cond uppercase tracking-widest">
+          <Megaphone className="h-3 w-3" /> Declarado
+        </span>
+      )}
+      {emg.false_alarm && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted text-foreground text-[10px] px-2 py-0.5 font-cond uppercase tracking-widest">
+          <Ban className="h-3 w-3" /> 6-16 Falsa Alarma
+        </span>
       )}
     </div>
   );
