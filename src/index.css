@@ -3,6 +3,101 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@500;600;700;800&display=swap');
+
+/* =========================
+ * Voluntario PWA — scoped theme
+ * Locked design: black canvas + emergency red, Bebas Neue + Barlow, action-first.
+ * ========================= */
+.voluntario-theme {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 8%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 0 84% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 11%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 0 84% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 0 84% 50%;
+  --emergency: 0 84% 50%;
+  --emergency-foreground: 0 0% 100%;
+  --success: 145 65% 42%;
+  --success-foreground: 0 0% 100%;
+
+  font-family: 'Barlow', system-ui, sans-serif;
+  letter-spacing: 0.005em;
+}
+
+.voluntario-theme h1,
+.voluntario-theme h2,
+.voluntario-theme .font-display {
+  font-family: 'Bebas Neue', 'Barlow Condensed', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.voluntario-theme .font-cond {
+  font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Card with subtle red top-line for latest emergency */
+.voluntario-theme .vol-card-hot {
+  position: relative;
+  background: linear-gradient(180deg, hsl(0 84% 50% / 0.08), hsl(0 0% 8%) 40%);
+  border: 1px solid hsl(0 84% 50% / 0.35);
+  box-shadow: 0 12px 30px -12px hsl(0 84% 50% / 0.4);
+}
+.voluntario-theme .vol-card-hot::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, hsl(0 84% 50%), transparent);
+  border-radius: 12px 12px 0 0;
+}
+
+/* Live pulse dot */
+.voluntario-theme .vol-live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: hsl(0 84% 55%);
+  box-shadow: 0 0 0 0 hsl(0 84% 55% / 0.6);
+  animation: vol-pulse 1.6s ease-out infinite;
+}
+@keyframes vol-pulse {
+  0% { box-shadow: 0 0 0 0 hsl(0 84% 55% / 0.65); }
+  70% { box-shadow: 0 0 0 12px hsl(0 84% 55% / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(0 84% 55% / 0); }
+}
+
+/* Bottom-nav active indicator */
+.voluntario-theme .vol-tab-active::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  width: 32px; height: 3px;
+  background: hsl(0 84% 50%);
+  transform: translateX(-50%);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 12px hsl(0 84% 50% / 0.7);
+}
+
+.voluntario-theme .safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.voluntario-theme .safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
 
 @layer base {
   :root {
