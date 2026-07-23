@@ -72,12 +72,13 @@ export default function VoluntarioFeed({ organizationId }: Props) {
   const { data: notes } = useQuery({
     queryKey: ['vol-notes', organizationId],
     queryFn: async () => {
-      // Comunicados behave like emergencies: persistent, non-deletable from PWA.
-      // We ignore the "active" flag so archived ones still show in the feed.
+      // Comunicados: máx 7 días de vigencia; luego desaparecen del feed.
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await (supabase as any)
         .from('dispatch_notes')
         .select('id, title, content, created_at')
         .eq('organization_id', organizationId)
+        .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .limit(20);
       if (error) throw error;
