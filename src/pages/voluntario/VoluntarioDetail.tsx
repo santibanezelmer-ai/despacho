@@ -10,7 +10,7 @@ interface Props { organizationId: string }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
-  controlada: 'Controlada', finalizada: 'Finalizada',
+  controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -19,6 +19,7 @@ const STATUS_TONE: Record<string, string> = {
   trabajando: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
+  en_cuartel: 'bg-muted text-muted-foreground',
 };
 
 export default function VoluntarioDetail({ organizationId }: Props) {
