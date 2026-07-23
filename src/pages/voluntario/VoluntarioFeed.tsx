@@ -124,20 +124,35 @@ export default function VoluntarioFeed({ organizationId }: Props) {
         <h1 className="text-4xl mt-1 leading-none text-foreground">Emergencias Activas</h1>
       </header>
 
-      {/* Comunicados */}
+      {/* Comunicados — presented as emergency-like cards, persistent */}
       {!!notes?.length && (
-        <div className="px-5 mb-4 space-y-2">
+        <div className="px-5 mb-4 space-y-3">
           {notes.map((n: any) => (
-            <div key={n.id} className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <Megaphone className="h-3.5 w-3.5 text-amber-400" />
-                <span className="font-cond text-[10px] uppercase tracking-widest text-amber-400">Comunicado</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">
-                  {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: es })}
-                </span>
+            <div
+              key={n.id}
+              className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-br from-amber-500/15 to-amber-600/5 p-4 shadow-lg"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-black shadow-lg">
+                  <Megaphone className="h-7 w-7" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-cond uppercase tracking-widest text-[11px] px-2 py-0.5 rounded bg-amber-500 text-black font-bold">
+                      Comunicado
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-cond uppercase tracking-wider ml-auto">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: es })}
+                    </span>
+                  </div>
+                  {n.title && (
+                    <p className="font-display uppercase text-xl leading-tight text-foreground">{n.title}</p>
+                  )}
+                  <p className="text-[15px] leading-snug text-foreground/90 whitespace-pre-wrap mt-1">
+                    {n.content}
+                  </p>
+                </div>
               </div>
-              {n.title && <p className="font-semibold text-foreground text-sm">{n.title}</p>}
-              <p className="text-sm text-foreground/90 whitespace-pre-wrap">{n.content}</p>
             </div>
           ))}
         </div>
