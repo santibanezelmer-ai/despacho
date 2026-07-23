@@ -7,8 +7,13 @@ interface Props { organizationId: string }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
-  controlada: 'Controlada', finalizada: 'Finalizada',
+  controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
+
+function codeSize(code?: string | null) {
+  const len = (code || '?').length;
+  return len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
+}
 
 export default function VoluntarioHistory({ organizationId }: Props) {
   const { data, isLoading } = useQuery({
