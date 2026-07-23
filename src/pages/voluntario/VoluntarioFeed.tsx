@@ -213,9 +213,9 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
-            <div className="text-center leading-none">
+            <div className="text-center leading-none px-1">
               <div className="text-[9px] uppercase tracking-widest opacity-80 font-cond">Clave</div>
-              <div className="font-display text-2xl">{emg.emergency_keys?.code || '?'}</div>
+              <div className={`font-display ${codeSize(emg.emergency_keys?.code, '2xl')}`}>{emg.emergency_keys?.code || '?'}</div>
             </div>
           </div>
           <div className="flex-1 min-w-0">
@@ -223,7 +223,6 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
               <span className={`font-cond uppercase tracking-widest text-[10px] px-2 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
                 {STATUS_LABEL[emg.status] || emg.status}
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono truncate">{emg.folio}</span>
             </div>
             <p className="text-xl leading-tight text-foreground font-display uppercase truncate">
               {emg.emergency_keys?.name || 'Emergencia'}
