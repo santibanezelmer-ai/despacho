@@ -58,13 +58,14 @@ export default function VoluntarioDetail({ organizationId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('emergency_vehicles')
-        .select('id, status, vehicles(code, type)')
+        .select('id, released_at, vehicles(code, type)')
         .eq('emergency_id', id);
       if (error) throw error;
       return data ?? [];
     },
     enabled: !!id,
-    refetchInterval: 15_000,
+    refetchInterval: 5_000,
+    refetchOnMount: 'always',
   });
 
   const confirm = async (status: 'going' | 'not_going') => {
@@ -178,15 +179,34 @@ export default function VoluntarioDetail({ organizationId }: Props) {
           {emg.finished_at && <Row k="Finalizada" v={fmt(emg.finished_at)} />}
         </Section>
 
-        <Section icon={<Truck className="h-4 w-4" />} label={`Móviles${vehicles?.length ? ` · ${vehicles.length}` : ''}`}>
+        <Section icon={<Truck className="h-4 w-4" />} label={`Móviles Asignados${vehicles?.length ? ` · ${vehicles.length}` : ''}`}>
           {!vehicles?.length ? (
-            <p className="text-xs text-muted-foreground">Sin móviles asignados aún.</p>
+            <p className="text-sm text-muted-foreground">Sin móviles asignados aún.</p>
           ) : (
-            <ul className="flex flex-wrap gap-1.5">
+            <ul className="grid grid-cols-2 gap-2">
               {vehicles.map((v: any) => (
-                <li key={v.id} className="flex items-center gap-1.5 rounded-lg bg-muted/60 border border-border px-2.5 py-1.5">
-                  <span className="font-mono font-bold text-sm text-foreground">{v.vehicles?.code ?? '—'}</span>
-                  {v.vehicles?.type && <span className="text-[10px] font-cond uppercase tracking-widest text-muted-foreground">{v.vehicles.type}</span>}
+                <li
+                  key={v.id}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 ${
+                    v.released_at
+                      ? 'bg-success/10 border-success/30'
+                      : 'bg-emergency/10 border-emergency/30'
+                  }`}
+                >
+                  <Truck className={`h-4 w-4 ${v.released_at ? 'text-success' : 'text-emergency'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono font-bold text-base text-foreground leading-none">
+                      {v.vehicles?.code ?? '—'}
+                    </p>
+                    {v.vehicles?.type && (
+                      <p className="text-[10px] font-cond uppercase tracking-widest text-muted-foreground mt-0.5 truncate">
+                        {v.vehicles.type}
+                      </p>
+                    )}
+                  </div>
+                  {v.released_at && (
+                    <span className="text-[9px] font-cond uppercase tracking-widest text-success">Cuartel</span>
+                  )}
                 </li>
               ))}
             </ul>
