@@ -16,6 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
   trabajando: 'Trabajando',
   controlada: 'Controlada',
   finalizada: 'Finalizada',
+  en_cuartel: 'Finalizada',
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -24,7 +25,16 @@ const STATUS_TONE: Record<string, string> = {
   trabajando: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
+  en_cuartel: 'bg-muted text-muted-foreground',
 };
+
+// Auto-scale code text so long codes like "10-0-1" don't overflow the badge.
+function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
+  const len = (code || '?').length;
+  if (base === '2xl') return len >= 6 ? 'text-base' : len >= 5 ? 'text-lg' : len >= 4 ? 'text-xl' : 'text-2xl';
+  if (base === 'xl') return len >= 6 ? 'text-sm' : len >= 5 ? 'text-base' : len >= 4 ? 'text-lg' : 'text-xl';
+  return len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
+}
 
 export default function VoluntarioFeed({ organizationId }: Props) {
   const { user } = useAuth();
