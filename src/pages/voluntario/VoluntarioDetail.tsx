@@ -105,7 +105,6 @@ export default function VoluntarioDetail({ organizationId }: Props) {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/60 px-4 py-3 flex items-center gap-3">
         <button onClick={() => nav(-1)} aria-label="Volver" className="p-2 -ml-2 rounded-lg active:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-muted-foreground font-mono">{emg.folio}</p>
           <p className="font-cond uppercase tracking-widest text-xs text-foreground truncate">{STATUS_LABEL[emg.status] || emg.status}</p>
         </div>
         <span className={`font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
