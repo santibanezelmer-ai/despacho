@@ -37,7 +37,7 @@ export default function VoluntarioFeed({ organizationId }: Props) {
         .from('emergencies')
         .select('id, folio, address, status, dispatched_at, created_at, observations, pre_report, declared, false_alarm, latitude, longitude, emergency_keys(code, name, color)')
         .eq('organization_id', organizationId)
-        .neq('status', 'finalizada')
+        .not('status', 'in', '(finalizada,en_cuartel)')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -62,11 +62,12 @@ export default function VoluntarioFeed({ organizationId }: Props) {
   const { data: notes } = useQuery({
     queryKey: ['vol-notes', organizationId],
     queryFn: async () => {
+      // Comunicados behave like emergencies: persistent, non-deletable from PWA.
+      // We ignore the "active" flag so archived ones still show in the feed.
       const { data, error } = await (supabase as any)
         .from('dispatch_notes')
         .select('id, title, content, created_at')
         .eq('organization_id', organizationId)
-        .eq('active', true)
         .order('created_at', { ascending: false })
         .limit(20);
       if (error) throw error;
