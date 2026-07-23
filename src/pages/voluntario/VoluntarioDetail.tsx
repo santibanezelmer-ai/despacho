@@ -58,13 +58,14 @@ export default function VoluntarioDetail({ organizationId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('emergency_vehicles')
-        .select('id, status, vehicles(code, type)')
+        .select('id, released_at, vehicles(code, type)')
         .eq('emergency_id', id);
       if (error) throw error;
       return data ?? [];
     },
     enabled: !!id,
-    refetchInterval: 15_000,
+    refetchInterval: 5_000,
+    refetchOnMount: 'always',
   });
 
   const confirm = async (status: 'going' | 'not_going') => {
