@@ -7,8 +7,13 @@ interface Props { organizationId: string }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
-  controlada: 'Controlada', finalizada: 'Finalizada',
+  controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
+
+function codeSize(code?: string | null) {
+  const len = (code || '?').length;
+  return len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
+}
 
 export default function VoluntarioHistory({ organizationId }: Props) {
   const { data, isLoading } = useQuery({
@@ -55,7 +60,7 @@ export default function VoluntarioHistory({ organizationId }: Props) {
                   <li key={e.id}>
                     <Link to={`/voluntario/emergencia/${e.id}`} className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 active:scale-[0.98] transition-transform">
                       <div
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-white font-display text-base"
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-white font-display px-1 text-center leading-none ${codeSize(e.emergency_keys?.code)}`}
                         style={{ backgroundColor: e.emergency_keys?.color || '#404040' }}
                       >{e.emergency_keys?.code || '?'}</div>
                       <div className="flex-1 min-w-0">
@@ -66,7 +71,7 @@ export default function VoluntarioHistory({ organizationId }: Props) {
                         <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                           <MapPin className="h-3 w-3" />{e.address}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/80 mt-0.5 font-mono">{e.folio} · {new Date(e.finished_at || e.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-[10px] text-muted-foreground/80 mt-0.5 font-cond uppercase tracking-widest">{new Date(e.finished_at || e.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </Link>

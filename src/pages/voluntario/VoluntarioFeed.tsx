@@ -16,6 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
   trabajando: 'Trabajando',
   controlada: 'Controlada',
   finalizada: 'Finalizada',
+  en_cuartel: 'Finalizada',
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -24,7 +25,16 @@ const STATUS_TONE: Record<string, string> = {
   trabajando: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
+  en_cuartel: 'bg-muted text-muted-foreground',
 };
+
+// Auto-scale code text so long codes like "10-0-1" don't overflow the badge.
+function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
+  const len = (code || '?').length;
+  if (base === '2xl') return len >= 6 ? 'text-base' : len >= 5 ? 'text-lg' : len >= 4 ? 'text-xl' : 'text-2xl';
+  if (base === 'xl') return len >= 6 ? 'text-sm' : len >= 5 ? 'text-base' : len >= 4 ? 'text-lg' : 'text-xl';
+  return len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
+}
 
 export default function VoluntarioFeed({ organizationId }: Props) {
   const { user } = useAuth();
@@ -62,12 +72,13 @@ export default function VoluntarioFeed({ organizationId }: Props) {
   const { data: notes } = useQuery({
     queryKey: ['vol-notes', organizationId],
     queryFn: async () => {
-      // Comunicados behave like emergencies: persistent, non-deletable from PWA.
-      // We ignore the "active" flag so archived ones still show in the feed.
+      // Comunicados: máx 7 días de vigencia; luego desaparecen del feed.
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await (supabase as any)
         .from('dispatch_notes')
         .select('id, title, content, created_at')
         .eq('organization_id', organizationId)
+        .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .limit(20);
       if (error) throw error;
@@ -202,9 +213,9 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
-            <div className="text-center leading-none">
+            <div className="text-center leading-none px-1">
               <div className="text-[9px] uppercase tracking-widest opacity-80 font-cond">Clave</div>
-              <div className="font-display text-2xl">{emg.emergency_keys?.code || '?'}</div>
+              <div className={`font-display ${codeSize(emg.emergency_keys?.code, '2xl')}`}>{emg.emergency_keys?.code || '?'}</div>
             </div>
           </div>
           <div className="flex-1 min-w-0">
@@ -212,7 +223,6 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
               <span className={`font-cond uppercase tracking-widest text-[10px] px-2 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
                 {STATUS_LABEL[emg.status] || emg.status}
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono truncate">{emg.folio}</span>
             </div>
             <p className="text-xl leading-tight text-foreground font-display uppercase truncate">
               {emg.emergency_keys?.name || 'Emergencia'}
@@ -284,7 +294,7 @@ function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
       <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
         <div className="flex items-start gap-3">
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display text-lg"
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-1 text-center leading-none ${codeSize(emg.emergency_keys?.code, 'lg')}`}
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
             {emg.emergency_keys?.code || '?'}
@@ -302,9 +312,8 @@ function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
               <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
               {emg.address}
             </p>
-            <div className="flex items-center justify-between mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
-              <span>Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}</span>
-              <span className="font-mono normal-case tracking-normal">{emg.folio}</span>
+            <div className="mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
+              Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
             </div>
           </div>
         </div>

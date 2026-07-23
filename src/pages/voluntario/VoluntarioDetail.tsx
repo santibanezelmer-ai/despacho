@@ -10,7 +10,7 @@ interface Props { organizationId: string }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
-  controlada: 'Controlada', finalizada: 'Finalizada',
+  controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -19,6 +19,7 @@ const STATUS_TONE: Record<string, string> = {
   trabajando: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
+  en_cuartel: 'bg-muted text-muted-foreground',
 };
 
 export default function VoluntarioDetail({ organizationId }: Props) {
@@ -104,7 +105,6 @@ export default function VoluntarioDetail({ organizationId }: Props) {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/60 px-4 py-3 flex items-center gap-3">
         <button onClick={() => nav(-1)} aria-label="Volver" className="p-2 -ml-2 rounded-lg active:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-muted-foreground font-mono">{emg.folio}</p>
           <p className="font-cond uppercase tracking-widest text-xs text-foreground truncate">{STATUS_LABEL[emg.status] || emg.status}</p>
         </div>
         <span className={`font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
