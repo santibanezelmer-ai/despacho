@@ -294,7 +294,7 @@ function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
       <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
         <div className="flex items-start gap-3">
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display text-lg"
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-1 text-center leading-none ${codeSize(emg.emergency_keys?.code, 'lg')}`}
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
             {emg.emergency_keys?.code || '?'}
@@ -312,9 +312,8 @@ function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
               <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
               {emg.address}
             </p>
-            <div className="flex items-center justify-between mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
-              <span>Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}</span>
-              <span className="font-mono normal-case tracking-normal">{emg.folio}</span>
+            <div className="mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
+              Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
             </div>
           </div>
         </div>
