@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -59,7 +60,7 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('emergency_vehicles')
-        .select('id, released_at, vehicles(code, type)')
+        .select('id, released_at, vehicles(code, type, companies(name, logo_url))')
         .eq('emergency_id', id);
       if (error) throw error;
       return data ?? [];

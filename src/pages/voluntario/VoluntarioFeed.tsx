@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, CheckCircle2, XCircle, Navigation } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Logo } from '@/components/ui/Logo';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -129,11 +130,22 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
     <div className="max-w-md mx-auto">
       {/* Header */}
       <header className="px-5 pt-6 pb-4">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-cond">
-          <span className="vol-live-dot" /> En vivo · alerta por cada despacho
+        <div className="flex items-center gap-3">
+          {orgLogoUrl && (
+            <div className="h-11 w-11 rounded-lg bg-card border border-border/60 overflow-hidden flex items-center justify-center shrink-0">
+              <Logo src={orgLogoUrl} alt={orgName || 'Organización'} className="max-h-11 max-w-11 object-contain" hideWhenEmpty />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-cond">
+              <span className="vol-live-dot" /> En vivo · alerta por cada despacho
+            </div>
+            {orgName && <p className="text-[11px] font-cond uppercase tracking-widest text-muted-foreground truncate">{orgName}</p>}
+            <h1 className="text-4xl mt-0.5 leading-none text-foreground">Emergencias Activas</h1>
+          </div>
         </div>
-        <h1 className="text-4xl mt-1 leading-none text-foreground">Emergencias Activas</h1>
       </header>
+
 
       {/* Comunicados — presented as emergency-like cards, persistent */}
       {!!notes?.length && (
