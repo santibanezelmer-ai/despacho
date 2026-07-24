@@ -293,7 +293,7 @@ function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
       <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
         <div className="flex items-start gap-3">
           <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-1 text-center leading-none ${codeSize(emg.emergency_keys?.code, 'lg')}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(emg.emergency_keys?.code, 'lg')}`}
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
             {emg.emergency_keys?.code || '?'}
