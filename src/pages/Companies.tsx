@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Building2, Plus, Search, Pencil, Trash2, Loader2, Volume2 } from 'lucide-react';
 import ToneUploadField from '@/components/admin/ToneUploadField';
+import LogoUploadField from '@/components/admin/LogoUploadField';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,9 +23,10 @@ interface CompanyForm {
   phone: string;
   active: boolean;
   tone_url: string;
+  logo_url: string | null;
 }
 
-const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '' };
+const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '', logo_url: null };
 
 export default function Companies() {
   const [search, setSearch] = useState('');
@@ -43,7 +45,7 @@ export default function Companies() {
 
   const openNew = () => { setEditing({ ...empty }); setDialogOpen(true); };
   const openEdit = (c: any) => {
-    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '' });
+    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '', logo_url: c.logo_url ?? null });
     setDialogOpen(true);
   };
 
@@ -84,6 +86,7 @@ export default function Companies() {
         phone: editing.phone.trim() || null,
         active: editing.active,
         tone_url: editing.tone_url.trim() || null,
+        logo_url: editing.logo_url || null,
         organization_id: orgId!,
       };
       if (editing.id) {
