@@ -19,6 +19,7 @@ interface VolunteerMembership {
   organization_id: string;
   org_name: string;
   org_status: string;
+  org_logo_url: string | null;
   pwa_enabled: boolean;
   volunteer_active: boolean;
 }
@@ -38,7 +39,7 @@ export default function VoluntarioApp() {
       setChecking(true);
       const { data, error: err } = await (supabase as any)
         .from('organization_members')
-        .select('organization_id, role, status, organizations(id, name, status)')
+        .select('organization_id, role, status, organizations(id, name, status, logo_url)')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .in('role', ['voluntario', 'visor']);
@@ -68,6 +69,7 @@ export default function VoluntarioApp() {
         organization_id: m.organization_id,
         org_name: m.organizations?.name ?? '',
         org_status: m.organizations?.status ?? '',
+        org_logo_url: m.organizations?.logo_url ?? null,
         pwa_enabled: vol?.pwa_enabled ?? true,
         volunteer_active: vol?.status === 'activo' || !vol,
       });
@@ -139,13 +141,13 @@ export default function VoluntarioApp() {
   }
 
   return (
-    <VoluntarioLayout>
+    <VoluntarioLayout orgName={membership.org_name} orgLogoUrl={membership.org_logo_url}>
       <Routes>
-        <Route index element={<VoluntarioFeed organizationId={membership.organization_id} />} />
+        <Route index element={<VoluntarioFeed organizationId={membership.organization_id} orgName={membership.org_name} orgLogoUrl={membership.org_logo_url} />} />
         <Route path="historial" element={<VoluntarioHistory organizationId={membership.organization_id} />} />
         <Route path="mapa" element={<VoluntarioMap />} />
         <Route path="perfil" element={<VoluntarioProfile organizationId={membership.organization_id} orgName={membership.org_name} />} />
-        <Route path="emergencia/:id" element={<VoluntarioDetail organizationId={membership.organization_id} />} />
+        <Route path="emergencia/:id" element={<VoluntarioDetail organizationId={membership.organization_id} orgName={membership.org_name} orgLogoUrl={membership.org_logo_url} />} />
         <Route path="login" element={<Navigate to="/voluntario" replace />} />
         <Route path="*" element={<Navigate to="/voluntario" replace />} />
       </Routes>
