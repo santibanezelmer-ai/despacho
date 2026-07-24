@@ -225,6 +225,14 @@ export default function Companies() {
                   <Label className="text-xs">Activa</Label>
                 </div>
               </div>
+              <LogoUploadField
+                label="Logo de la Compañía"
+                value={editing.logo_url}
+                onChange={(path) => setEditing(f => f ? { ...f, logo_url: path } : f)}
+                orgId={orgId!}
+                kind="company"
+                subId={editing.id ?? 'new'}
+              />
               <ToneUploadField
                 label="Tono de Compañía (MP3)"
                 value={editing.tone_url}
