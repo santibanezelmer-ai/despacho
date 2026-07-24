@@ -60,7 +60,7 @@ export default function VoluntarioHistory({ organizationId }: Props) {
                   <li key={e.id}>
                     <Link to={`/voluntario/emergencia/${e.id}`} className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 active:scale-[0.98] transition-transform">
                       <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-white font-display px-1 text-center leading-none ${codeSize(e.emergency_keys?.code)}`}
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(e.emergency_keys?.code)}`}
                         style={{ backgroundColor: e.emergency_keys?.color || '#404040' }}
                       >{e.emergency_keys?.code || '?'}</div>
                       <div className="flex-1 min-w-0">
