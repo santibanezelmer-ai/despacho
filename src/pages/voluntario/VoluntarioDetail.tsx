@@ -22,7 +22,7 @@ const STATUS_TONE: Record<string, string> = {
   en_cuartel: 'bg-muted text-muted-foreground',
 };
 
-export default function VoluntarioDetail({ organizationId }: Props) {
+export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }: Props) {
   const { id } = useParams();
   const nav = useNavigate();
   const { user } = useAuth();

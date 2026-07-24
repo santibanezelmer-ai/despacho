@@ -36,7 +36,7 @@ function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
   return len >= 7 ? 'text-[10px]' : len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
 }
 
-export default function VoluntarioFeed({ organizationId }: Props) {
+export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
 
