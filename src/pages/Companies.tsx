@@ -161,7 +161,16 @@ export default function Companies() {
               filtered.map(c => (
                 <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-mono font-bold text-foreground">{c.number}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded bg-muted/50 border border-border overflow-hidden flex items-center justify-center shrink-0">
+                        {(c as any).logo_url
+                          ? <img src="" data-logo-src={(c as any).logo_url} alt="" className="max-h-8 max-w-8 object-contain" ref={el => { if (!el) return; import('@/lib/logoStorage').then(m => m.resolveLogoUrl((c as any).logo_url)).then(u => { if (u) el.src = u; }); }} />
+                          : <Building2 className="h-4 w-4 text-muted-foreground" />}
+                      </div>
+                      <span>{c.name}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{c.address ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.phone ?? '—'}</td>
                   <td className="px-4 py-3">
