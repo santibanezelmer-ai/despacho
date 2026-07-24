@@ -210,12 +210,11 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
       <Link to={`/voluntario/emergencia/${emg.id}`} className="block active:scale-[0.99] transition-transform">
         <div className="flex items-start gap-3">
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg overflow-hidden"
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
-            <div className="text-center leading-none px-1">
-              <div className="text-[9px] uppercase tracking-widest opacity-80 font-cond">Clave</div>
-              <div className={`font-display ${codeSize(emg.emergency_keys?.code, '2xl')}`}>{emg.emergency_keys?.code || '?'}</div>
+            <div className={`text-center leading-none px-0.5 w-full break-words font-display ${codeSize(emg.emergency_keys?.code, '2xl')}`}>
+              {emg.emergency_keys?.code || '?'}
             </div>
           </div>
           <div className="flex-1 min-w-0">
