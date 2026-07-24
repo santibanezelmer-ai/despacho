@@ -28,12 +28,12 @@ const STATUS_TONE: Record<string, string> = {
   en_cuartel: 'bg-muted text-muted-foreground',
 };
 
-// Auto-scale code text so long codes like "10-0-1" don't overflow the badge.
+// Auto-scale code text so long codes like "10-0-15" don't overflow the badge.
 function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
   const len = (code || '?').length;
-  if (base === '2xl') return len >= 6 ? 'text-base' : len >= 5 ? 'text-lg' : len >= 4 ? 'text-xl' : 'text-2xl';
-  if (base === 'xl') return len >= 6 ? 'text-sm' : len >= 5 ? 'text-base' : len >= 4 ? 'text-lg' : 'text-xl';
-  return len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
+  if (base === '2xl') return len >= 7 ? 'text-sm' : len >= 6 ? 'text-base' : len >= 5 ? 'text-lg' : len >= 4 ? 'text-xl' : 'text-2xl';
+  if (base === 'xl') return len >= 7 ? 'text-xs' : len >= 6 ? 'text-sm' : len >= 5 ? 'text-base' : len >= 4 ? 'text-lg' : 'text-xl';
+  return len >= 7 ? 'text-[10px]' : len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
 }
 
 export default function VoluntarioFeed({ organizationId }: Props) {
@@ -210,12 +210,11 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
       <Link to={`/voluntario/emergencia/${emg.id}`} className="block active:scale-[0.99] transition-transform">
         <div className="flex items-start gap-3">
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-white shadow-lg overflow-hidden"
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
-            <div className="text-center leading-none px-1">
-              <div className="text-[9px] uppercase tracking-widest opacity-80 font-cond">Clave</div>
-              <div className={`font-display ${codeSize(emg.emergency_keys?.code, '2xl')}`}>{emg.emergency_keys?.code || '?'}</div>
+            <div className={`text-center leading-none px-0.5 w-full break-words font-display ${codeSize(emg.emergency_keys?.code, '2xl')}`}>
+              {emg.emergency_keys?.code || '?'}
             </div>
           </div>
           <div className="flex-1 min-w-0">
@@ -294,7 +293,7 @@ function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
       <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
         <div className="flex items-start gap-3">
           <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-1 text-center leading-none ${codeSize(emg.emergency_keys?.code, 'lg')}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(emg.emergency_keys?.code, 'lg')}`}
             style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
           >
             {emg.emergency_keys?.code || '?'}
