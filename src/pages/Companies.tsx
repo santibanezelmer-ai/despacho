@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Building2, Plus, Search, Pencil, Trash2, Loader2, Volume2 } from 'lucide-react';
 import ToneUploadField from '@/components/admin/ToneUploadField';
 import LogoUploadField from '@/components/admin/LogoUploadField';
+import { Logo } from '@/components/ui/Logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -164,9 +165,7 @@ export default function Companies() {
                   <td className="px-4 py-3 font-medium text-foreground">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded bg-muted/50 border border-border overflow-hidden flex items-center justify-center shrink-0">
-                        {(c as any).logo_url
-                          ? <img src="" data-logo-src={(c as any).logo_url} alt="" className="max-h-8 max-w-8 object-contain" ref={el => { if (!el) return; import('@/lib/logoStorage').then(m => m.resolveLogoUrl((c as any).logo_url)).then(u => { if (u) el.src = u; }); }} />
-                          : <Building2 className="h-4 w-4 text-muted-foreground" />}
+                        <Logo src={(c as any).logo_url} alt={c.name} className="max-h-8 max-w-8 object-contain" fallback={<Building2 className="h-4 w-4 text-muted-foreground" />} />
                       </div>
                       <span>{c.name}</span>
                     </div>
