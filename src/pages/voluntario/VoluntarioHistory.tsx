@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 function codeSize(code?: string | null) {
   const len = (code || '?').length;
-  return len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
+  return len >= 7 ? 'text-[10px]' : len >= 6 ? 'text-xs' : len >= 5 ? 'text-sm' : len >= 4 ? 'text-base' : 'text-lg';
 }
 
 export default function VoluntarioHistory({ organizationId }: Props) {
