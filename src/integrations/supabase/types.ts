@@ -64,6 +64,7 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          logo_url: string | null
           name: string
           number: number
           organization_id: string
@@ -76,6 +77,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           name: string
           number: number
           organization_id: string
@@ -88,6 +90,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           name?: string
           number?: number
           organization_id?: string
