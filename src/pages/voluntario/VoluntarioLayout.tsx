@@ -3,7 +3,9 @@ import { Clock, User, Siren, Map as MapIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 
-export default function VoluntarioLayout({ children }: { children: React.ReactNode }) {
+export default function VoluntarioLayout({ children, orgName, orgLogoUrl }: { children: React.ReactNode; orgName?: string; orgLogoUrl?: string | null }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _brand = { orgName, orgLogoUrl };
   const loc = useLocation();
   const hideNav = loc.pathname === '/voluntario/login';
 

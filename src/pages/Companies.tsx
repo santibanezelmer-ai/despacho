@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Building2, Plus, Search, Pencil, Trash2, Loader2, Volume2 } from 'lucide-react';
 import ToneUploadField from '@/components/admin/ToneUploadField';
+import LogoUploadField from '@/components/admin/LogoUploadField';
+import { Logo } from '@/components/ui/Logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,9 +24,10 @@ interface CompanyForm {
   phone: string;
   active: boolean;
   tone_url: string;
+  logo_url: string | null;
 }
 
-const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '' };
+const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '', logo_url: null };
 
 export default function Companies() {
   const [search, setSearch] = useState('');
@@ -43,7 +46,7 @@ export default function Companies() {
 
   const openNew = () => { setEditing({ ...empty }); setDialogOpen(true); };
   const openEdit = (c: any) => {
-    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '' });
+    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '', logo_url: c.logo_url ?? null });
     setDialogOpen(true);
   };
 
@@ -84,6 +87,7 @@ export default function Companies() {
         phone: editing.phone.trim() || null,
         active: editing.active,
         tone_url: editing.tone_url.trim() || null,
+        logo_url: editing.logo_url || null,
         organization_id: orgId!,
       };
       if (editing.id) {
@@ -158,7 +162,14 @@ export default function Companies() {
               filtered.map(c => (
                 <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-mono font-bold text-foreground">{c.number}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded bg-muted/50 border border-border overflow-hidden flex items-center justify-center shrink-0">
+                        <Logo src={(c as any).logo_url} alt={c.name} className="max-h-8 max-w-8 object-contain" fallback={<Building2 className="h-4 w-4 text-muted-foreground" />} />
+                      </div>
+                      <span>{c.name}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{c.address ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.phone ?? '—'}</td>
                   <td className="px-4 py-3">
@@ -214,6 +225,14 @@ export default function Companies() {
                   <Label className="text-xs">Activa</Label>
                 </div>
               </div>
+              <LogoUploadField
+                label="Logo de la Compañía"
+                value={editing.logo_url}
+                onChange={(path) => setEditing(f => f ? { ...f, logo_url: path } : f)}
+                orgId={orgId!}
+                kind="company"
+                subId={editing.id ?? 'new'}
+              />
               <ToneUploadField
                 label="Tono de Compañía (MP3)"
                 value={editing.tone_url}

@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
-interface Props { organizationId: string }
+interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
@@ -22,7 +23,7 @@ const STATUS_TONE: Record<string, string> = {
   en_cuartel: 'bg-muted text-muted-foreground',
 };
 
-export default function VoluntarioDetail({ organizationId }: Props) {
+export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }: Props) {
   const { id } = useParams();
   const nav = useNavigate();
   const { user } = useAuth();
@@ -59,7 +60,7 @@ export default function VoluntarioDetail({ organizationId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('emergency_vehicles')
-        .select('id, released_at, vehicles(code, type)')
+        .select('id, released_at, vehicles(code, type, companies(name, logo_url))')
         .eq('emergency_id', id);
       if (error) throw error;
       return data ?? [];
@@ -104,13 +105,20 @@ export default function VoluntarioDetail({ organizationId }: Props) {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/60 px-4 py-3 flex items-center gap-3">
         <button onClick={() => nav(-1)} aria-label="Volver" className="p-2 -ml-2 rounded-lg active:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
+        {orgLogoUrl && (
+          <div className="h-8 w-8 rounded bg-card border border-border/60 overflow-hidden flex items-center justify-center shrink-0">
+            <Logo src={orgLogoUrl} alt={orgName || ''} className="max-h-8 max-w-8 object-contain" hideWhenEmpty />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
+          {orgName && <p className="font-cond uppercase tracking-widest text-[9px] text-muted-foreground truncate">{orgName}</p>}
           <p className="font-cond uppercase tracking-widest text-xs text-foreground truncate">{STATUS_LABEL[emg.status] || emg.status}</p>
         </div>
         <span className={`font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
           {STATUS_LABEL[emg.status] || emg.status}
         </span>
       </header>
+
 
       {/* Hero */}
       <div
@@ -198,8 +206,16 @@ export default function VoluntarioDetail({ organizationId }: Props) {
                     <p className="font-mono font-bold text-base text-foreground leading-none">
                       {v.vehicles?.code ?? '—'}
                     </p>
+                    {v.vehicles?.companies?.name && (
+                      <p className="text-[9px] font-cond uppercase tracking-widest text-muted-foreground mt-0.5 truncate flex items-center gap-1">
+                        {v.vehicles.companies.logo_url && (
+                          <Logo src={v.vehicles.companies.logo_url} alt="" className="h-3 w-3 object-contain" hideWhenEmpty />
+                        )}
+                        {v.vehicles.companies.name}
+                      </p>
+                    )}
                     {v.vehicles?.type && (
-                      <p className="text-[10px] font-cond uppercase tracking-widest text-muted-foreground mt-0.5 truncate">
+                      <p className="text-[10px] font-cond uppercase tracking-widest text-muted-foreground/70 mt-0.5 truncate">
                         {v.vehicles.type}
                       </p>
                     )}
