@@ -6,7 +6,7 @@ import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, Fil
 import { toast } from 'sonner';
 import { useState } from 'react';
 
-interface Props { organizationId: string }
+interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
