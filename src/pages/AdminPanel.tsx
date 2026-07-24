@@ -13,6 +13,7 @@ import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 import RanksAdmin from '@/components/admin/RanksAdmin';
 import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
 import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
+import OrganizationBrandingCard from '@/components/admin/OrganizationBrandingCard';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor';
 
@@ -241,6 +242,10 @@ export default function AdminPanel() {
         <Shield className="inline h-3 w-3 mr-1" />
         Los cambios de rol se aplican inmediatamente. Remover a un miembro solo afecta a esta organización.
       </p>
+
+      <div className="border-t border-border pt-6">
+        <OrganizationBrandingCard />
+      </div>
 
       <div className="border-t border-border pt-6">
         <InvitationsAdmin />
