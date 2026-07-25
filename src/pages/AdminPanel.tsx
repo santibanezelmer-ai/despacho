@@ -192,6 +192,7 @@ export default function AdminPanel() {
             ) : (
               members.map((m: any) => {
                 const isSelf = m.user_id === user?.id;
+                const uiRole = toUiRole(m.role, m.company_id);
                 return (
                   <TableRow key={m.id} className="border-border/30">
                     <TableCell className="text-sm font-medium">
@@ -207,27 +208,60 @@ export default function AdminPanel() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={m.role}
-                        onValueChange={(v) => {
-                          if (isSelf && m.role === 'admin' && v !== 'admin') {
-                            toast.error('No puedes quitarte el rol de admin a ti mismo');
-                            return;
-                          }
-                          updateRoleMutation.mutate({ memberId: m.id, role: v as OrgRole });
-                        }}
-                      >
-                        <SelectTrigger className={`h-7 w-36 text-xs ${ROLE_COLORS[m.role as OrgRole]}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ALL_ROLES.map(r => (
-                            <SelectItem key={r} value={r} className="text-xs">
-                              {ROLE_LABELS[r]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-col gap-1">
+                        <Select
+                          value={uiRole}
+                          onValueChange={(v) => {
+                            const newRole = v as UiRole;
+                            if (isSelf && uiRole === 'admin' && newRole !== 'admin') {
+                              toast.error('No puedes quitarte el rol de admin a ti mismo');
+                              return;
+                            }
+                            if (newRole === 'admin_compania') {
+                              // Wait for company selection — pre-fill with existing company_id if any.
+                              if (m.company_id) {
+                                updateRoleMutation.mutate({ memberId: m.id, uiRole: newRole, companyId: m.company_id });
+                              } else if (companies?.length) {
+                                updateRoleMutation.mutate({ memberId: m.id, uiRole: newRole, companyId: companies[0].id });
+                              } else {
+                                toast.error('Primero crea una compañía');
+                              }
+                              return;
+                            }
+                            updateRoleMutation.mutate({ memberId: m.id, uiRole: newRole, companyId: null });
+                          }}
+                        >
+                          <SelectTrigger className={`h-7 w-40 text-xs ${ROLE_COLORS[uiRole]}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ALL_ROLES.map(r => (
+                              <SelectItem key={r} value={r} className="text-xs">
+                                {ROLE_LABELS[r]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {uiRole === 'admin_compania' && (
+                          <Select
+                            value={m.company_id ?? ''}
+                            onValueChange={(cid) => {
+                              updateRoleMutation.mutate({ memberId: m.id, uiRole: 'admin_compania', companyId: cid });
+                            }}
+                          >
+                            <SelectTrigger className="h-7 w-40 text-[11px]">
+                              <SelectValue placeholder="Compañía..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(companies ?? []).map((c: any) => (
+                                <SelectItem key={c.id} value={c.id} className="text-xs">
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       {!isSelf && (
