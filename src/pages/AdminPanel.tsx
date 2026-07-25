@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useCompanies } from '@/hooks/useCompanies';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,23 +16,31 @@ import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
 import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
 import OrganizationBrandingCard from '@/components/admin/OrganizationBrandingCard';
 
-type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor';
+// Virtual role that maps to role='admin' + company_id NOT NULL in the DB.
+type UiRole = 'admin' | 'admin_compania' | 'operador' | 'oficial' | 'visor';
 
-const ROLE_LABELS: Record<OrgRole, string> = {
+const ROLE_LABELS: Record<UiRole, string> = {
   admin: 'Administrador',
+  admin_compania: 'Admin de Compañía',
   operador: 'Operador',
   oficial: 'Oficial',
   visor: 'Visor',
 };
 
-const ROLE_COLORS: Record<OrgRole, string> = {
+const ROLE_COLORS: Record<UiRole, string> = {
   admin: 'bg-red-500/20 text-red-400 border-red-500/30',
+  admin_compania: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   operador: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   oficial: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   visor: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
 };
 
-const ALL_ROLES: OrgRole[] = ['admin', 'operador', 'oficial', 'visor'];
+const ALL_ROLES: UiRole[] = ['admin', 'admin_compania', 'operador', 'oficial', 'visor'];
+
+function toUiRole(dbRole: string, companyId: string | null): UiRole {
+  if (dbRole === 'admin' && companyId) return 'admin_compania';
+  return (dbRole as UiRole);
+}
 
 export default function AdminPanel() {
   const { user } = useAuth();
