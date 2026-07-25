@@ -910,6 +910,7 @@ export type Database = {
       }
       organization_members: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           invited_by: string | null
@@ -920,6 +921,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           invited_by?: string | null
@@ -930,6 +932,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           invited_by?: string | null
@@ -940,6 +943,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "organization_members_organization_id_fkey"
             columns: ["organization_id"]
@@ -1499,6 +1509,10 @@ export type Database = {
           _table_name?: string
         }
         Returns: string
+      }
+      is_company_admin: {
+        Args: { _company_id: string; _org_id: string }
+        Returns: boolean
       }
       is_demo_org_active: { Args: { _org_id: string }; Returns: boolean }
       is_org_admin_of_user: {
