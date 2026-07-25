@@ -137,11 +137,8 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-cond">
-              <span className="vol-live-dot" /> En vivo · alerta por cada despacho
-            </div>
             {orgName && <p className="text-[11px] font-cond uppercase tracking-widest text-muted-foreground truncate">{orgName}</p>}
-            <h1 className="text-4xl mt-0.5 leading-none text-foreground">Emergencias Activas</h1>
+            <h1 className="text-3xl mt-0.5 leading-none text-foreground whitespace-nowrap">Emergencias Activas</h1>
           </div>
         </div>
       </header>
