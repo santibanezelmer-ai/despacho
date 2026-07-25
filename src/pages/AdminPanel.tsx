@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useCompanies } from '@/hooks/useCompanies';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,28 +16,37 @@ import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
 import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
 import OrganizationBrandingCard from '@/components/admin/OrganizationBrandingCard';
 
-type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor';
+// Virtual role that maps to role='admin' + company_id NOT NULL in the DB.
+type UiRole = 'admin' | 'admin_compania' | 'operador' | 'oficial' | 'visor';
 
-const ROLE_LABELS: Record<OrgRole, string> = {
+const ROLE_LABELS: Record<UiRole, string> = {
   admin: 'Administrador',
+  admin_compania: 'Admin de Compañía',
   operador: 'Operador',
   oficial: 'Oficial',
   visor: 'Visor',
 };
 
-const ROLE_COLORS: Record<OrgRole, string> = {
+const ROLE_COLORS: Record<UiRole, string> = {
   admin: 'bg-red-500/20 text-red-400 border-red-500/30',
+  admin_compania: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   operador: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   oficial: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   visor: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
 };
 
-const ALL_ROLES: OrgRole[] = ['admin', 'operador', 'oficial', 'visor'];
+const ALL_ROLES: UiRole[] = ['admin', 'admin_compania', 'operador', 'oficial', 'visor'];
+
+function toUiRole(dbRole: string, companyId: string | null): UiRole {
+  if (dbRole === 'admin' && companyId) return 'admin_compania';
+  return (dbRole as UiRole);
+}
 
 export default function AdminPanel() {
   const { user } = useAuth();
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
+  const { data: companies } = useCompanies();
 
   // Fetch members of the CURRENT organization only
   const { data: members, isLoading } = useQuery({
@@ -45,7 +55,7 @@ export default function AdminPanel() {
     queryFn: async () => {
       const { data: memberRows, error: mErr } = await (supabase as any)
         .from('organization_members')
-        .select('id, user_id, role, status, created_at')
+        .select('id, user_id, role, status, created_at, company_id')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: true });
       if (mErr) throw mErr;
@@ -65,10 +75,15 @@ export default function AdminPanel() {
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: string; role: OrgRole }) => {
+    mutationFn: async ({ memberId, uiRole, companyId }: { memberId: string; uiRole: UiRole; companyId: string | null }) => {
+      const dbRole = uiRole === 'admin_compania' ? 'admin' : uiRole;
+      const finalCompanyId = uiRole === 'admin_compania' ? companyId : null;
+      if (uiRole === 'admin_compania' && !finalCompanyId) {
+        throw new Error('Selecciona una compañía para este administrador');
+      }
       const { error } = await (supabase as any)
         .from('organization_members')
-        .update({ role })
+        .update({ role: dbRole, company_id: finalCompanyId })
         .eq('id', memberId);
       if (error) throw error;
     },
@@ -177,6 +192,7 @@ export default function AdminPanel() {
             ) : (
               members.map((m: any) => {
                 const isSelf = m.user_id === user?.id;
+                const uiRole = toUiRole(m.role, m.company_id);
                 return (
                   <TableRow key={m.id} className="border-border/30">
                     <TableCell className="text-sm font-medium">
@@ -192,27 +208,60 @@ export default function AdminPanel() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={m.role}
-                        onValueChange={(v) => {
-                          if (isSelf && m.role === 'admin' && v !== 'admin') {
-                            toast.error('No puedes quitarte el rol de admin a ti mismo');
-                            return;
-                          }
-                          updateRoleMutation.mutate({ memberId: m.id, role: v as OrgRole });
-                        }}
-                      >
-                        <SelectTrigger className={`h-7 w-36 text-xs ${ROLE_COLORS[m.role as OrgRole]}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ALL_ROLES.map(r => (
-                            <SelectItem key={r} value={r} className="text-xs">
-                              {ROLE_LABELS[r]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-col gap-1">
+                        <Select
+                          value={uiRole}
+                          onValueChange={(v) => {
+                            const newRole = v as UiRole;
+                            if (isSelf && uiRole === 'admin' && newRole !== 'admin') {
+                              toast.error('No puedes quitarte el rol de admin a ti mismo');
+                              return;
+                            }
+                            if (newRole === 'admin_compania') {
+                              // Wait for company selection — pre-fill with existing company_id if any.
+                              if (m.company_id) {
+                                updateRoleMutation.mutate({ memberId: m.id, uiRole: newRole, companyId: m.company_id });
+                              } else if (companies?.length) {
+                                updateRoleMutation.mutate({ memberId: m.id, uiRole: newRole, companyId: companies[0].id });
+                              } else {
+                                toast.error('Primero crea una compañía');
+                              }
+                              return;
+                            }
+                            updateRoleMutation.mutate({ memberId: m.id, uiRole: newRole, companyId: null });
+                          }}
+                        >
+                          <SelectTrigger className={`h-7 w-40 text-xs ${ROLE_COLORS[uiRole]}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ALL_ROLES.map(r => (
+                              <SelectItem key={r} value={r} className="text-xs">
+                                {ROLE_LABELS[r]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {uiRole === 'admin_compania' && (
+                          <Select
+                            value={m.company_id ?? ''}
+                            onValueChange={(cid) => {
+                              updateRoleMutation.mutate({ memberId: m.id, uiRole: 'admin_compania', companyId: cid });
+                            }}
+                          >
+                            <SelectTrigger className="h-7 w-40 text-[11px]">
+                              <SelectValue placeholder="Compañía..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(companies ?? []).map((c: any) => (
+                                <SelectItem key={c.id} value={c.id} className="text-xs">
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       {!isSelf && (
