@@ -46,6 +46,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
+  const { data: companies } = useCompanies();
 
   // Fetch members of the CURRENT organization only
   const { data: members, isLoading } = useQuery({
@@ -54,7 +55,7 @@ export default function AdminPanel() {
     queryFn: async () => {
       const { data: memberRows, error: mErr } = await (supabase as any)
         .from('organization_members')
-        .select('id, user_id, role, status, created_at')
+        .select('id, user_id, role, status, created_at, company_id')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: true });
       if (mErr) throw mErr;
@@ -74,10 +75,15 @@ export default function AdminPanel() {
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: string; role: OrgRole }) => {
+    mutationFn: async ({ memberId, uiRole, companyId }: { memberId: string; uiRole: UiRole; companyId: string | null }) => {
+      const dbRole = uiRole === 'admin_compania' ? 'admin' : uiRole;
+      const finalCompanyId = uiRole === 'admin_compania' ? companyId : null;
+      if (uiRole === 'admin_compania' && !finalCompanyId) {
+        throw new Error('Selecciona una compañía para este administrador');
+      }
       const { error } = await (supabase as any)
         .from('organization_members')
-        .update({ role })
+        .update({ role: dbRole, company_id: finalCompanyId })
         .eq('id', memberId);
       if (error) throw error;
     },
