@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import LogoUploadField from './LogoUploadField';
 import { toast } from 'sonner';
@@ -11,6 +13,7 @@ export default function OrganizationBrandingCard() {
   const { orgId, isOrgAdmin } = useOrganization();
   const qc = useQueryClient();
   const [logo, setLogo] = useState<string | null>(null);
+  const [name, setName] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
   const { data: org, isLoading } = useQuery({
@@ -27,22 +30,27 @@ export default function OrganizationBrandingCard() {
     },
   });
 
-  useEffect(() => { setLogo(org?.logo_url ?? null); }, [org?.logo_url]);
+  useEffect(() => {
+    setLogo(org?.logo_url ?? null);
+    setName(org?.name ?? '');
+  }, [org?.logo_url, org?.name]);
 
   if (!isOrgAdmin) return null;
 
-  const dirty = (org?.logo_url ?? null) !== logo;
+  const dirty = (org?.logo_url ?? null) !== logo || (org?.name ?? '') !== name.trim();
 
   const handleSave = async () => {
     if (!orgId) return;
+    const trimmed = name.trim();
+    if (!trimmed) { toast.error('El nombre no puede estar vacío'); return; }
     setSaving(true);
     try {
       const { error } = await (supabase as any)
         .from('organizations')
-        .update({ logo_url: logo })
+        .update({ logo_url: logo, name: trimmed })
         .eq('id', orgId);
       if (error) throw error;
-      toast.success('Logo de la organización actualizado');
+      toast.success('Organización actualizada');
       qc.invalidateQueries({ queryKey: ['org-branding', orgId] });
       qc.invalidateQueries({ queryKey: ['organization'] });
     } catch (err: any) {
@@ -59,13 +67,24 @@ export default function OrganizationBrandingCard() {
         <h2 className="text-sm font-cond uppercase tracking-widest text-foreground">Marca de la organización</h2>
       </div>
       <p className="text-xs text-muted-foreground -mt-2">
-        Este logo se muestra en la PWA de voluntarios, en las fichas de emergencia y en los informes exportados.
+        Nombre y logo se muestran en la PWA, en las fichas de emergencia y en los informes exportados.
       </p>
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
       ) : (
         <>
+          <div className="space-y-1.5">
+            <Label htmlFor="org-name" className="text-xs">Nombre de la organización</Label>
+            <Input
+              id="org-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Cuerpo de Bomberos de..."
+              maxLength={120}
+            />
+          </div>
+
           <LogoUploadField
             label={`Logo de ${org?.name ?? 'la organización'}`}
             value={logo}
