@@ -61,7 +61,9 @@ export function useUpsertSystemSound() {
       const path = `${orgId}/sounds/${soundKey}-${Date.now()}.mp3`;
       const { error: uploadErr } = await supabase.storage.from('tones').upload(path, file);
       if (uploadErr) throw uploadErr;
-      const { data: urlData } = supabase.storage.from('tones').getPublicUrl(path);
+      const { data: urlData, error: signErr } = await supabase.storage.from('tones').createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (signErr || !urlData) throw signErr ?? new Error('No se pudo firmar la URL');
+
 
       // Upsert via delete + insert (unique constraint)
       await supabase.from('system_sounds').delete()
