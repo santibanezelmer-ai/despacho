@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,9 +24,13 @@ export default function Vehicles() {
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const { data: vehicles, isLoading } = useVehicles();
   const { canWrite } = useAuth();
+  const { scopedCompanyId } = useOrganization();
   const qc = useQueryClient();
 
-  const filtered = (vehicles ?? []).filter(v =>
+  const scoped = (vehicles ?? []).filter((v: any) =>
+    scopedCompanyId ? v.company_id === scopedCompanyId : true
+  );
+  const filtered = scoped.filter(v =>
     v.code.toLowerCase().includes(search.toLowerCase()) ||
     v.type.toLowerCase().includes(search.toLowerCase()) ||
     (v.companies?.name ?? '').toLowerCase().includes(search.toLowerCase())

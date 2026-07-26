@@ -32,6 +32,7 @@ interface OrgMembership {
   organization_id: string;
   role: OrgRole;
   status: string;
+  company_id: string | null;
   organization: {
     id: string;
     name: string;
@@ -50,6 +51,12 @@ interface OrganizationContextType {
   orgRole: OrgRole | null;
   canWrite: boolean;
   isOrgAdmin: boolean;
+  /** True when the current user is a full org admin (role=admin AND no company scope). */
+  isFullOrgAdmin: boolean;
+  /** True when the current user is scoped to a single company (role=admin + company_id). */
+  isCompanyAdmin: boolean;
+  /** company_id the user is scoped to, or null if not company-scoped. */
+  scopedCompanyId: string | null;
   loading: boolean;
   setCurrentOrgId: (id: string) => void;
 }
@@ -74,7 +81,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from('organization_members')
-        .select('organization_id, role, status, organizations(id, name, slug, status, logo_url, is_demo, demo_expires_at)')
+        .select('organization_id, role, status, company_id, organizations(id, name, slug, status, logo_url, is_demo, demo_expires_at)')
         .eq('user_id', user.id)
         .eq('status', 'active');
 
@@ -83,6 +90,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           organization_id: m.organization_id,
           role: m.role,
           status: m.status,
+          company_id: m.company_id ?? null,
           organization: m.organizations,
         }));
         setMemberships(mapped);
@@ -104,10 +112,15 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const orgRole = currentOrg?.role ?? null;
   const canWrite = orgRole === 'admin' || orgRole === 'operador' || orgRole === 'oficial';
   const isOrgAdmin = orgRole === 'admin';
+  const scopedCompanyId = isOrgAdmin ? (currentOrg?.company_id ?? null) : null;
+  const isCompanyAdmin = isOrgAdmin && !!scopedCompanyId;
+  const isFullOrgAdmin = isOrgAdmin && !scopedCompanyId;
 
   return (
     <OrganizationContext.Provider value={{
-      memberships, currentOrg, orgId: currentOrgId, orgRole, canWrite, isOrgAdmin, loading, setCurrentOrgId,
+      memberships, currentOrg, orgId: currentOrgId, orgRole, canWrite, isOrgAdmin,
+      isFullOrgAdmin, isCompanyAdmin, scopedCompanyId,
+      loading, setCurrentOrgId,
     }}>
       {children}
     </OrganizationContext.Provider>
