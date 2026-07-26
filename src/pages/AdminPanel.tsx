@@ -15,6 +15,7 @@ import RanksAdmin from '@/components/admin/RanksAdmin';
 import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
 import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
 import OrganizationBrandingCard from '@/components/admin/OrganizationBrandingCard';
+import CompanyAdminsManager from '@/components/admin/CompanyAdminsManager';
 
 // Virtual role that maps to role='admin' + company_id NOT NULL in the DB.
 type UiRole = 'admin' | 'admin_compania' | 'operador' | 'oficial' | 'visor';
