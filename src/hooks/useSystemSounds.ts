@@ -73,7 +73,7 @@ export function useUpsertSystemSound() {
       const { error } = await supabase.from('system_sounds').insert({
         organization_id: orgId!,
         sound_key: soundKey,
-        sound_url: urlData.publicUrl,
+        sound_url: urlData.signedUrl,
         label: SOUND_KEYS.find(s => s.key === soundKey)?.label ?? soundKey,
       });
       if (error) throw error;
