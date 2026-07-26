@@ -119,7 +119,8 @@
     "ajv": "^8.20.0",
     "@babel/plugin-transform-modules-systemjs": "^8.0.1",
     "ws": "^8.21.1",
-    "dompurify": "^3.4.12"
+    "dompurify": "^3.4.12",
+    "protobufjs": "^8.7.1"
   },
   "resolutions": {
     "tar": "^7.5.22",
@@ -133,6 +134,7 @@
     "ajv": "^8.20.0",
     "@babel/plugin-transform-modules-systemjs": "^8.0.1",
     "ws": "^8.21.1",
-    "dompurify": "^3.4.12"
+    "dompurify": "^3.4.12",
+    "protobufjs": "^8.7.1"
   }
 }
