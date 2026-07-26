@@ -114,7 +114,8 @@
     "brace-expansion": "^2.1.2",
     "fast-uri": "^3.1.4",
     "minimatch": "^9.0.9",
-    "glob": "^10.4.5"
+    "glob": "^11.0.0",
+    "@xmldom/xmldom": "^0.9.10"
   },
   "resolutions": {
     "tar": "^7.5.22",
@@ -123,6 +124,7 @@
     "brace-expansion": "^2.1.2",
     "fast-uri": "^3.1.4",
     "minimatch": "^9.0.9",
-    "glob": "^10.4.5"
+    "glob": "^11.0.0",
+    "@xmldom/xmldom": "^0.9.10"
   }
 }
