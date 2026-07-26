@@ -61,8 +61,9 @@ export default function Companies() {
       const path = `company-${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from('tones').upload(path, file);
       if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from('tones').getPublicUrl(path);
-      setEditing(f => f ? { ...f, tone_url: urlData.publicUrl } : f);
+      const { data: urlData, error: signErr } = await supabase.storage.from('tones').createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (signErr || !urlData) throw signErr ?? new Error('No se pudo firmar la URL');
+      setEditing(f => f ? { ...f, tone_url: urlData.signedUrl } : f);
       toast.success('Tono subido');
     } catch (err: any) {
       toast.error(err.message || 'Error subiendo tono');
