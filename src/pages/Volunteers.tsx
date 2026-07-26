@@ -18,10 +18,13 @@ export default function Volunteers() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const { data: volunteers, isLoading } = useVolunteers();
   const { canWrite } = useAuth();
-  const { orgId, isOrgAdmin } = useOrganization();
+  const { orgId, isOrgAdmin, scopedCompanyId, isCompanyAdmin } = useOrganization();
   const qc = useQueryClient();
 
-  const filtered = (volunteers ?? []).filter((v: any) =>
+  const scoped = (volunteers ?? []).filter((v: any) =>
+    scopedCompanyId ? v.company_id === scopedCompanyId : true
+  );
+  const filtered = scoped.filter((v: any) =>
     v.name.toLowerCase().includes(search.toLowerCase()) ||
     (v.companies?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (v.ranks?.name ?? '').toLowerCase().includes(search.toLowerCase())
