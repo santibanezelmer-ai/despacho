@@ -32,6 +32,7 @@ interface OrgMembership {
   organization_id: string;
   role: OrgRole;
   status: string;
+  company_id: string | null;
   organization: {
     id: string;
     name: string;
@@ -50,6 +51,12 @@ interface OrganizationContextType {
   orgRole: OrgRole | null;
   canWrite: boolean;
   isOrgAdmin: boolean;
+  /** True when the current user is a full org admin (role=admin AND no company scope). */
+  isFullOrgAdmin: boolean;
+  /** True when the current user is scoped to a single company (role=admin + company_id). */
+  isCompanyAdmin: boolean;
+  /** company_id the user is scoped to, or null if not company-scoped. */
+  scopedCompanyId: string | null;
   loading: boolean;
   setCurrentOrgId: (id: string) => void;
 }
