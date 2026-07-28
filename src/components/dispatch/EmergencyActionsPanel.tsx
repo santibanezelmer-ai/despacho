@@ -179,6 +179,29 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       const audio = playSystemSound('declarado');
       if (!audio) toast.info('Sin sonido de declarado configurado');
       toast.success('🔊 Emergencia declarada');
+      // Re-notify volunteers with the same push flow used for new emergencies,
+      // so their PWA plays the dispatch tone again.
+      (async () => {
+        try {
+          const { data: emg } = await supabase
+            .from('emergencies')
+            .select('organization_id, address')
+            .eq('id', emergency.id)
+            .maybeSingle();
+          if (!emg?.organization_id) return;
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              organization_id: emg.organization_id,
+              emergency_id: emergency.id,
+              title: '🔴 INCENDIO DECLARADO',
+              body: emg.address ?? emergency.address,
+              type: 'new_emergency',
+            },
+          });
+        } catch (e) {
+          console.error('[Declarado] push failed', e);
+        }
+      })();
     }
   };
 
