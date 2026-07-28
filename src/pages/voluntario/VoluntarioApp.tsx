@@ -99,6 +99,19 @@ export default function VoluntarioApp() {
       }
     };
     navigator.serviceWorker?.addEventListener('message', onSwMessage);
+
+    // If the app was opened from a notification while closed, the SW appended
+    // ?playTone=1 to the URL — reproduce the custom MP3 now that we have a
+    // user gesture (the tap on the notification).
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('playTone') === '1') {
+        playDefaultDispatchTone();
+        url.searchParams.delete('playTone');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch { /* ignore */ }
+
     return () => {
       unsub();
       navigator.serviceWorker?.removeEventListener('message', onSwMessage);
