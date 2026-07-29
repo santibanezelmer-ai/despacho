@@ -206,29 +206,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
         )}
       </div>
 
-      {/* Sticky action bar — always accessible */}
-      {!isFinal && (
-        <div className="fixed bottom-[72px] inset-x-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md safe-bottom">
-          <div className="max-w-md mx-auto grid grid-cols-2 gap-2 p-3">
-            <button
-              onClick={() => confirm('going')} disabled={saving}
-              className={`h-14 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition ${
-                myAttendance?.status === 'going' ? 'bg-success text-success-foreground' : 'bg-emergency text-emergency-foreground'
-              }`}
-            >
-              <CheckCircle2 className="h-5 w-5" /> Voy
-            </button>
-            <button
-              onClick={() => confirm('not_going')} disabled={saving}
-              className={`h-14 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition ${
-                myAttendance?.status === 'not_going' ? 'bg-muted text-foreground border border-border' : 'bg-card border border-border text-foreground/80'
-              }`}
-            >
-              <XCircle className="h-5 w-5" /> No voy
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
