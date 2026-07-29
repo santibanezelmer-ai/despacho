@@ -11,8 +11,8 @@ interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string 
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho',
-  en_camino: 'En camino',
-  trabajando: 'Trabajando',
+  en_ruta: 'En ruta',
+  en_trabajo: 'En trabajo',
   controlada: 'Controlada',
   finalizada: 'Finalizada',
   en_cuartel: 'Finalizada',
@@ -20,8 +20,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_TONE: Record<string, string> = {
   despacho: 'bg-emergency text-emergency-foreground',
-  en_camino: 'bg-amber-500 text-black',
-  trabajando: 'bg-orange-500 text-black',
+  en_ruta: 'bg-amber-500 text-black',
+  en_trabajo: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
   en_cuartel: 'bg-muted text-muted-foreground',
