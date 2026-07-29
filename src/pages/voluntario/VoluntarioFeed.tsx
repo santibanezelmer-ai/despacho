@@ -241,57 +241,36 @@ function HotCard({ emg }: { emg: any }) {
   );
 }
 
-function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; onConfirm: (e: any, s: 'going' | 'not_going') => void }) {
+function RowCard({ emg }: { emg: any }) {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(emg.emergency_keys?.code, 'lg')}`}
-            style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
-          >
-            {emg.emergency_keys?.code || '?'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-display uppercase text-lg leading-none text-foreground truncate">
-                {emg.emergency_keys?.name || 'Emergencia'}
-              </p>
-              <span className={`ml-auto font-cond uppercase tracking-widest text-[9px] px-1.5 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
-                {STATUS_LABEL[emg.status] || emg.status}
-              </span>
-            </div>
-            <p className="text-[13px] text-foreground/80 mt-0.5 flex items-start gap-1 line-clamp-1">
-              <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-              {emg.address}
+    <Link to={`/voluntario/emergencia/${emg.id}`} className="block bg-card border border-border rounded-xl overflow-hidden p-3.5 active:bg-muted/40 transition">
+      <div className="flex items-start gap-3">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(emg.emergency_keys?.code, 'lg')}`}
+          style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
+        >
+          {emg.emergency_keys?.code || '?'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-display uppercase text-lg leading-none text-foreground truncate">
+              {emg.emergency_keys?.name || 'Emergencia'}
             </p>
-            <div className="mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
-              Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
-            </div>
+            <span className={`ml-auto font-cond uppercase tracking-widest text-[9px] px-1.5 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
+              {STATUS_LABEL[emg.status] || emg.status}
+            </span>
+          </div>
+          <p className="text-[13px] text-foreground/80 mt-0.5 flex items-start gap-1 line-clamp-1">
+            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+            {emg.address}
+          </p>
+          <div className="mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
+            Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
           </div>
         </div>
-        <Badges emg={emg} compact />
-      </Link>
-
-      <div className="grid grid-cols-2 border-t border-border/60">
-        <button
-          onClick={() => onConfirm(emg, 'going')}
-          className={`h-11 font-cond uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 active:scale-95 transition border-r border-border/60 ${
-            myStatus === 'going' ? 'bg-success/20 text-success' : 'text-foreground/80'
-          }`}
-        >
-          <CheckCircle2 className="h-4 w-4" /> Voy
-        </button>
-        <button
-          onClick={() => onConfirm(emg, 'not_going')}
-          className={`h-11 font-cond uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 active:scale-95 transition ${
-            myStatus === 'not_going' ? 'bg-muted text-foreground' : 'text-muted-foreground'
-          }`}
-        >
-          <XCircle className="h-4 w-4" /> No voy
-        </button>
       </div>
-    </div>
+      <Badges emg={emg} compact />
+    </Link>
   );
 }
 
