@@ -2,12 +2,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, CheckCircle2, XCircle, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, Navigation } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Logo } from '@/components/ui/Logo';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useState } from 'react';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
