@@ -37,7 +37,6 @@ function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
 
 export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: Props) {
   const { user } = useAuth();
-  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['vol-feed', organizationId],
@@ -85,42 +84,6 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
     },
     refetchInterval: 10_000,
   });
-
-  const ids = (data ?? []).map((e: any) => e.id);
-  const { data: attendance } = useQuery({
-    queryKey: ['vol-att-batch', user?.id, ids.join(',')],
-    queryFn: async () => {
-      if (!user || !ids.length) return {};
-      const { data } = await (supabase as any)
-        .from('emergency_attendance')
-        .select('emergency_id, status')
-        .eq('user_id', user.id)
-        .in('emergency_id', ids);
-      const map: Record<string, string> = {};
-      for (const r of data ?? []) map[r.emergency_id] = r.status;
-      return map;
-    },
-    enabled: !!user && ids.length > 0,
-    refetchInterval: 15_000,
-  });
-
-  const confirm = async (emg: any, status: 'going' | 'not_going') => {
-    if (!user) return;
-    try { navigator.vibrate?.(status === 'going' ? [30, 30, 30] : 30); } catch { /* noop */ }
-    const { error } = await (supabase as any).from('emergency_attendance').upsert(
-      {
-        emergency_id: emg.id,
-        organization_id: emg.organization_id ?? organizationId,
-        user_id: user.id,
-        status,
-        confirmed_at: new Date().toISOString(),
-      },
-      { onConflict: 'emergency_id,user_id' },
-    );
-    if (error) return toast.error(error.message);
-    toast.success(status === 'going' ? 'Voy confirmado' : 'Marcado: no voy');
-    qc.invalidateQueries({ queryKey: ['vol-att-batch'] });
-  };
 
   const [latest, ...rest] = data ?? [];
 
@@ -188,7 +151,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
       ) : (
         <div className="space-y-3 px-5 pb-6">
           {/* Hero — latest emergency */}
-          <HotCard emg={latest} myStatus={attendance?.[latest.id]} onConfirm={confirm} />
+          <HotCard emg={latest} />
 
           {rest.length > 0 && (
             <p className="font-cond uppercase tracking-widest text-[10px] text-muted-foreground pt-3 pl-1">
@@ -197,7 +160,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
           )}
 
           {rest.map((e: any) => (
-            <RowCard key={e.id} emg={e} myStatus={attendance?.[e.id]} onConfirm={confirm} />
+            <RowCard key={e.id} emg={e} />
           ))}
         </div>
       )}
@@ -207,7 +170,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
 
 /* ---------------- Cards ---------------- */
 
-function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; onConfirm: (e: any, s: 'going' | 'not_going') => void }) {
+function HotCard({ emg }: { emg: any }) {
   const mapsUrl = emg.latitude && emg.longitude
     ? `https://www.google.com/maps/dir/?api=1&destination=${emg.latitude},${emg.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(emg.address)}`;
