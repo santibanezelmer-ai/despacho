@@ -23,9 +23,6 @@ const STATUS_TONE: Record<string, string> = {
 export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }: Props) {
   const { id } = useParams();
   const nav = useNavigate();
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const [saving, setSaving] = useState(false);
 
   const { data: emg, isLoading } = useQuery({
     queryKey: ['vol-emg', id],
@@ -38,18 +35,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
       return data;
     },
     refetchInterval: 15_000,
-  });
-
-  const { data: myAttendance } = useQuery({
-    queryKey: ['vol-att', id, user?.id],
-    queryFn: async () => {
-      if (!user || !id) return null;
-      const { data } = await (supabase as any)
-        .from('emergency_attendance')
-        .select('*').eq('emergency_id', id).eq('user_id', user.id).maybeSingle();
-      return data;
-    },
-    enabled: !!user && !!id,
   });
 
   const { data: vehicles } = useQuery({
@@ -66,25 +51,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
     refetchInterval: 5_000,
     refetchOnMount: 'always',
   });
-
-  const confirm = async (status: 'going' | 'not_going') => {
-    if (!user || !id || !emg) return;
-    try { navigator.vibrate?.(status === 'going' ? [30, 30, 30] : 30); } catch { /* noop */ }
-    setSaving(true);
-    const { error } = await (supabase as any).from('emergency_attendance').upsert(
-      {
-        emergency_id: id, organization_id: emg.organization_id, user_id: user.id,
-        status, confirmed_at: new Date().toISOString(),
-      },
-      { onConflict: 'emergency_id,user_id' },
-    );
-    setSaving(false);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(status === 'going' ? 'Voy confirmado' : 'Marcado: no voy');
-      qc.invalidateQueries({ queryKey: ['vol-att', id, user.id] });
-    }
-  };
 
   if (isLoading || !emg) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>;
