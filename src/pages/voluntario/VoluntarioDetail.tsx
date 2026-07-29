@@ -1,23 +1,20 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
-import { toast } from 'sonner';
-import { useState } from 'react';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
 const STATUS_LABEL: Record<string, string> = {
-  despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
+  despacho: 'Despacho', en_ruta: 'En ruta', en_trabajo: 'En trabajo',
   controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
 
 const STATUS_TONE: Record<string, string> = {
   despacho: 'bg-emergency text-emergency-foreground',
-  en_camino: 'bg-amber-500 text-black',
-  trabajando: 'bg-orange-500 text-black',
+  en_ruta: 'bg-amber-500 text-black',
+  en_trabajo: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
   en_cuartel: 'bg-muted text-muted-foreground',
