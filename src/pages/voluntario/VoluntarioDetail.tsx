@@ -1,23 +1,20 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, MapPin, Navigation, CheckCircle2, XCircle, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
-import { toast } from 'sonner';
-import { useState } from 'react';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
 const STATUS_LABEL: Record<string, string> = {
-  despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
+  despacho: 'Despacho', en_ruta: 'En ruta', en_trabajo: 'En trabajo',
   controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
 
 const STATUS_TONE: Record<string, string> = {
   despacho: 'bg-emergency text-emergency-foreground',
-  en_camino: 'bg-amber-500 text-black',
-  trabajando: 'bg-orange-500 text-black',
+  en_ruta: 'bg-amber-500 text-black',
+  en_trabajo: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
   en_cuartel: 'bg-muted text-muted-foreground',
@@ -26,9 +23,6 @@ const STATUS_TONE: Record<string, string> = {
 export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }: Props) {
   const { id } = useParams();
   const nav = useNavigate();
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const [saving, setSaving] = useState(false);
 
   const { data: emg, isLoading } = useQuery({
     queryKey: ['vol-emg', id],
@@ -41,18 +35,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
       return data;
     },
     refetchInterval: 15_000,
-  });
-
-  const { data: myAttendance } = useQuery({
-    queryKey: ['vol-att', id, user?.id],
-    queryFn: async () => {
-      if (!user || !id) return null;
-      const { data } = await (supabase as any)
-        .from('emergency_attendance')
-        .select('*').eq('emergency_id', id).eq('user_id', user.id).maybeSingle();
-      return data;
-    },
-    enabled: !!user && !!id,
   });
 
   const { data: vehicles } = useQuery({
@@ -70,25 +52,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
     refetchOnMount: 'always',
   });
 
-  const confirm = async (status: 'going' | 'not_going') => {
-    if (!user || !id || !emg) return;
-    try { navigator.vibrate?.(status === 'going' ? [30, 30, 30] : 30); } catch { /* noop */ }
-    setSaving(true);
-    const { error } = await (supabase as any).from('emergency_attendance').upsert(
-      {
-        emergency_id: id, organization_id: emg.organization_id, user_id: user.id,
-        status, confirmed_at: new Date().toISOString(),
-      },
-      { onConflict: 'emergency_id,user_id' },
-    );
-    setSaving(false);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(status === 'going' ? 'Voy confirmado' : 'Marcado: no voy');
-      qc.invalidateQueries({ queryKey: ['vol-att', id, user.id] });
-    }
-  };
-
   if (isLoading || !emg) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>;
   }
@@ -98,10 +61,10 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
     ? `https://www.google.com/maps/dir/?api=1&destination=${emg.latitude},${emg.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(emg.address)}`;
   const wazeUrl = hasCoords ? `https://waze.com/ul?ll=${emg.latitude},${emg.longitude}&navigate=yes` : null;
-  const isFinal = emg.status === 'finalizada';
 
   return (
-    <div className="max-w-md mx-auto pb-32">
+    <div className="max-w-md mx-auto pb-8">
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/60 px-4 py-3 flex items-center gap-3">
         <button onClick={() => nav(-1)} aria-label="Volver" className="p-2 -ml-2 rounded-lg active:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
@@ -243,29 +206,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
         )}
       </div>
 
-      {/* Sticky action bar — always accessible */}
-      {!isFinal && (
-        <div className="fixed bottom-[72px] inset-x-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md safe-bottom">
-          <div className="max-w-md mx-auto grid grid-cols-2 gap-2 p-3">
-            <button
-              onClick={() => confirm('going')} disabled={saving}
-              className={`h-14 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition ${
-                myAttendance?.status === 'going' ? 'bg-success text-success-foreground' : 'bg-emergency text-emergency-foreground'
-              }`}
-            >
-              <CheckCircle2 className="h-5 w-5" /> Voy
-            </button>
-            <button
-              onClick={() => confirm('not_going')} disabled={saving}
-              className={`h-14 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition ${
-                myAttendance?.status === 'not_going' ? 'bg-muted text-foreground border border-border' : 'bg-card border border-border text-foreground/80'
-              }`}
-            >
-              <XCircle className="h-5 w-5" /> No voy
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

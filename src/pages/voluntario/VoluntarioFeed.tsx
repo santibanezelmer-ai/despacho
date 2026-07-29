@@ -2,19 +2,17 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, CheckCircle2, XCircle, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, Navigation } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Logo } from '@/components/ui/Logo';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useState } from 'react';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
 const STATUS_LABEL: Record<string, string> = {
   despacho: 'Despacho',
-  en_camino: 'En camino',
-  trabajando: 'Trabajando',
+  en_ruta: 'En ruta',
+  en_trabajo: 'En trabajo',
   controlada: 'Controlada',
   finalizada: 'Finalizada',
   en_cuartel: 'Finalizada',
@@ -22,8 +20,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_TONE: Record<string, string> = {
   despacho: 'bg-emergency text-emergency-foreground',
-  en_camino: 'bg-amber-500 text-black',
-  trabajando: 'bg-orange-500 text-black',
+  en_ruta: 'bg-amber-500 text-black',
+  en_trabajo: 'bg-orange-500 text-black',
   controlada: 'bg-blue-500 text-white',
   finalizada: 'bg-muted text-muted-foreground',
   en_cuartel: 'bg-muted text-muted-foreground',
@@ -39,7 +37,6 @@ function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
 
 export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: Props) {
   const { user } = useAuth();
-  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['vol-feed', organizationId],
@@ -87,42 +84,6 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
     },
     refetchInterval: 10_000,
   });
-
-  const ids = (data ?? []).map((e: any) => e.id);
-  const { data: attendance } = useQuery({
-    queryKey: ['vol-att-batch', user?.id, ids.join(',')],
-    queryFn: async () => {
-      if (!user || !ids.length) return {};
-      const { data } = await (supabase as any)
-        .from('emergency_attendance')
-        .select('emergency_id, status')
-        .eq('user_id', user.id)
-        .in('emergency_id', ids);
-      const map: Record<string, string> = {};
-      for (const r of data ?? []) map[r.emergency_id] = r.status;
-      return map;
-    },
-    enabled: !!user && ids.length > 0,
-    refetchInterval: 15_000,
-  });
-
-  const confirm = async (emg: any, status: 'going' | 'not_going') => {
-    if (!user) return;
-    try { navigator.vibrate?.(status === 'going' ? [30, 30, 30] : 30); } catch { /* noop */ }
-    const { error } = await (supabase as any).from('emergency_attendance').upsert(
-      {
-        emergency_id: emg.id,
-        organization_id: emg.organization_id ?? organizationId,
-        user_id: user.id,
-        status,
-        confirmed_at: new Date().toISOString(),
-      },
-      { onConflict: 'emergency_id,user_id' },
-    );
-    if (error) return toast.error(error.message);
-    toast.success(status === 'going' ? 'Voy confirmado' : 'Marcado: no voy');
-    qc.invalidateQueries({ queryKey: ['vol-att-batch'] });
-  };
 
   const [latest, ...rest] = data ?? [];
 
@@ -190,7 +151,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
       ) : (
         <div className="space-y-3 px-5 pb-6">
           {/* Hero — latest emergency */}
-          <HotCard emg={latest} myStatus={attendance?.[latest.id]} onConfirm={confirm} />
+          <HotCard emg={latest} />
 
           {rest.length > 0 && (
             <p className="font-cond uppercase tracking-widest text-[10px] text-muted-foreground pt-3 pl-1">
@@ -199,7 +160,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
           )}
 
           {rest.map((e: any) => (
-            <RowCard key={e.id} emg={e} myStatus={attendance?.[e.id]} onConfirm={confirm} />
+            <RowCard key={e.id} emg={e} />
           ))}
         </div>
       )}
@@ -209,7 +170,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
 
 /* ---------------- Cards ---------------- */
 
-function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; onConfirm: (e: any, s: 'going' | 'not_going') => void }) {
+function HotCard({ emg }: { emg: any }) {
   const mapsUrl = emg.latitude && emg.longitude
     ? `https://www.google.com/maps/dir/?api=1&destination=${emg.latitude},${emg.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(emg.address)}`;
@@ -265,24 +226,8 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
         )}
       </Link>
 
-      {/* Speed actions — no drill-down needed */}
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <button
-          onClick={() => onConfirm(emg, 'going')}
-          className={`h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 active:scale-95 transition ${
-            myStatus === 'going' ? 'bg-success text-success-foreground' : 'bg-emergency text-emergency-foreground'
-          }`}
-        >
-          <CheckCircle2 className="h-4 w-4" /> Voy
-        </button>
-        <button
-          onClick={() => onConfirm(emg, 'not_going')}
-          className={`h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 active:scale-95 transition ${
-            myStatus === 'not_going' ? 'bg-muted text-foreground' : 'bg-card border border-border text-foreground/80'
-          }`}
-        >
-          <XCircle className="h-4 w-4" /> No voy
-        </button>
+      {/* Speed action — navigation only */}
+      <div className="mt-4">
         <a
           href={mapsUrl}
           target="_blank"
@@ -296,57 +241,36 @@ function HotCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; on
   );
 }
 
-function RowCard({ emg, myStatus, onConfirm }: { emg: any; myStatus?: string; onConfirm: (e: any, s: 'going' | 'not_going') => void }) {
+function RowCard({ emg }: { emg: any }) {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <Link to={`/voluntario/emergencia/${emg.id}`} className="block p-3.5 active:bg-muted/40 transition">
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(emg.emergency_keys?.code, 'lg')}`}
-            style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
-          >
-            {emg.emergency_keys?.code || '?'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-display uppercase text-lg leading-none text-foreground truncate">
-                {emg.emergency_keys?.name || 'Emergencia'}
-              </p>
-              <span className={`ml-auto font-cond uppercase tracking-widest text-[9px] px-1.5 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
-                {STATUS_LABEL[emg.status] || emg.status}
-              </span>
-            </div>
-            <p className="text-[13px] text-foreground/80 mt-0.5 flex items-start gap-1 line-clamp-1">
-              <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-              {emg.address}
+    <Link to={`/voluntario/emergencia/${emg.id}`} className="block bg-card border border-border rounded-xl overflow-hidden p-3.5 active:bg-muted/40 transition">
+      <div className="flex items-start gap-3">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white font-display px-0.5 text-center leading-none overflow-hidden break-words ${codeSize(emg.emergency_keys?.code, 'lg')}`}
+          style={{ backgroundColor: emg.emergency_keys?.color || '#dc2626' }}
+        >
+          {emg.emergency_keys?.code || '?'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-display uppercase text-lg leading-none text-foreground truncate">
+              {emg.emergency_keys?.name || 'Emergencia'}
             </p>
-            <div className="mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
-              Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
-            </div>
+            <span className={`ml-auto font-cond uppercase tracking-widest text-[9px] px-1.5 py-0.5 rounded ${STATUS_TONE[emg.status] || 'bg-muted text-muted-foreground'}`}>
+              {STATUS_LABEL[emg.status] || emg.status}
+            </span>
+          </div>
+          <p className="text-[13px] text-foreground/80 mt-0.5 flex items-start gap-1 line-clamp-1">
+            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+            {emg.address}
+          </p>
+          <div className="mt-1.5 text-[10px] font-cond uppercase tracking-widest text-muted-foreground">
+            Hace {formatDistanceToNow(new Date(emg.dispatched_at || emg.created_at), { locale: es })}
           </div>
         </div>
-        <Badges emg={emg} compact />
-      </Link>
-
-      <div className="grid grid-cols-2 border-t border-border/60">
-        <button
-          onClick={() => onConfirm(emg, 'going')}
-          className={`h-11 font-cond uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 active:scale-95 transition border-r border-border/60 ${
-            myStatus === 'going' ? 'bg-success/20 text-success' : 'text-foreground/80'
-          }`}
-        >
-          <CheckCircle2 className="h-4 w-4" /> Voy
-        </button>
-        <button
-          onClick={() => onConfirm(emg, 'not_going')}
-          className={`h-11 font-cond uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 active:scale-95 transition ${
-            myStatus === 'not_going' ? 'bg-muted text-foreground' : 'text-muted-foreground'
-          }`}
-        >
-          <XCircle className="h-4 w-4" /> No voy
-        </button>
       </div>
-    </div>
+      <Badges emg={emg} compact />
+    </Link>
   );
 }
 

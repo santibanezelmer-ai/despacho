@@ -50,13 +50,15 @@ try {
     const body = data.body || '';
     const emergencyId = data.emergency_id || data.emergencyId;
 
+    // Always ask any live PWA client to play the custom dispatch tone.
+    // Web platform limitation: a Service Worker cannot play audio itself
+    // and browsers ignore Notification `sound`. So we ALWAYS keep the
+    // notification non-silent (system sound guaranteed on lock screen /
+    // closed app) AND we message live clients so the custom MP3 also
+    // plays on top when the PWA is alive. On tap, ?playTone=1 fires the
+    // custom MP3 as soon as the app opens.
     const clientsArr = await getVoluntarioClients();
-    const hasLiveClient = clientsArr.length > 0;
-
-    if (hasLiveClient) {
-      // Client alive → it will play the user's custom MP3. Keep notification silent.
-      await askClientsToPlayTone({ title, body, emergency_id: emergencyId }, clientsArr);
-    }
+    await askClientsToPlayTone({ title, body, emergency_id: emergencyId }, clientsArr);
 
     self.registration.showNotification(title, {
       body,
@@ -65,11 +67,11 @@ try {
       vibrate: [400, 200, 400, 200, 400],
       tag: emergencyId ? `emg-${emergencyId}` : 'operix-vol',
       requireInteraction: true,
-      // silent only when a client will play the custom tone. Otherwise fall
-      // back to the system sound so the user hears SOMETHING even with the
-      // PWA fully closed. The custom MP3 then plays when they tap.
-      silent: hasLiveClient,
-      data: { emergency_id: emergencyId, playTone: !hasLiveClient },
+      // Never silent: the system notification sound must ALWAYS play,
+      // over any other notification, whether the PWA is open, closed,
+      // backgrounded, or the device is locked.
+      silent: false,
+      data: { emergency_id: emergencyId, playTone: true },
     });
   });
 } catch (e) {
