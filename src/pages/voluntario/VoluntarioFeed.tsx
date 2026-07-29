@@ -226,24 +226,8 @@ function HotCard({ emg }: { emg: any }) {
         )}
       </Link>
 
-      {/* Speed actions — no drill-down needed */}
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <button
-          onClick={() => onConfirm(emg, 'going')}
-          className={`h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 active:scale-95 transition ${
-            myStatus === 'going' ? 'bg-success text-success-foreground' : 'bg-emergency text-emergency-foreground'
-          }`}
-        >
-          <CheckCircle2 className="h-4 w-4" /> Voy
-        </button>
-        <button
-          onClick={() => onConfirm(emg, 'not_going')}
-          className={`h-12 rounded-xl font-cond uppercase tracking-widest text-sm flex items-center justify-center gap-1.5 active:scale-95 transition ${
-            myStatus === 'not_going' ? 'bg-muted text-foreground' : 'bg-card border border-border text-foreground/80'
-          }`}
-        >
-          <XCircle className="h-4 w-4" /> No voy
-        </button>
+      {/* Speed action — navigation only */}
+      <div className="mt-4">
         <a
           href={mapsUrl}
           target="_blank"
