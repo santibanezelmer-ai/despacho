@@ -61,10 +61,10 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
     ? `https://www.google.com/maps/dir/?api=1&destination=${emg.latitude},${emg.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(emg.address)}`;
   const wazeUrl = hasCoords ? `https://waze.com/ul?ll=${emg.latitude},${emg.longitude}&navigate=yes` : null;
-  const isFinal = emg.status === 'finalizada';
 
   return (
-    <div className="max-w-md mx-auto pb-32">
+    <div className="max-w-md mx-auto pb-8">
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/60 px-4 py-3 flex items-center gap-3">
         <button onClick={() => nav(-1)} aria-label="Volver" className="p-2 -ml-2 rounded-lg active:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
