@@ -6,7 +6,7 @@ import { Loader2, MapPin, ChevronRight } from 'lucide-react';
 interface Props { organizationId: string }
 
 const STATUS_LABEL: Record<string, string> = {
-  despacho: 'Despacho', en_camino: 'En camino', trabajando: 'Trabajando',
+  despacho: 'Despacho', en_ruta: 'En ruta', en_trabajo: 'En trabajo',
   controlada: 'Controlada', finalizada: 'Finalizada', en_cuartel: 'Finalizada',
 };
 
