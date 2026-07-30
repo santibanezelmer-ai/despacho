@@ -252,7 +252,7 @@ async function showLocalNotification(title: string, body: string, data: Record<s
         extra: data,
         smallIcon: 'ic_notification', // White silhouette for status bar
         largeIcon: 'ic_launcher',
-        sound: 'default',
+        sound: `${CHANNEL_SOUND}.mp3`,
       }],
     });
     console.log('[Push] Local notification scheduled OK');
