@@ -13,7 +13,11 @@ export interface PushPayload {
   type?: string;
 }
 
-const CHANNEL_ID = 'emergency_alerts';
+// v2 channel: Android channels are immutable once created, so a new id is
+// required to switch the sound to the custom MP3 (res/raw/dispatch_tone.mp3).
+const CHANNEL_ID = 'emergency_alerts_v2';
+const LEGACY_CHANNEL_IDS = ['emergency_alerts'];
+const CHANNEL_SOUND = 'dispatch_tone';
 let channelCreated = false;
 let listenersSetup = false;
 let registrationListenersSetup = false;
@@ -41,21 +45,23 @@ function finishRegistration(value: string | null) {
 async function ensureNotificationChannel(): Promise<void> {
   if (channelCreated || Capacitor.getPlatform() !== 'android') return;
   try {
-    // Delete and recreate to pick up config changes
-    try { await LocalNotifications.deleteChannel({ id: CHANNEL_ID }); } catch (_) {}
+    // Remove legacy channels so the old "default" sound stops being used
+    for (const legacy of LEGACY_CHANNEL_IDS) {
+      try { await LocalNotifications.deleteChannel({ id: legacy }); } catch (_) {}
+    }
 
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
       name: 'Emergencias',
-      description: 'Alertas de emergencia con sonido y vibración',
+      description: 'Alertas de emergencia con tono de despacho',
       importance: 5,       // IMPORTANCE_HIGH = heads-up
       visibility: 1,       // PUBLIC
-      sound: 'default',
+      sound: CHANNEL_SOUND, // res/raw/dispatch_tone.mp3 — suena con app cerrada
       vibration: true,
       lights: true,
     });
     channelCreated = true;
-    console.log(`[Push] Channel "${CHANNEL_ID}" created (importance=5/max)`);
+    console.log(`[Push] Channel "${CHANNEL_ID}" created with sound "${CHANNEL_SOUND}"`);
   } catch (err: any) {
     console.error('[Push] Channel creation error:', err);
   }
@@ -246,7 +252,7 @@ async function showLocalNotification(title: string, body: string, data: Record<s
         extra: data,
         smallIcon: 'ic_notification', // White silhouette for status bar
         largeIcon: 'ic_launcher',
-        sound: 'default',
+        sound: `${CHANNEL_SOUND}.mp3`,
       }],
     });
     console.log('[Push] Local notification scheduled OK');
