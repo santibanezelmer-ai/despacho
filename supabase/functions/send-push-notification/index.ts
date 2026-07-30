@@ -261,6 +261,7 @@ Deno.serve(async (req: Request) => {
 
     for (const { id: tokenId, token, platform, user_id } of tokens!) {
       const isWeb = platform === 'web';
+      const isIos = platform === 'ios';
       const emergencyPath = `/voluntario/emergencia/${emergency_id}`;
       const fcmPayload: any = {
         message: {
@@ -281,6 +282,30 @@ Deno.serve(async (req: Request) => {
         fcmPayload.message.webpush = {
           headers: { Urgency: 'high', TTL: '600' },
           fcm_options: { link: emergencyPath },
+        };
+      } else if (isIos) {
+        // iOS / APNs: the custom tone must be a bundled sound file
+        // (ios/App/App/Sounds/dispatch_tone.caf, added to the Xcode target).
+        // `interruption-level: time-sensitive` lets the alert break through
+        // Focus modes; `sound` as an object keeps volume at max.
+        fcmPayload.message.notification = { title, body: body ?? '' };
+        fcmPayload.message.apns = {
+          headers: {
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
+            'apns-expiration': String(Math.floor(Date.now() / 1000) + 600),
+            'apns-collapse-id': String(emergency_id).slice(0, 63),
+          },
+          payload: {
+            aps: {
+              alert: { title, body: body ?? '' },
+              sound: { critical: 0, name: 'dispatch_tone.caf', volume: 1.0 },
+              'interruption-level': 'time-sensitive',
+              'mutable-content': 1,
+              'content-available': 1,
+              badge: 1,
+            },
+          },
         };
       } else {
         // Native Android: keep notification block so system tray shows it
