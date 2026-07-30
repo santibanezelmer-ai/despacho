@@ -13,7 +13,11 @@ export interface PushPayload {
   type?: string;
 }
 
-const CHANNEL_ID = 'emergency_alerts';
+// v2 channel: Android channels are immutable once created, so a new id is
+// required to switch the sound to the custom MP3 (res/raw/dispatch_tone.mp3).
+const CHANNEL_ID = 'emergency_alerts_v2';
+const LEGACY_CHANNEL_IDS = ['emergency_alerts'];
+const CHANNEL_SOUND = 'dispatch_tone';
 let channelCreated = false;
 let listenersSetup = false;
 let registrationListenersSetup = false;
