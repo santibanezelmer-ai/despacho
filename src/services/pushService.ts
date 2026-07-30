@@ -18,6 +18,10 @@ export interface PushPayload {
 const CHANNEL_ID = 'emergency_alerts_v2';
 const LEGACY_CHANNEL_IDS = ['emergency_alerts'];
 const CHANNEL_SOUND = 'dispatch_tone';
+// Android reads res/raw/dispatch_tone.mp3, iOS reads the bundled
+// dispatch_tone.caf (ios/App/App/Sounds/dispatch_tone.caf).
+const LOCAL_SOUND_FILE =
+  Capacitor.getPlatform() === 'ios' ? 'dispatch_tone.caf' : `${CHANNEL_SOUND}.mp3`;
 let channelCreated = false;
 let listenersSetup = false;
 let registrationListenersSetup = false;
