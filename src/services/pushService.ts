@@ -45,21 +45,23 @@ function finishRegistration(value: string | null) {
 async function ensureNotificationChannel(): Promise<void> {
   if (channelCreated || Capacitor.getPlatform() !== 'android') return;
   try {
-    // Delete and recreate to pick up config changes
-    try { await LocalNotifications.deleteChannel({ id: CHANNEL_ID }); } catch (_) {}
+    // Remove legacy channels so the old "default" sound stops being used
+    for (const legacy of LEGACY_CHANNEL_IDS) {
+      try { await LocalNotifications.deleteChannel({ id: legacy }); } catch (_) {}
+    }
 
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
       name: 'Emergencias',
-      description: 'Alertas de emergencia con sonido y vibración',
+      description: 'Alertas de emergencia con tono de despacho',
       importance: 5,       // IMPORTANCE_HIGH = heads-up
       visibility: 1,       // PUBLIC
-      sound: 'default',
+      sound: CHANNEL_SOUND, // res/raw/dispatch_tone.mp3 — suena con app cerrada
       vibration: true,
       lights: true,
     });
     channelCreated = true;
-    console.log(`[Push] Channel "${CHANNEL_ID}" created (importance=5/max)`);
+    console.log(`[Push] Channel "${CHANNEL_ID}" created with sound "${CHANNEL_SOUND}"`);
   } catch (err: any) {
     console.error('[Push] Channel creation error:', err);
   }
