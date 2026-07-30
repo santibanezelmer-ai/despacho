@@ -283,15 +283,18 @@ Deno.serve(async (req: Request) => {
           fcm_options: { link: emergencyPath },
         };
       } else {
-        // Native Android: keep notification block so system tray shows it.
+        // Native Android: keep notification block so system tray shows it
+        // even with the app fully closed, and force the custom MP3 that
+        // lives in android/app/src/main/res/raw/dispatch_tone.mp3.
         fcmPayload.message.notification = { title, body: body ?? '' };
         fcmPayload.message.android = {
           priority: 'HIGH',
+          ttl: '600s',
           notification: {
-            channel_id: 'emergency_alerts',
-            sound: 'default',
+            channel_id: 'emergency_alerts_v2',
+            sound: 'dispatch_tone',
+            default_sound: false,
             default_vibrate_timings: true,
-            default_sound: true,
             notification_priority: 'PRIORITY_MAX',
             visibility: 'PUBLIC',
             icon: 'ic_notification',
