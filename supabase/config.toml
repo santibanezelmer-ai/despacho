@@ -7,3 +7,5 @@ project_id = "ratbcyvzdlokcqyxdvvg"
     verify_jwt = true
   [functions.send-invitation]
     verify_jwt = false
+  [functions.location-share]
+    verify_jwt = false
