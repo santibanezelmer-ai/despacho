@@ -219,6 +219,7 @@ const App = () => (
               <Routes>
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/invite/:token" element={<AcceptInvitation />} />
+                <Route path="/location/:token" element={<SharedLocationPage />} />
                 <Route path="/voluntario/*" element={<VoluntarioApp />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>
