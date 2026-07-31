@@ -89,6 +89,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
+  const [locationRequestId, setLocationRequestId] = useState<string | null>(null);
+  const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
+
+  const handleLocationFix = useCallback((fix: LocationFix) => {
+    setLocationFix(fix);
+    setAddress(prev =>
+      prev.trim()
+        ? prev
+        : fix.address ?? `${fix.latitude.toFixed(6)}, ${fix.longitude.toFixed(6)}`
+    );
+    toast.success('Ubicación recibida correctamente.');
+  }, []);
+
 
   // Register/unregister the global callback so UI updates while playing
   useEffect(() => {
