@@ -172,12 +172,24 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
           caller_phone: callerPhone.trim() || null,
           observations: observations.trim() || null,
           created_by: user?.id ?? null,
+          latitude: locationFix?.latitude ?? null,
+          longitude: locationFix?.longitude ?? null,
           folio: '',
         })
         .select()
         .single();
 
       if (eErr) throw eErr;
+
+      // 1b. Vincular la solicitud de ubicación y su historial con la emergencia
+      if (locationRequestId) {
+        await supabase
+          .from('location_requests')
+          .update({ emergency_id: emergency.id })
+          .eq('id', locationRequestId);
+      }
+
+
 
       // 2. Assign vehicles
       if (selectedVehicleIds.length > 0) {
