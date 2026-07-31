@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
+import { resolveToneUrl } from '@/lib/toneUrl';
 import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface KeyForm {
@@ -80,8 +81,11 @@ export default function EmergencyKeysAdmin() {
     }
   };
 
-  const playTone = (url: string) => {
-    try { new Audio(url).play(); } catch { toast.error('No se puede reproducir'); }
+  const playTone = async (url: string) => {
+    try {
+      const src = (await resolveToneUrl(url)) ?? url;
+      await new Audio(src).play();
+    } catch { toast.error('No se puede reproducir'); }
   };
 
   const handleSave = async () => {
