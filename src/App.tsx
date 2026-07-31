@@ -46,6 +46,7 @@ import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
 import MobileMapPage from "@/pages/mobile/MobileMapPage";
 import OnboardingPage from "@/pages/admin/OnboardingPage";
 import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
+import SharedLocationPage from "@/pages/SharedLocationPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
