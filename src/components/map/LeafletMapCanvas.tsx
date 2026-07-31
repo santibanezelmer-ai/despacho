@@ -133,6 +133,7 @@ export default function LeafletMapCanvas({
   onHydrantAction,
   locateRequested,
   onLocateResult,
+  liveLocation,
 }: LeafletMapCanvasProps) {
   const hydrantsRef = useRef(hydrants);
   hydrantsRef.current = hydrants;
