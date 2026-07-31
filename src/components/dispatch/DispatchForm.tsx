@@ -309,8 +309,20 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Phone className="h-3.5 w-3.5" /> Teléfono
               </label>
-              <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50" />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50 sm:flex-1" />
+                <div className="sm:w-[190px]">
+                  <LocationRequestPanel
+                    phone={callerPhone}
+                    requestId={locationRequestId}
+                    onRequestCreated={setLocationRequestId}
+                    fix={locationFix}
+                    onFix={handleLocationFix}
+                  />
+                </div>
+              </div>
             </div>
+
           </div>
 
           <div>
