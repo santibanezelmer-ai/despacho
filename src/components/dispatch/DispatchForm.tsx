@@ -13,6 +13,7 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 import { resolveToneUrl } from '@/lib/toneUrl';
+import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 
 
 // ── Global tone player (survives component unmount) ──
