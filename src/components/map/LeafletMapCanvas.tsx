@@ -52,6 +52,8 @@ type LeafletMapCanvasProps = {
   onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
   locateRequested?: number; // increment to trigger geolocation
   onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
+  /** Ubicación en vivo compartida por el solicitante de una emergencia */
+  liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
