@@ -52,6 +52,8 @@ type LeafletMapCanvasProps = {
   onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
   locateRequested?: number; // increment to trigger geolocation
   onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
+  /** Ubicación en vivo compartida por el solicitante de una emergencia */
+  liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
 };
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
@@ -131,6 +133,7 @@ export default function LeafletMapCanvas({
   onHydrantAction,
   locateRequested,
   onLocateResult,
+  liveLocation,
 }: LeafletMapCanvasProps) {
   const hydrantsRef = useRef(hydrants);
   hydrantsRef.current = hydrants;
@@ -321,6 +324,57 @@ export default function LeafletMapCanvas({
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [locateRequested, onLocateResult]);
+
+  // Ubicación en vivo del solicitante (marcador rojo + círculo de precisión)
+  const liveMarkerRef = useRef<L.Marker | null>(null);
+  const liveCircleRef = useRef<L.Circle | null>(null);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!liveLocation) {
+      liveMarkerRef.current?.remove();
+      liveCircleRef.current?.remove();
+      liveMarkerRef.current = null;
+      liveCircleRef.current = null;
+      return;
+    }
+
+    const latlng: [number, number] = [liveLocation.lat, liveLocation.lng];
+    const radius = liveLocation.accuracy && liveLocation.accuracy > 0 ? liveLocation.accuracy : 25;
+
+    if (!liveMarkerRef.current) {
+      liveMarkerRef.current = L.marker(latlng, {
+        zIndexOffset: 1000,
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="width:20px;height:20px;background:#dc2626;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(220,38,38,0.8);"></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        }),
+      }).addTo(map);
+    } else {
+      liveMarkerRef.current.setLatLng(latlng);
+    }
+    liveMarkerRef.current.bindPopup(
+      `Ubicación del solicitante<br/>Precisión: ${Math.round(radius)} m`
+    );
+
+    if (!liveCircleRef.current) {
+      liveCircleRef.current = L.circle(latlng, {
+        radius,
+        color: '#dc2626',
+        fillColor: '#dc2626',
+        fillOpacity: 0.15,
+        weight: 1,
+      }).addTo(map);
+    } else {
+      liveCircleRef.current.setLatLng(latlng);
+      liveCircleRef.current.setRadius(radius);
+    }
+
+    map.setView(latlng, Math.max(map.getZoom(), 16));
+  }, [liveLocation]);
 
   return <div ref={mapContainerRef} className="h-full w-full bg-muted" />;
 }

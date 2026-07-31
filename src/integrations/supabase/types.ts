@@ -804,6 +804,142 @@ export type Database = {
         }
         Relationships: []
       }
+      location_pings: {
+        Row: {
+          accuracy: number | null
+          battery_level: number | null
+          captured_at: string
+          created_at: string
+          emergency_id: string | null
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          organization_id: string
+          request_id: string
+          speed: number | null
+        }
+        Insert: {
+          accuracy?: number | null
+          battery_level?: number | null
+          captured_at?: string
+          created_at?: string
+          emergency_id?: string | null
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          organization_id: string
+          request_id: string
+          speed?: number | null
+        }
+        Update: {
+          accuracy?: number | null
+          battery_level?: number | null
+          captured_at?: string
+          created_at?: string
+          emergency_id?: string | null
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          organization_id?: string
+          request_id?: string
+          speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_pings_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_pings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_pings_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "location_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_requests: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          created_by: string | null
+          emergency_id: string | null
+          expires_at: string
+          id: string
+          last_ping_at: string | null
+          latitude: number | null
+          longitude: number | null
+          organization_id: string
+          phone: string | null
+          resolved_address: string | null
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          created_by?: string | null
+          emergency_id?: string | null
+          expires_at?: string
+          id?: string
+          last_ping_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          organization_id: string
+          phone?: string | null
+          resolved_address?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          created_by?: string | null
+          emergency_id?: string | null
+          expires_at?: string
+          id?: string
+          last_ping_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          organization_id?: string
+          phone?: string | null
+          resolved_address?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_requests_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_log: {
         Row: {
           created_at: string

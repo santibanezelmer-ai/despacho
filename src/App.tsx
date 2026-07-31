@@ -46,6 +46,7 @@ import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
 import MobileMapPage from "@/pages/mobile/MobileMapPage";
 import OnboardingPage from "@/pages/admin/OnboardingPage";
 import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
+import SharedLocationPage from "@/pages/SharedLocationPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -218,6 +219,7 @@ const App = () => (
               <Routes>
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/invite/:token" element={<AcceptInvitation />} />
+                <Route path="/location/:token" element={<SharedLocationPage />} />
                 <Route path="/voluntario/*" element={<VoluntarioApp />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>

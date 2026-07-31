@@ -13,6 +13,7 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 import { resolveToneUrl } from '@/lib/toneUrl';
+import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 
 
 // ── Global tone player (survives component unmount) ──
@@ -88,6 +89,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
+  const [locationRequestId, setLocationRequestId] = useState<string | null>(null);
+  const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
+
+  const handleLocationFix = useCallback((fix: LocationFix) => {
+    setLocationFix(fix);
+    setAddress(prev =>
+      prev.trim()
+        ? prev
+        : fix.address ?? `${fix.latitude.toFixed(6)}, ${fix.longitude.toFixed(6)}`
+    );
+    toast.success('Ubicación recibida correctamente.');
+  }, []);
+
 
   // Register/unregister the global callback so UI updates while playing
   useEffect(() => {
@@ -158,12 +172,24 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
           caller_phone: callerPhone.trim() || null,
           observations: observations.trim() || null,
           created_by: user?.id ?? null,
+          latitude: locationFix?.latitude ?? null,
+          longitude: locationFix?.longitude ?? null,
           folio: '',
         })
         .select()
         .single();
 
       if (eErr) throw eErr;
+
+      // 1b. Vincular la solicitud de ubicación y su historial con la emergencia
+      if (locationRequestId) {
+        await supabase
+          .from('location_requests')
+          .update({ emergency_id: emergency.id })
+          .eq('id', locationRequestId);
+      }
+
+
 
       // 2. Assign vehicles
       if (selectedVehicleIds.length > 0) {
@@ -283,8 +309,20 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Phone className="h-3.5 w-3.5" /> Teléfono
               </label>
-              <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50" />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50 sm:flex-1" />
+                <div className="sm:w-[190px]">
+                  <LocationRequestPanel
+                    phone={callerPhone}
+                    requestId={locationRequestId}
+                    onRequestCreated={setLocationRequestId}
+                    fix={locationFix}
+                    onFix={handleLocationFix}
+                  />
+                </div>
+              </div>
             </div>
+
           </div>
 
           <div>

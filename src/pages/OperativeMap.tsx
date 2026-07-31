@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +33,55 @@ export default function OperativeMap() {
   const [editingHydrant, setEditingHydrant] = useState<{ id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null>(null);
   const [locateCounter, setLocateCounter] = useState(0);
   const [locating, setLocating] = useState(false);
+  const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number; accuracy: number | null; ts: number } | null>(null);
+
+  // Ubicación compartida por solicitantes: carga inicial + tiempo real
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await supabase
+        .from('location_pings')
+        .select('latitude, longitude, accuracy, captured_at')
+        .gte('captured_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+        .order('captured_at', { ascending: false })
+        .limit(1);
+      const last = data?.[0];
+      if (!cancelled && last) {
+        setLiveLocation({
+          lat: last.latitude,
+          lng: last.longitude,
+          accuracy: last.accuracy,
+          ts: new Date(last.captured_at).getTime(),
+        });
+      }
+    })();
+
+    const channel = supabase
+      .channel('operative-map-location-pings')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'location_pings' },
+        (payload) => {
+          const row = payload.new as any;
+          setLiveLocation({
+            lat: row.latitude,
+            lng: row.longitude,
+            accuracy: row.accuracy ?? null,
+            ts: new Date(row.captured_at ?? Date.now()).getTime(),
+          });
+          toast.success('Ubicación recibida correctamente.');
+          queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
 
   const { data: sharedHydrants } = useSharedHydrants(mapBounds);
 
@@ -170,6 +219,7 @@ export default function OperativeMap() {
           onHydrantAction={handleHydrantAction}
           locateRequested={locateCounter}
           onLocateResult={handleLocateResult}
+          liveLocation={liveLocation}
         />
 
         {clickMode && (
