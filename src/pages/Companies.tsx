@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { resolveToneUrl } from '@/lib/toneUrl';
 
 interface CompanyForm {
   id?: string;
@@ -72,9 +73,13 @@ export default function Companies() {
     }
   };
 
-  const playTone = (url: string) => {
-    try { new Audio(url).play(); } catch { toast.error('No se puede reproducir'); }
+  const playTone = async (url: string) => {
+    try {
+      const src = (await resolveToneUrl(url)) ?? url;
+      await new Audio(src).play();
+    } catch { toast.error('No se puede reproducir'); }
   };
+
 
   const handleSave = async () => {
     if (!editing) return;

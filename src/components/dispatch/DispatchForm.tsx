@@ -12,6 +12,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
+import { resolveToneUrl } from '@/lib/toneUrl';
+
 
 // ── Global tone player (survives component unmount) ──
 let globalAudio: HTMLAudioElement | null = null;
@@ -19,7 +21,7 @@ let globalToneQueue: { url: string; label: string }[] = [];
 let globalToneIndex = 0;
 let globalOnUpdate: ((playing: boolean, label: string) => void) | null = null;
 
-function playNextGlobalTone() {
+async function playNextGlobalTone() {
   if (globalToneIndex >= globalToneQueue.length) {
     globalOnUpdate?.(false, '');
     globalToneQueue = [];
@@ -28,19 +30,20 @@ function playNextGlobalTone() {
   }
   const tone = globalToneQueue[globalToneIndex];
   globalOnUpdate?.(true, tone.label);
-  const audio = new Audio(tone.url);
+  const src = (await resolveToneUrl(tone.url)) ?? tone.url;
+  const audio = new Audio(src);
   globalAudio = audio;
   audio.onended = () => {
     globalToneIndex++;
-    playNextGlobalTone();
+    void playNextGlobalTone();
   };
   audio.onerror = () => {
     globalToneIndex++;
-    playNextGlobalTone();
+    void playNextGlobalTone();
   };
   audio.play().catch(() => {
     globalToneIndex++;
-    playNextGlobalTone();
+    void playNextGlobalTone();
   });
 }
 
@@ -49,8 +52,9 @@ function startGlobalToneSequence(queue: { url: string; label: string }[]) {
   if (queue.length === 0) return;
   globalToneQueue = queue;
   globalToneIndex = 0;
-  playNextGlobalTone();
+  void playNextGlobalTone();
 }
+
 
 function stopGlobalTones() {
   if (globalAudio) {
