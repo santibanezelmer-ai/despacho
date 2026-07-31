@@ -72,9 +72,13 @@ export default function Companies() {
     }
   };
 
-  const playTone = (url: string) => {
-    try { new Audio(url).play(); } catch { toast.error('No se puede reproducir'); }
+  const playTone = async (url: string) => {
+    try {
+      const src = (await resolveToneUrl(url)) ?? url;
+      await new Audio(src).play();
+    } catch { toast.error('No se puede reproducir'); }
   };
+
 
   const handleSave = async () => {
     if (!editing) return;
