@@ -299,6 +299,37 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
             </div>
           </section>
 
+          {/* 1b. Teléfono del solicitante + solicitud de ubicación */}
+          {!isClosed && (
+            <section>
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Phone className="h-3.5 w-3.5" /> Teléfono del solicitante
+              </label>
+              <p className="mb-2 font-mono text-sm text-foreground">
+                {callerPhone || 'No registrado'}
+              </p>
+              {callerPhone ? (
+                <LocationRequestPanel
+                  phone={callerPhone}
+                  requestId={locRequestId}
+                  onRequestCreated={setLocRequestId}
+                  fix={locFix}
+                  onFix={handleLocationFix}
+                  emergencyId={emergency.id}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Registre un teléfono al despachar para poder solicitar la ubicación por enlace.
+                </p>
+              )}
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Visible solo en la consola de despacho hasta finalizar la emergencia.
+              </p>
+            </section>
+          )}
+
+
+
           {/* 2. Assign More Vehicles */}
           <section>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
