@@ -81,14 +81,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     return () => { cancelled = true; };
   }, [emergency.id, isClosed]);
 
-  const handleLocationFix = useCallback((fix: LocationFix) => {
-    setLocFix(fix);
-    setMapCoords({ lat: fix.latitude, lng: fix.longitude });
-    toast.success('Ubicación recibida y asignada al mapa');
-    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-  }, [queryClient]);
-
-
   const { data: allVehicles } = useVehicles();
   const available = (allVehicles ?? []).filter(
     v => v.status === 'disponible' && !assignedVehicleIds.includes(v.id)
@@ -101,6 +93,14 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const toggleFlag = useToggleFlag();
   const playSystemSound = usePlaySystemSound();
   const queryClient = useQueryClient();
+
+  const handleLocationFix = useCallback((fix: LocationFix) => {
+    setLocFix(fix);
+    setMapCoords({ lat: fix.latitude, lng: fix.longitude });
+    toast.success('Ubicación recibida y asignada al mapa');
+    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+  }, [queryClient]);
+
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
