@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +12,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
 import VehicleReturnManager from './VehicleReturnManager';
+import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+
 
 interface Emergency {
   id: string;
@@ -42,6 +45,44 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [preReport, setPreReport] = useState(emergency.pre_report ?? '');
   const [savingPre, setSavingPre] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [callerPhone, setCallerPhone] = useState('');
+  const [locRequestId, setLocRequestId] = useState<string | null>(null);
+  const [locFix, setLocFix] = useState<LocationFix | null>(null);
+
+  const isClosed = emergency.status === 'finalizada';
+
+  // Teléfono del solicitante: visible sólo en la consola y sólo mientras la emergencia esté activa
+  useEffect(() => {
+    if (isClosed) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('emergencies')
+        .select('caller_phone')
+        .eq('id', emergency.id)
+        .maybeSingle();
+      if (!cancelled) setCallerPhone(data?.caller_phone ?? '');
+      const { data: req } = await supabase
+        .from('location_requests')
+        .select('id, latitude, longitude, accuracy, last_ping_at, resolved_address')
+        .eq('emergency_id', emergency.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !req) return;
+      setLocRequestId(req.id);
+      if (req.latitude != null && req.longitude != null) {
+        setLocFix({
+          latitude: req.latitude,
+          longitude: req.longitude,
+          accuracy: req.accuracy ?? null,
+          receivedAt: req.last_ping_at ?? new Date().toISOString(),
+          address: req.resolved_address ?? null,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [emergency.id, isClosed]);
 
   const { data: allVehicles } = useVehicles();
   const available = (allVehicles ?? []).filter(
@@ -55,6 +96,14 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const toggleFlag = useToggleFlag();
   const playSystemSound = usePlaySystemSound();
   const queryClient = useQueryClient();
+
+  const handleLocationFix = useCallback((fix: LocationFix) => {
+    setLocFix(fix);
+    setMapCoords({ lat: fix.latitude, lng: fix.longitude });
+    toast.success('Ubicación recibida y asignada al mapa');
+    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+  }, [queryClient]);
+
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
@@ -250,6 +299,37 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
             </div>
           </section>
 
+          {/* 1b. Teléfono del solicitante + solicitud de ubicación */}
+          {!isClosed && (
+            <section>
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Phone className="h-3.5 w-3.5" /> Teléfono del solicitante
+              </label>
+              <p className="mb-2 font-mono text-sm text-foreground">
+                {callerPhone || 'No registrado'}
+              </p>
+              {callerPhone ? (
+                <LocationRequestPanel
+                  phone={callerPhone}
+                  requestId={locRequestId}
+                  onRequestCreated={setLocRequestId}
+                  fix={locFix}
+                  onFix={handleLocationFix}
+                  emergencyId={emergency.id}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Registre un teléfono al despachar para poder solicitar la ubicación por enlace.
+                </p>
+              )}
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Visible solo en la consola de despacho hasta finalizar la emergencia.
+              </p>
+            </section>
+          )}
+
+
+
           {/* 2. Assign More Vehicles */}
           <section>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -303,8 +383,9 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               </Button>
             ) : (
               <div className="space-y-2">
-                <div ref={mapRef} className="h-56 w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
-                <p className="text-[10px] text-muted-foreground">Haz clic en el mapa o arrastra el marcador rojo para definir la ubicación.</p>
+                <div ref={mapRef} className="h-[60vh] min-h-[380px] w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
+                <p className="text-[10px] text-muted-foreground">Haz clic en el mapa o arrastra el marcador rojo para definir la ubicación. Si el solicitante comparte su ubicación por enlace, se marcará automáticamente.</p>
+
                 {mapCoords && (
                   <p className="text-xs text-muted-foreground font-mono">
                     {mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}

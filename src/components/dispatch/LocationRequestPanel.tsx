@@ -21,17 +21,20 @@ interface Props {
   onRequestCreated: (requestId: string) => void;
   fix: LocationFix | null;
   onFix: (fix: LocationFix) => void;
+  /** Cuando la emergencia ya fue despachada, vincula la solicitud desde el inicio */
+  emergencyId?: string | null;
 }
 
 const shareBase = 'https://operixdispatch.com/location';
 
-export default function LocationRequestPanel({ phone, requestId, onRequestCreated, fix, onFix }: Props) {
+export default function LocationRequestPanel({ phone, requestId, onRequestCreated, fix, onFix, emergencyId }: Props) {
   const { orgId } = useOrganization();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
 
   // Realtime: escuchar la ubicación entrante del solicitante
   useEffect(() => {
@@ -74,9 +77,11 @@ export default function LocationRequestPanel({ phone, requestId, onRequestCreate
           organization_id: orgId!,
           phone: cleaned,
           created_by: user?.id ?? null,
+          emergency_id: emergencyId ?? null,
         })
         .select('id, token')
         .single();
+
       if (error) throw error;
 
       setLink(`${shareBase}/${data.token}`);
