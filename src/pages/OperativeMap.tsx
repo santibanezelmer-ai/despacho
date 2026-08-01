@@ -29,6 +29,8 @@ export default function OperativeMap() {
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
   const [showStations, setShowStations] = useState(true);
+  const [compatibilityMode, setCompatibilityMode] = useState(false);
+
 
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [clickMode, setClickMode] = useState(false);
