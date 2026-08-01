@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed } from 'lucide-react';
+import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import LeafletMapCanvas, { type MapEmergency, type MapHydrant } from '@/components/map/LeafletMapCanvas';
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
+import { useStations } from '@/hooks/useStations';
+
 
 
 const statusLabels: Record<string, string> = {
@@ -23,9 +25,13 @@ export default function OperativeMap() {
   const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
+  const stations = useStations();
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
+  const [showStations, setShowStations] = useState(true);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
+
+
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [clickMode, setClickMode] = useState(false);
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
@@ -186,6 +192,13 @@ export default function OperativeMap() {
               <Droplets className="h-3 w-3 text-info" /> Grifos
             </Label>
           </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={showStations} onCheckedChange={setShowStations} id="show-stations" />
+            <Label htmlFor="show-stations" className="text-xs flex items-center gap-1">
+              <Building2 className="h-3 w-3 text-warning" /> Cuarteles
+            </Label>
+          </div>
+
           <div className="flex items-center gap-1">
             <Button
               size="sm"
@@ -210,8 +223,11 @@ export default function OperativeMap() {
         <LeafletMapCanvas
           emergencies={mapEmergencies}
           hydrants={mapHydrants}
+          stations={stations}
           showEmergencies={showEmergencies}
           showHydrants={showHydrants}
+          showStations={showStations}
+
           onCompatibilityModeChange={setCompatibilityMode}
           onBoundsChange={handleBoundsChange}
           onMapClick={handleMapClick}
@@ -247,6 +263,11 @@ export default function OperativeMap() {
             <div className="w-3 h-3 rounded bg-info border border-white" />
             Grifo
           </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-[#f59e0b] border border-white" />
+            Cuartel
+          </div>
+
         </div>
       </div>
 

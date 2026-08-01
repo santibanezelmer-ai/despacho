@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Building2, Plus, Search, Pencil, Trash2, Loader2, Volume2 } from 'lucide-react';
 import ToneUploadField from '@/components/admin/ToneUploadField';
 import LogoUploadField from '@/components/admin/LogoUploadField';
+import LocationFields from '@/components/admin/LocationFields';
 import { Logo } from '@/components/ui/Logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,9 +27,11 @@ interface CompanyForm {
   active: boolean;
   tone_url: string;
   logo_url: string | null;
+  latitude: string;
+  longitude: string;
 }
 
-const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '', logo_url: null };
+const empty: CompanyForm = { name: '', number: '', address: '', phone: '', active: true, tone_url: '', logo_url: null, latitude: '', longitude: '' };
 
 export default function Companies() {
   const [search, setSearch] = useState('');
@@ -47,7 +50,7 @@ export default function Companies() {
 
   const openNew = () => { setEditing({ ...empty }); setDialogOpen(true); };
   const openEdit = (c: any) => {
-    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '', logo_url: c.logo_url ?? null });
+    setEditing({ id: c.id, name: c.name, number: c.number.toString(), address: c.address ?? '', phone: c.phone ?? '', active: c.active, tone_url: c.tone_url ?? '', logo_url: c.logo_url ?? null, latitude: c.latitude != null ? String(c.latitude) : '', longitude: c.longitude != null ? String(c.longitude) : '' });
     setDialogOpen(true);
   };
 
@@ -94,6 +97,8 @@ export default function Companies() {
         active: editing.active,
         tone_url: editing.tone_url.trim() || null,
         logo_url: editing.logo_url || null,
+        latitude: editing.latitude.trim() ? parseFloat(editing.latitude) : null,
+        longitude: editing.longitude.trim() ? parseFloat(editing.longitude) : null,
         organization_id: orgId!,
       };
       if (editing.id) {
@@ -201,7 +206,7 @@ export default function Companies() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={v => !v && setDialogOpen(false)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing?.id ? 'Editar Compañía' : 'Nueva Compañía'}</DialogTitle>
           </DialogHeader>
@@ -217,10 +222,13 @@ export default function Companies() {
                   <Input value={editing.name} onChange={e => setEditing(f => f ? { ...f, name: e.target.value } : f)} className="bg-muted/50" />
                 </div>
               </div>
-              <div>
-                <Label className="text-xs">Dirección</Label>
-                <Input value={editing.address} onChange={e => setEditing(f => f ? { ...f, address: e.target.value } : f)} className="bg-muted/50" />
-              </div>
+              <LocationFields
+                address={editing.address}
+                latitude={editing.latitude}
+                longitude={editing.longitude}
+                onChange={(patch) => setEditing(f => f ? { ...f, ...patch } : f)}
+                addressLabel="Dirección del cuartel"
+              />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Teléfono</Label>
