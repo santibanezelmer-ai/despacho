@@ -42,6 +42,52 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [preReport, setPreReport] = useState(emergency.pre_report ?? '');
   const [savingPre, setSavingPre] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [callerPhone, setCallerPhone] = useState('');
+  const [locRequestId, setLocRequestId] = useState<string | null>(null);
+  const [locFix, setLocFix] = useState<LocationFix | null>(null);
+
+  const isClosed = emergency.status === 'finalizada';
+
+  // Teléfono del solicitante: visible sólo en la consola y sólo mientras la emergencia esté activa
+  useEffect(() => {
+    if (isClosed) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('emergencies')
+        .select('caller_phone')
+        .eq('id', emergency.id)
+        .maybeSingle();
+      if (!cancelled) setCallerPhone(data?.caller_phone ?? '');
+      const { data: req } = await supabase
+        .from('location_requests')
+        .select('id, latitude, longitude, accuracy, last_ping_at, resolved_address')
+        .eq('emergency_id', emergency.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !req) return;
+      setLocRequestId(req.id);
+      if (req.latitude != null && req.longitude != null) {
+        setLocFix({
+          latitude: req.latitude,
+          longitude: req.longitude,
+          accuracy: req.accuracy ?? null,
+          receivedAt: req.last_ping_at ?? new Date().toISOString(),
+          address: req.resolved_address ?? null,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [emergency.id, isClosed]);
+
+  const handleLocationFix = useCallback((fix: LocationFix) => {
+    setLocFix(fix);
+    setMapCoords({ lat: fix.latitude, lng: fix.longitude });
+    toast.success('Ubicación recibida y asignada al mapa');
+    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+  }, [queryClient]);
+
 
   const { data: allVehicles } = useVehicles();
   const available = (allVehicles ?? []).filter(
