@@ -77,9 +77,11 @@ export default function LocationRequestPanel({ phone, requestId, onRequestCreate
           organization_id: orgId!,
           phone: cleaned,
           created_by: user?.id ?? null,
+          emergency_id: emergencyId ?? null,
         })
         .select('id, token')
         .single();
+
       if (error) throw error;
 
       setLink(`${shareBase}/${data.token}`);
