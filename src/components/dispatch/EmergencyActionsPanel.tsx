@@ -277,7 +277,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="console-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="console-panel w-full max-w-4xl max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-sm font-bold text-foreground">Acciones — {emergency.address}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
