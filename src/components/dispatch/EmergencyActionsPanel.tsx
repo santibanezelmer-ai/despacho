@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -111,7 +113,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   // Custom red emergency icon
   const buildEmergencyIcon = () => {
-    const L = (window as any).L;
     return L.divIcon({
       className: 'emergency-marker',
       html: `<div style="background:hsl(0,85%,55%);border:2px solid #fff;border-radius:50% 50% 50% 0;width:26px;height:26px;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);color:#fff;font-weight:bold;font-size:14px;">!</span></div>`,
@@ -121,8 +122,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   };
 
   const placeMarker = (lat: number, lng: number) => {
-    const L = (window as any).L;
-    if (!leafletMapRef.current || !L) return;
+    if (!leafletMapRef.current) return;
     if (markerRef.current) {
       markerRef.current.setLatLng([lat, lng]);
     } else {
@@ -139,8 +139,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   // Init mini map
   useEffect(() => {
     if (!showMap || !mapRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
 
     const center = mapCoords ?? { lat: -33.45, lng: -70.65 };
     const map = L.map(mapRef.current, { zoomControl: true }).setView([center.lat, center.lng], mapCoords ? 15 : 12);
@@ -149,6 +147,9 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     }).addTo(map);
     leafletMapRef.current = map;
 
+    // El contenedor se monta dentro de un modal: recalcula tamaño tras el layout
+    setTimeout(() => map.invalidateSize(), 200);
+
     if (mapCoords) placeMarker(mapCoords.lat, mapCoords.lng);
 
     map.on('click', (e: any) => {
@@ -156,6 +157,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       setMapCoords({ lat, lng });
       placeMarker(lat, lng);
     });
+
 
     // Auto-geolocate when opening the map without pre-existing coords
     if (!mapCoords && navigator.geolocation) {
@@ -178,6 +180,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     return () => { map.remove(); leafletMapRef.current = null; markerRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showMap]);
+
+  // Sincroniza el marcador cuando llegan coordenadas nuevas (enlace de ubicación)
+  useEffect(() => {
+    if (!showMap || !mapCoords || !leafletMapRef.current) return;
+    placeMarker(mapCoords.lat, mapCoords.lng);
+    leafletMapRef.current.setView([mapCoords.lat, mapCoords.lng], 16);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMap, mapCoords?.lat, mapCoords?.lng]);
+
 
   const handleGeolocate = () => {
     if (!navigator.geolocation) {
@@ -277,7 +288,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="console-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="console-panel w-full max-w-4xl max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-sm font-bold text-foreground">Acciones — {emergency.address}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
