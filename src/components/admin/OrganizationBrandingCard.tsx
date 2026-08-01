@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import LogoUploadField from './LogoUploadField';
+import LocationFields from './LocationFields';
 import { toast } from 'sonner';
 
 export default function OrganizationBrandingCard() {
@@ -14,6 +15,9 @@ export default function OrganizationBrandingCard() {
   const qc = useQueryClient();
   const [logo, setLogo] = useState<string | null>(null);
   const [name, setName] = useState<string>('');
+  const [address, setAddress] = useState<string>('');
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
   const { data: org, isLoading } = useQuery({
@@ -22,7 +26,7 @@ export default function OrganizationBrandingCard() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('organizations')
-        .select('id, name, logo_url')
+        .select('id, name, logo_url, address, latitude, longitude')
         .eq('id', orgId)
         .single();
       if (error) throw error;
@@ -33,11 +37,19 @@ export default function OrganizationBrandingCard() {
   useEffect(() => {
     setLogo(org?.logo_url ?? null);
     setName(org?.name ?? '');
-  }, [org?.logo_url, org?.name]);
+    setAddress(org?.address ?? '');
+    setLatitude(org?.latitude != null ? String(org.latitude) : '');
+    setLongitude(org?.longitude != null ? String(org.longitude) : '');
+  }, [org?.logo_url, org?.name, org?.address, org?.latitude, org?.longitude]);
 
   if (!isOrgAdmin) return null;
 
-  const dirty = (org?.logo_url ?? null) !== logo || (org?.name ?? '') !== name.trim();
+  const dirty =
+    (org?.logo_url ?? null) !== logo ||
+    (org?.name ?? '') !== name.trim() ||
+    (org?.address ?? '') !== address.trim() ||
+    (org?.latitude != null ? String(org.latitude) : '') !== latitude.trim() ||
+    (org?.longitude != null ? String(org.longitude) : '') !== longitude.trim();
 
   const handleSave = async () => {
     if (!orgId) return;
@@ -47,12 +59,19 @@ export default function OrganizationBrandingCard() {
     try {
       const { error } = await (supabase as any)
         .from('organizations')
-        .update({ logo_url: logo, name: trimmed })
+        .update({
+          logo_url: logo,
+          name: trimmed,
+          address: address.trim() || null,
+          latitude: latitude.trim() ? parseFloat(latitude) : null,
+          longitude: longitude.trim() ? parseFloat(longitude) : null,
+        })
         .eq('id', orgId);
       if (error) throw error;
       toast.success('Organización actualizada');
       qc.invalidateQueries({ queryKey: ['org-branding', orgId] });
       qc.invalidateQueries({ queryKey: ['organization'] });
+      qc.invalidateQueries({ queryKey: ['org-location', orgId] });
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar');
     } finally {
@@ -84,6 +103,18 @@ export default function OrganizationBrandingCard() {
               maxLength={120}
             />
           </div>
+
+          <LocationFields
+            address={address}
+            latitude={latitude}
+            longitude={longitude}
+            onChange={(patch) => {
+              if (patch.address !== undefined) setAddress(patch.address);
+              if (patch.latitude !== undefined) setLatitude(patch.latitude);
+              if (patch.longitude !== undefined) setLongitude(patch.longitude);
+            }}
+            addressLabel="Dirección del cuartel general"
+          />
 
           <LogoUploadField
             label={`Logo de ${org?.name ?? 'la organización'}`}
