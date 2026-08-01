@@ -192,6 +192,13 @@ export default function OperativeMap() {
               <Droplets className="h-3 w-3 text-info" /> Grifos
             </Label>
           </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={showStations} onCheckedChange={setShowStations} id="show-stations" />
+            <Label htmlFor="show-stations" className="text-xs flex items-center gap-1">
+              <Building2 className="h-3 w-3 text-warning" /> Cuarteles
+            </Label>
+          </div>
+
           <div className="flex items-center gap-1">
             <Button
               size="sm"
