@@ -345,7 +345,7 @@ export default function LeafletMapCanvas({
       mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
       initialFitDoneRef.current = true;
     }
-  }, [emergencies, hydrants, positions, showEmergencies, showHydrants]);
+  }, [emergencies, hydrants, stations, positions, showEmergencies, showHydrants, showStations]);
 
   // Geolocation
   const locationMarkerRef = useRef<L.Marker | null>(null);
