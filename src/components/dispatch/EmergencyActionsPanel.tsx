@@ -352,8 +352,9 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               </Button>
             ) : (
               <div className="space-y-2">
-                <div ref={mapRef} className="h-56 w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
-                <p className="text-[10px] text-muted-foreground">Haz clic en el mapa o arrastra el marcador rojo para definir la ubicación.</p>
+                <div ref={mapRef} className="h-[60vh] min-h-[380px] w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
+                <p className="text-[10px] text-muted-foreground">Haz clic en el mapa o arrastra el marcador rojo para definir la ubicación. Si el solicitante comparte su ubicación por enlace, se marcará automáticamente.</p>
+
                 {mapCoords && (
                   <p className="text-xs text-muted-foreground font-mono">
                     {mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}
