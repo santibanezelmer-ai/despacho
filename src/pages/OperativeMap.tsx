@@ -223,8 +223,11 @@ export default function OperativeMap() {
         <LeafletMapCanvas
           emergencies={mapEmergencies}
           hydrants={mapHydrants}
+          stations={stations}
           showEmergencies={showEmergencies}
           showHydrants={showHydrants}
+          showStations={showStations}
+
           onCompatibilityModeChange={setCompatibilityMode}
           onBoundsChange={handleBoundsChange}
           onMapClick={handleMapClick}
