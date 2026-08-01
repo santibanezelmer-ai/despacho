@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff } from 'lucide-react';
+import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff, Building2 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
