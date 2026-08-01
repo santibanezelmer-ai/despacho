@@ -7,6 +7,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
+import { useStations } from '@/hooks/useStations';
 
 const statusLabels: Record<string, string> = {
   despacho: 'Despacho', en_ruta: 'En Ruta', en_trabajo: 'En Trabajo', controlada: 'Controlada',
