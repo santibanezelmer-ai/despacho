@@ -181,6 +181,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showMap]);
 
+  // Sincroniza el marcador cuando llegan coordenadas nuevas (enlace de ubicación)
+  useEffect(() => {
+    if (!showMap || !mapCoords || !leafletMapRef.current) return;
+    placeMarker(mapCoords.lat, mapCoords.lng);
+    leafletMapRef.current.setView([mapCoords.lat, mapCoords.lng], 16);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMap, mapCoords?.lat, mapCoords?.lng]);
+
+
   const handleGeolocate = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocalización no disponible en este navegador');
