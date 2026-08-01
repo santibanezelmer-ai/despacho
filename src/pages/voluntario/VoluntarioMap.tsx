@@ -80,6 +80,7 @@ export default function VoluntarioMap() {
   const { data: emergencies, isLoading: loadingEmg } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const { data: sharedHydrants } = useSharedHydrants(bounds);
+  const stations = useStations();
 
   useEffect(() => {
     if (initRef.current) return;
