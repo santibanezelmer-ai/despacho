@@ -172,6 +172,25 @@ export default function VoluntarioMap() {
     return () => { markers.forEach(m => m.remove()); };
   }, [hydrants, sharedHydrants]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers: L.Marker[] = [];
+    stations.forEach(s => {
+      const title = s.labels.length > 1 ? 'Cuarteles en esta ubicación' : 'Cuartel';
+      const list = s.labels.map(l => `<div style="font-size:12px">• ${escapeHtml(l)}</div>`).join('');
+      const m = L.marker([s.latitude, s.longitude], { icon: stationIcon(), zIndexOffset: 500 })
+        .bindPopup(`<div style="min-width:160px;font-family:system-ui">
+          <div style="font-weight:700;font-size:13px;margin-bottom:3px">${title}</div>
+          ${list}
+          ${s.address ? `<div style="font-size:11px;color:#999;margin-top:3px">${escapeHtml(s.address)}</div>` : ''}
+        </div>`)
+        .addTo(map);
+      markers.push(m);
+    });
+    return () => { markers.forEach(m => m.remove()); };
+  }, [stations]);
+
   const handleLocate = useCallback(async () => {
     const map = mapRef.current;
     if (!map) return;
