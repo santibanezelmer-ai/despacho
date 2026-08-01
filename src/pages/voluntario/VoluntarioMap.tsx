@@ -33,6 +33,18 @@ function hydrantIcon(own: boolean) {
   });
 }
 
+function stationIcon() {
+  return L.divIcon({
+    html: `<div style="width:26px;height:26px;border-radius:6px;background:#f59e0b;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-6h4v6"/></svg>
+    </div>`,
+    className: '', iconSize: [26, 26], iconAnchor: [13, 13],
+  });
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 async function requestGeolocation(): Promise<{ lat: number; lng: number } | null> {
   const isNative = Capacitor.isNativePlatform();
   if (isNative) {
