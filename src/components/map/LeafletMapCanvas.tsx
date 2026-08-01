@@ -301,14 +301,26 @@ export default function LeafletMapCanvas({
     const points: [number, number][] = [];
     if (showEmergencies) emergencies.forEach((e) => points.push([e.latitude, e.longitude]));
     if (showHydrants) hydrants.forEach((h) => points.push([h.latitude, h.longitude]));
+    if (showStations) stations.forEach((s) => points.push([s.latitude, s.longitude]));
     return points;
-  }, [emergencies, hydrants, showEmergencies, showHydrants]);
+  }, [emergencies, hydrants, stations, showEmergencies, showHydrants, showStations]);
 
   useEffect(() => {
     if (!mapRef.current || !emergencyLayerRef.current || !hydrantLayerRef.current) return;
 
     emergencyLayerRef.current.clearLayers();
     hydrantLayerRef.current.clearLayers();
+    stationLayerRef.current?.clearLayers();
+
+    if (showStations && stationLayerRef.current) {
+      stations.forEach((station) => {
+        L.marker([station.latitude, station.longitude], { icon: stationIcon })
+          .bindPopup(buildStationPopup(station))
+          .addTo(stationLayerRef.current!);
+      });
+    }
+
+
 
     if (showEmergencies) {
       emergencies.forEach((emergency) => {
