@@ -12,6 +12,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
 import VehicleReturnManager from './VehicleReturnManager';
+import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+
 
 interface Emergency {
   id: string;
