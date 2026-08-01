@@ -64,7 +64,9 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           name: string
           number: number
           organization_id: string
@@ -77,7 +79,9 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name: string
           number: number
           organization_id: string
@@ -90,7 +94,9 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
           number?: number
           organization_id?: string
@@ -1155,7 +1161,9 @@ export type Database = {
           id: string
           institution_email: string | null
           is_demo: boolean
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           name: string
           phone: string | null
           plan: string | null
@@ -1175,7 +1183,9 @@ export type Database = {
           id?: string
           institution_email?: string | null
           is_demo?: boolean
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name: string
           phone?: string | null
           plan?: string | null
@@ -1195,7 +1205,9 @@ export type Database = {
           id?: string
           institution_email?: string | null
           is_demo?: boolean
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
           phone?: string | null
           plan?: string | null
