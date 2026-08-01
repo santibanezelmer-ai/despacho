@@ -263,6 +263,11 @@ export default function OperativeMap() {
             <div className="w-3 h-3 rounded bg-info border border-white" />
             Grifo
           </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-[#f59e0b] border border-white" />
+            Cuartel
+          </div>
+
         </div>
       </div>
 
