@@ -40,16 +40,27 @@ export type MapHydrant = {
   isOwn?: boolean;
 };
 
+export type MapStation = {
+  id: string;
+  latitude: number;
+  longitude: number;
+  labels: string[];
+  address: string | null;
+};
+
 type LeafletMapCanvasProps = {
   emergencies: MapEmergency[];
   hydrants: MapHydrant[];
+  stations?: MapStation[];
   showEmergencies: boolean;
   showHydrants: boolean;
+  showStations?: boolean;
   onCompatibilityModeChange: (enabled: boolean) => void;
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   clickMode?: boolean;
   onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
+
   locateRequested?: number; // increment to trigger geolocation
   onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
   /** Ubicación en vivo compartida por el solicitante de una emergencia */
