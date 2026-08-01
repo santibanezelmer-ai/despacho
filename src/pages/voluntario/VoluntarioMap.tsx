@@ -1,12 +1,13 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
-import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff } from 'lucide-react';
+import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff, Building2 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
+import { useStations } from '@/hooks/useStations';
 
 const statusLabels: Record<string, string> = {
   despacho: 'Despacho', en_ruta: 'En Ruta', en_trabajo: 'En Trabajo', controlada: 'Controlada',
@@ -31,6 +32,18 @@ function hydrantIcon(own: boolean) {
     className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
   });
 }
+
+function stationIcon() {
+  return L.divIcon({
+    html: `<div style="width:26px;height:26px;border-radius:6px;background:#f59e0b;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-6h4v6"/></svg>
+    </div>`,
+    className: '', iconSize: [26, 26], iconAnchor: [13, 13],
+  });
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 async function requestGeolocation(): Promise<{ lat: number; lng: number } | null> {
   const isNative = Capacitor.isNativePlatform();
@@ -67,6 +80,7 @@ export default function VoluntarioMap() {
   const { data: emergencies, isLoading: loadingEmg } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const { data: sharedHydrants } = useSharedHydrants(bounds);
+  const stations = useStations();
 
   useEffect(() => {
     if (initRef.current) return;
@@ -158,6 +172,25 @@ export default function VoluntarioMap() {
     return () => { markers.forEach(m => m.remove()); };
   }, [hydrants, sharedHydrants]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers: L.Marker[] = [];
+    stations.forEach(s => {
+      const title = s.labels.length > 1 ? 'Cuarteles en esta ubicación' : 'Cuartel';
+      const list = s.labels.map(l => `<div style="font-size:12px">• ${escapeHtml(l)}</div>`).join('');
+      const m = L.marker([s.latitude, s.longitude], { icon: stationIcon(), zIndexOffset: 500 })
+        .bindPopup(`<div style="min-width:160px;font-family:system-ui">
+          <div style="font-weight:700;font-size:13px;margin-bottom:3px">${title}</div>
+          ${list}
+          ${s.address ? `<div style="font-size:11px;color:#999;margin-top:3px">${escapeHtml(s.address)}</div>` : ''}
+        </div>`)
+        .addTo(map);
+      markers.push(m);
+    });
+    return () => { markers.forEach(m => m.remove()); };
+  }, [stations]);
+
   const handleLocate = useCallback(async () => {
     const map = mapRef.current;
     if (!map) return;
@@ -200,6 +233,7 @@ export default function VoluntarioMap() {
       <div className="absolute bottom-4 left-4 z-[1000] bg-card/90 backdrop-blur-sm border border-border rounded-xl px-3 py-2 space-y-1">
         <div className="flex items-center gap-2 text-xs text-muted-foreground"><Flame className="w-3 h-3 text-destructive" /> Emergencias</div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground"><Droplets className="w-3 h-3 text-[hsl(var(--info))]" /> Grifos</div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><Building2 className="w-3 h-3 text-[#f59e0b]" /> Cuarteles</div>
       </div>
       {loadingEmg && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
