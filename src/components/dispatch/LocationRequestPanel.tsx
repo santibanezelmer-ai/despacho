@@ -25,7 +25,8 @@ interface Props {
   emergencyId?: string | null;
 }
 
-const shareBase = 'https://operixdispatch.com/location';
+// Usa el origen actual para que el enlace funcione tanto en preview como en producción
+const shareBase = `${typeof window !== 'undefined' ? window.location.origin : 'https://operixdispatch.com'}/location`;
 
 export default function LocationRequestPanel({ phone, requestId, onRequestCreated, fix, onFix, emergencyId }: Props) {
   const { orgId } = useOrganization();
