@@ -132,11 +132,32 @@ const buildHydrantPopup = (hydrant: MapHydrant) => {
   return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:4px;">${rows.join('')}</div>`;
 };
 
+const stationIcon = L.divIcon({
+  className: '',
+  html: `<div style="background:#f59e0b;width:26px;height:26px;border-radius:6px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-6h4v6"/></svg>
+  </div>`,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+});
+
+const buildStationPopup = (station: MapStation) => {
+  const title = station.labels.length > 1 ? 'Cuarteles en esta ubicación' : 'Cuartel';
+  const list = station.labels.map((l) => `<div style="font-size:12px;">• ${escapeHtml(l)}</div>`).join('');
+  return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:3px;min-width:160px;">
+    <div style="font-weight:700;">${title}</div>
+    ${list}
+    ${station.address ? `<div style="font-size:12px;color:hsl(var(--muted-foreground));margin-top:2px;">${escapeHtml(station.address)}</div>` : ''}
+  </div>`;
+};
+
 export default function LeafletMapCanvas({
   emergencies,
   hydrants,
+  stations = [],
   showEmergencies,
   showHydrants,
+  showStations = true,
   onCompatibilityModeChange,
   onBoundsChange,
   onMapClick,
@@ -154,7 +175,9 @@ export default function LeafletMapCanvas({
   const mapRef = useRef<L.Map | null>(null);
   const emergencyLayerRef = useRef<L.LayerGroup | null>(null);
   const hydrantLayerRef = useRef<L.LayerGroup | null>(null);
+  const stationLayerRef = useRef<L.LayerGroup | null>(null);
   const initialFitDoneRef = useRef(false);
+
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const tileUrlRef = useRef(PRIMARY_TILE_URL);
 
