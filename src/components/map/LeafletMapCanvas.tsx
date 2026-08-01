@@ -210,8 +210,11 @@ export default function LeafletMapCanvas({
 
     const emergencyLayer = L.layerGroup().addTo(map);
     const hydrantLayer = L.layerGroup().addTo(map);
+    const stationLayer = L.layerGroup().addTo(map);
     emergencyLayerRef.current = emergencyLayer;
     hydrantLayerRef.current = hydrantLayer;
+    stationLayerRef.current = stationLayer;
+
 
     const activateFallbackTiles = () => {
       if (!mapRef.current || tileUrlRef.current === FALLBACK_TILE_URL) return;
