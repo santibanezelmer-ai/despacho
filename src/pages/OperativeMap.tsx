@@ -25,9 +25,11 @@ export default function OperativeMap() {
   const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
+  const stations = useStations();
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
-  const [compatibilityMode, setCompatibilityMode] = useState(false);
+  const [showStations, setShowStations] = useState(true);
+
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [clickMode, setClickMode] = useState(false);
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
