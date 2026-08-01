@@ -288,7 +288,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="console-panel w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+      <div className="console-panel w-[96vw] max-w-6xl max-h-[95vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-sm font-bold text-foreground">Acciones — {emergency.address}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -394,7 +394,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               </Button>
             ) : (
               <div className="space-y-2">
-                <div ref={mapRef} className="h-[60vh] min-h-[380px] w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
+                <div ref={mapRef} className="h-[75vh] min-h-[480px] w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
                 <p className="text-[10px] text-muted-foreground">Haz clic en el mapa o arrastra el marcador rojo para definir la ubicación. Si el solicitante comparte su ubicación por enlace, se marcará automáticamente.</p>
 
                 {mapCoords && (
