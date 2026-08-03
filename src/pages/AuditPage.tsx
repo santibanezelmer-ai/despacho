@@ -116,7 +116,7 @@ export default function AuditPage() {
               <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-8">Sin registros de auditoría</TableCell></TableRow>
             ) : filtered.map((l: any) => (
               <TableRow key={l.id} className="border-border/30">
-                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(l.created_at), 'dd/MM/yy HH:mm')}</TableCell>
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(l.created_at), `dd/MM/yy ${pattern()}`)}</TableCell>
                 <TableCell className="text-sm">{l.profiles?.display_name ?? l.profiles?.email ?? '—'}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className={`text-[10px] ${ACTION_COLORS[l.action] ?? ''}`}>{l.action}</Badge>

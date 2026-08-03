@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 interface NotificationLogRow {
   id: string;
@@ -20,6 +21,7 @@ interface NotificationLogRow {
 }
 
 export default function NotificationsPage() {
+  const { pattern } = useTimeFormat();
   const { orgId } = useOrganization();
 
   const { data: logs, isLoading } = useQuery({
@@ -113,7 +115,7 @@ export default function NotificationsPage() {
                 return (
                   <TableRow key={log.id} className="border-border/30">
                     <TableCell className="text-xs text-muted-foreground">
-                      {format(new Date(log.created_at), 'dd/MM HH:mm', { locale: es })}
+                      {format(new Date(log.created_at), `dd/MM ${pattern()}`, { locale: es })}
                     </TableCell>
                     <TableCell className="text-sm">
                       {profile?.display_name || profile?.email || log.user_id.slice(0, 8)}
@@ -133,7 +135,7 @@ export default function NotificationsPage() {
                       {log.opened_at ? (
                         <Badge variant="outline" className="text-[10px] bg-blue-500/20 text-blue-400 border-blue-500/30">
                           <Eye className="h-3 w-3 mr-1" />
-                          {format(new Date(log.opened_at), 'HH:mm', { locale: es })}
+                          {format(new Date(log.opened_at), pattern(), { locale: es })}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>

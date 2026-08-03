@@ -246,7 +246,7 @@ export default function MobileEmergencyDetailPage() {
                   <div className="flex-1">
                     <span className="text-xs font-semibold">{step.label}</span>
                     <span className="text-[11px] text-muted-foreground ml-2">
-                      {format(new Date(value), "dd MMM HH:mm:ss", { locale: es })}
+                      {format(new Date(value), `dd MMM ${pattern(true)}`, { locale: es })}
                     </span>
                   </div>
                 </div>
@@ -270,7 +270,7 @@ export default function MobileEmergencyDetailPage() {
                 <div key={log.id} className="bg-secondary/30 rounded-lg px-3 py-2">
                   <p className="text-xs">{log.message}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {format(new Date(log.created_at), "dd MMM HH:mm", { locale: es })}
+                    {format(new Date(log.created_at), `dd MMM ${pattern()}`, { locale: es })}
                   </p>
                 </div>
               ))}
