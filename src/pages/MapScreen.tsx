@@ -200,7 +200,7 @@ export default function MapScreen() {
         </div>
         <div className="bg-card/90 backdrop-blur-sm border border-border rounded-xl px-3 py-2">
           <span className="text-sm font-mono font-bold text-foreground">
-            {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            {formatClock(now)}
           </span>
         </div>
       </div>

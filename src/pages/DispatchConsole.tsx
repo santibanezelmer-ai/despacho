@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import DispatchNotesPanel from '@/components/dispatch/DispatchNotesPanel';
@@ -82,7 +83,7 @@ export default function DispatchConsole() {
         <div className="flex items-center gap-4">
           <div className="text-right mr-2">
             <span className="text-xl font-mono font-bold text-foreground">
-              {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              {formatClock(now)}
             </span>
           </div>
           <Button

@@ -276,7 +276,7 @@ export default function CentralScreen() {
           )}
           <div className="text-right">
             <div className="text-2xl font-mono font-bold text-foreground">
-              {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              {formatClock(now)}
             </div>
             <div className="text-sm text-muted-foreground">
               {now.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
