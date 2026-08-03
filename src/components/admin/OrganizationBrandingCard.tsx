@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import LogoUploadField from './LogoUploadField';
 import LocationFields from './LocationFields';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 export default function OrganizationBrandingCard() {
@@ -18,6 +19,7 @@ export default function OrganizationBrandingCard() {
   const [address, setAddress] = useState<string>('');
   const [latitude, setLatitude] = useState<string>('');
   const [longitude, setLongitude] = useState<string>('');
+  const [timeFormat, setTimeFormat] = useState<'12' | '24'>('24');
   const [saving, setSaving] = useState(false);
 
   const { data: org, isLoading } = useQuery({
@@ -26,7 +28,7 @@ export default function OrganizationBrandingCard() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('organizations')
-        .select('id, name, logo_url, address, latitude, longitude')
+        .select('id, name, logo_url, address, latitude, longitude, time_format')
         .eq('id', orgId)
         .single();
       if (error) throw error;
@@ -40,7 +42,8 @@ export default function OrganizationBrandingCard() {
     setAddress(org?.address ?? '');
     setLatitude(org?.latitude != null ? String(org.latitude) : '');
     setLongitude(org?.longitude != null ? String(org.longitude) : '');
-  }, [org?.logo_url, org?.name, org?.address, org?.latitude, org?.longitude]);
+    setTimeFormat((org?.time_format as '12' | '24') ?? '24');
+  }, [org?.logo_url, org?.name, org?.address, org?.latitude, org?.longitude, org?.time_format]);
 
   if (!isOrgAdmin) return null;
 
@@ -49,7 +52,8 @@ export default function OrganizationBrandingCard() {
     (org?.name ?? '') !== name.trim() ||
     (org?.address ?? '') !== address.trim() ||
     (org?.latitude != null ? String(org.latitude) : '') !== latitude.trim() ||
-    (org?.longitude != null ? String(org.longitude) : '') !== longitude.trim();
+    (org?.longitude != null ? String(org.longitude) : '') !== longitude.trim() ||
+    ((org?.time_format as string) ?? '24') !== timeFormat;
 
   const handleSave = async () => {
     if (!orgId) return;
@@ -65,6 +69,7 @@ export default function OrganizationBrandingCard() {
           address: address.trim() || null,
           latitude: latitude.trim() ? parseFloat(latitude) : null,
           longitude: longitude.trim() ? parseFloat(longitude) : null,
+          time_format: timeFormat,
         })
         .eq('id', orgId);
       if (error) throw error;
@@ -72,6 +77,7 @@ export default function OrganizationBrandingCard() {
       qc.invalidateQueries({ queryKey: ['org-branding', orgId] });
       qc.invalidateQueries({ queryKey: ['organization'] });
       qc.invalidateQueries({ queryKey: ['org-location', orgId] });
+      qc.invalidateQueries({ queryKey: ['org-time-format', orgId] });
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar');
     } finally {
@@ -115,6 +121,22 @@ export default function OrganizationBrandingCard() {
             }}
             addressLabel="Dirección del cuartel general"
           />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="org-time-format" className="text-xs">Formato de hora</Label>
+            <Select value={timeFormat} onValueChange={(v) => setTimeFormat(v as '12' | '24')}>
+              <SelectTrigger id="org-time-format" className="w-full sm:w-64 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24" className="text-xs">24 horas (14:35)</SelectItem>
+                <SelectItem value="12" className="text-xs">12 horas (02:35 p.m.)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Se aplica a los relojes, bitácoras y horarios de la consola y de la PWA de esta organización.
+            </p>
+          </div>
 
           <LogoUploadField
             label={`Logo de ${org?.name ?? 'la organización'}`}
