@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { ArrowLeft, MapPin, Navigation, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
@@ -21,6 +22,8 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }: Props) {
+  const { formatDateTime } = useTimeFormat(organizationId);
+  const fmt = (d?: string | null) => formatDateTime(d);
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -230,8 +233,4 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
-function fmt(d?: string | null) {
-  if (!d) return '—';
-  const date = new Date(d);
-  return date.toLocaleString('es-CL', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-}
+

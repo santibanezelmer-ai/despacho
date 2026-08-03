@@ -140,11 +140,7 @@ export default function InvitationsAdmin() {
     return map[status] ?? '';
   };
 
-  const fmtRel = (d?: string | null) => {
-    if (!d) return '—';
-    const date = new Date(d);
-    return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  };
+  const fmtRel = (d?: string | null) => formatDateTime(d);
 
   return (
     <div className="space-y-4">
