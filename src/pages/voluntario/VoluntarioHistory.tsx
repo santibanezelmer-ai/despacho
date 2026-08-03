@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Loader2, MapPin, ChevronRight } from 'lucide-react';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 interface Props { organizationId: string }
 
@@ -16,6 +17,7 @@ function codeSize(code?: string | null) {
 }
 
 export default function VoluntarioHistory({ organizationId }: Props) {
+  const { formatTime } = useTimeFormat(organizationId);
   const { data, isLoading } = useQuery({
     queryKey: ['vol-history-all', organizationId],
     queryFn: async () => {
@@ -71,7 +73,7 @@ export default function VoluntarioHistory({ organizationId }: Props) {
                         <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                           <MapPin className="h-3 w-3" />{e.address}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/80 mt-0.5 font-cond uppercase tracking-widest">{new Date(e.finished_at || e.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-[10px] text-muted-foreground/80 mt-0.5 font-cond uppercase tracking-widest">{formatTime(e.finished_at || e.created_at)}</p>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </Link>

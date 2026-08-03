@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Mail, Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
 import { z } from 'zod';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
@@ -28,6 +29,7 @@ const inviteSchema = z.object({
 });
 
 export default function InvitationsAdmin() {
+  const { formatDateTime } = useTimeFormat();
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
@@ -138,11 +140,7 @@ export default function InvitationsAdmin() {
     return map[status] ?? '';
   };
 
-  const fmtRel = (d?: string | null) => {
-    if (!d) return '—';
-    const date = new Date(d);
-    return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  };
+  const fmtRel = (d?: string | null) => formatDateTime(d);
 
   return (
     <div className="space-y-4">

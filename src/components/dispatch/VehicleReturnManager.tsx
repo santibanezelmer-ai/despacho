@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Home, Truck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 interface Props {
   emergencyId: string;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function VehicleReturnManager({ emergencyId, emergencyStatus }: Props) {
+  const { formatTime } = useTimeFormat();
   const { orgId } = useOrganization();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -222,7 +224,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
                 <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
                   {ev.odometer_end != null && <span>Km: {ev.odometer_end}</span>}
                   {kmTotal != null && <span>({kmTotal} km)</span>}
-                  <span>{new Date(ev.released_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{formatTime(ev.released_at)}</span>
                 </div>
               </div>
             );

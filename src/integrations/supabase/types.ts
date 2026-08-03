@@ -1170,6 +1170,7 @@ export type Database = {
           region: string | null
           slug: string
           status: Database["public"]["Enums"]["org_status"]
+          time_format: string
           updated_at: string
         }
         Insert: {
@@ -1192,6 +1193,7 @@ export type Database = {
           region?: string | null
           slug: string
           status?: Database["public"]["Enums"]["org_status"]
+          time_format?: string
           updated_at?: string
         }
         Update: {
@@ -1214,6 +1216,7 @@ export type Database = {
           region?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["org_status"]
+          time_format?: string
           updated_at?: string
         }
         Relationships: []

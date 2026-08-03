@@ -3,6 +3,7 @@ import { MapPin, Clock, ChevronRight, Siren } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 interface EmergencyCardProps {
   emergency: {
@@ -34,6 +35,7 @@ const statusClasses: Record<string, string> = {
 };
 
 export default function EmergencyMobileCard({ emergency }: EmergencyCardProps) {
+  const { pattern } = useTimeFormat();
   const navigate = useNavigate();
   const isLive = emergency.status !== 'finalizada';
   const keyColor = emergency.emergency_keys?.color || '#dc2626';
@@ -82,7 +84,7 @@ export default function EmergencyMobileCard({ emergency }: EmergencyCardProps) {
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {format(new Date(emergency.created_at), "dd MMM HH:mm", { locale: es })}
+              {format(new Date(emergency.created_at), `dd MMM ${pattern()}`, { locale: es })}
             </span>
             {emergency.vehicleCodes && emergency.vehicleCodes.length > 0 && (
               <span className="text-foreground/70">

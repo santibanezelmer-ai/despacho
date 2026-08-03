@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LocateFixed, Loader2, Flame, Droplets, Crosshair, Shield } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 function useHydrants() {
   return useQuery({
@@ -68,6 +69,7 @@ function hydrantIcon(own: boolean) {
 }
 
 export default function MapScreen() {
+  const { formatClock } = useTimeFormat();
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
@@ -200,7 +202,7 @@ export default function MapScreen() {
         </div>
         <div className="bg-card/90 backdrop-blur-sm border border-border rounded-xl px-3 py-2">
           <span className="text-sm font-mono font-bold text-foreground">
-            {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            {formatClock(now)}
           </span>
         </div>
       </div>
