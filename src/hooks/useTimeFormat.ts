@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useOrganization } from '@/contexts/OrganizationContext';
+import { useOrganizationOptional } from '@/contexts/OrganizationContext';
 import {
   formatClock,
   formatDateTime,
@@ -13,8 +13,9 @@ import {
  * Reads the current organization's 12h/24h preference and exposes
  * ready-to-use formatters. Defaults to 24h while loading.
  */
-export function useTimeFormat() {
-  const { orgId } = useOrganization();
+export function useTimeFormat(explicitOrgId?: string | null) {
+  const ctx = useOrganizationOptional();
+  const orgId = explicitOrgId ?? ctx?.orgId ?? null;
 
   const { data } = useQuery({
     queryKey: ['org-time-format', orgId],

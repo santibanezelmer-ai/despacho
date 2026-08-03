@@ -35,6 +35,7 @@ const statusClasses: Record<string, string> = {
 };
 
 export default function EmergencyMobileCard({ emergency }: EmergencyCardProps) {
+  const { pattern } = useTimeFormat();
   const navigate = useNavigate();
   const isLive = emergency.status !== 'finalizada';
   const keyColor = emergency.emergency_keys?.color || '#dc2626';

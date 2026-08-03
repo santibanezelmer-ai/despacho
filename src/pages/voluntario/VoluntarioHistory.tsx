@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Loader2, MapPin, ChevronRight } from 'lucide-react';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 interface Props { organizationId: string }
 
@@ -16,6 +17,7 @@ function codeSize(code?: string | null) {
 }
 
 export default function VoluntarioHistory({ organizationId }: Props) {
+  const { formatTime } = useTimeFormat(organizationId);
   const { data, isLoading } = useQuery({
     queryKey: ['vol-history-all', organizationId],
     queryFn: async () => {

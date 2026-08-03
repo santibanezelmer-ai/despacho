@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 const statusLabels: Record<string, string> = {
   despacho: 'Despacho', en_ruta: 'En Ruta', en_trabajo: 'En Trabajo',
@@ -48,6 +49,7 @@ function openWaze(lat: number | null, lng: number | null, address: string) {
 }
 
 export default function MobileEmergencyDetailPage() {
+  const { pattern } = useTimeFormat();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data, isLoading, error } = useMobileEmergencyDetail(id);

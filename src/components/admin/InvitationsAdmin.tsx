@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Mail, Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
 import { z } from 'zod';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
@@ -28,6 +29,7 @@ const inviteSchema = z.object({
 });
 
 export default function InvitationsAdmin() {
+  const { formatDateTime } = useTimeFormat();
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');

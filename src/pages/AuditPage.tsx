@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 const ACTION_COLORS: Record<string, string> = {
   INSERT: 'bg-success/20 text-success border-success/30',
@@ -16,6 +17,7 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 export default function AuditPage() {
+  const { pattern } = useTimeFormat();
   const { orgId } = useOrganization();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
