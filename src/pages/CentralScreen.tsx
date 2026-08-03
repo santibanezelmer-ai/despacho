@@ -6,6 +6,7 @@ import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Radio, MapPin, Truck, Users, Clock, Shield, Activity, Search, Map, QrCode, ExternalLink, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
@@ -159,6 +160,7 @@ function ShareModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function CentralScreen() {
+  const { formatClock } = useTimeFormat();
   const { data: emergencies } = useActiveEmergencies();
   const { data: vehicles } = useVehicles({ refetchInterval: 5000 });
   const { data: volunteers } = useVolunteers({ refetchInterval: 5000 });

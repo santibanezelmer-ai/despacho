@@ -17,6 +17,7 @@ import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 
 export default function DispatchConsole() {
+  const { formatClock } = useTimeFormat();
   const [selectedKey, setSelectedKey] = useState<EmergencyKeyRow | null>(null);
   const [now, setNow] = useState(new Date());
   const { data: emergencies } = useActiveEmergencies();
