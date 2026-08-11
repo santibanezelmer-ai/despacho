@@ -24,10 +24,10 @@ export function useDemoStatus() {
     enabled: !!orgId,
     refetchInterval: 60_000,
     queryFn: async (): Promise<DemoStatus> => {
-      const { data: settings } = await (supabase as any)
-        .from("demo_settings")
-        .select("duration_days, max_emergencies")
-        .maybeSingle();
+      const { data: limits } = await (supabase as any).rpc("get_demo_limits");
+      const settings = (limits ?? null) as
+        | { duration_days: number; max_emergencies: number; enabled: boolean }
+        | null;
 
       const maxEmergencies = settings?.max_emergencies ?? 20;
       const durationDays = settings?.duration_days ?? 14;
