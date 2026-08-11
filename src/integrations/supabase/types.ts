@@ -1625,7 +1625,6 @@ export type Database = {
         Returns: boolean
       }
       demo_emergency_count: { Args: { _org_id: string }; Returns: number }
-      demo_max_emergencies: { Args: never; Returns: number }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
