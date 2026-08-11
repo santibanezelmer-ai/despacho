@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 
 export default function RegisterOrganization() {
   const { signUp } = useAuth();
@@ -70,6 +71,16 @@ export default function RegisterOrganization() {
   if (step === 'success') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Helmet>
+        <title>Registrar organización — Operix Despacho</title>
+        <meta name="description" content="Solicita acceso a Operix para tu cuerpo de bomberos: despacho de emergencias, gestión de vehículos, voluntarios y mapa operativo en tiempo real." />
+        <link rel="canonical" href="https://operixdispatch.com/register" />
+        <meta property="og:url" content="https://operixdispatch.com/register" />
+        <meta property="og:title" content="Registrar organización — Operix Despacho" />
+        <meta property="og:description" content="Solicita acceso a Operix para tu cuerpo de bomberos y coordina emergencias en tiempo real." />
+        <meta name="twitter:title" content="Registrar organización — Operix Despacho" />
+        <meta name="twitter:description" content="Solicita acceso a Operix para tu cuerpo de bomberos y coordina emergencias en tiempo real." />
+      </Helmet>
         <div className="w-full max-w-sm text-center space-y-4 console-panel p-8">
           <CheckCircle className="mx-auto h-12 w-12 text-success" />
           <h2 className="text-lg font-bold text-foreground">Solicitud Enviada</h2>
