@@ -1625,11 +1625,13 @@ export type Database = {
         Returns: boolean
       }
       demo_emergency_count: { Args: { _org_id: string }; Returns: number }
+      demo_max_emergencies: { Args: never; Returns: number }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_demo_limits: { Args: never; Returns: Json }
       get_invitation_preview: { Args: { _token: string }; Returns: Json }
       get_my_organization_ids: { Args: never; Returns: string[] }
       get_user_roles: {
