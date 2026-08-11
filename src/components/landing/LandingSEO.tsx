@@ -34,18 +34,18 @@ export default function LandingSEO() {
     <Helmet>
       <title>Operix — Sistema de Despacho en Tiempo Real para Bomberos</title>
       <meta name="description" content="Despacha emergencias en segundos, coordina vehículos y personal en terreno. Plataforma operativa centralizada para cuerpos de bomberos." />
-      <link rel="canonical" href="https://despacho.lovable.app/" />
+      <link rel="canonical" href="https://operixdispatch.com/" />
 
       <meta property="og:type" content="website" />
-      <meta property="og:url" content="https://despacho.lovable.app/" />
+      <meta property="og:url" content="https://operixdispatch.com/" />
       <meta property="og:title" content="Operix — Sistema de Despacho en Tiempo Real para Bomberos" />
       <meta property="og:description" content="Despacha emergencias en segundos, coordina vehículos y personal en terreno. Plataforma operativa centralizada para cuerpos de bomberos." />
-      <meta property="og:image" content="https://despacho.lovable.app/favicon.png" />
+      <meta property="og:image" content="https://operixdispatch.com/favicon.png" />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Operix — Sistema de Despacho en Tiempo Real para Bomberos" />
       <meta name="twitter:description" content="Despacha emergencias en segundos. Plataforma operativa centralizada para cuerpos de bomberos." />
-      <meta name="twitter:image" content="https://despacho.lovable.app/favicon.png" />
+      <meta name="twitter:image" content="https://operixdispatch.com/favicon.png" />
 
       <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       <script type="application/ld+json">{JSON.stringify(orgSchema)}</script>

@@ -133,7 +133,7 @@ export default function ContactFormSection() {
                   />
                 </div>
                 <Select value={form.station_size} onValueChange={(v) => update('station_size', v)}>
-                  <SelectTrigger className="h-12 bg-secondary/50 border-border/50 text-sm">
+                  <SelectTrigger aria-label="Tamaño del cuartel" className="h-12 bg-secondary/50 border-border/50 text-sm">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <SelectValue placeholder="Tamaño del cuartel" />
