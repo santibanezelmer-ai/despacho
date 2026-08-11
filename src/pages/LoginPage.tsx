@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -23,10 +24,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Helmet>
+        <title>Iniciar sesión — Operix Despacho</title>
+        <meta name="description" content="Accede a la consola de despacho Operix para coordinar emergencias, vehículos y personal de tu cuerpo de bomberos en tiempo real." />
+        <link rel="canonical" href="https://operixdispatch.com/login" />
+        <meta property="og:url" content="https://operixdispatch.com/login" />
+        <meta property="og:title" content="Iniciar sesión — Operix Despacho" />
+        <meta property="og:description" content="Accede a la consola de despacho Operix para coordinar emergencias en tiempo real." />
+        <meta name="twitter:title" content="Iniciar sesión — Operix Despacho" />
+        <meta name="twitter:description" content="Accede a la consola de despacho Operix para coordinar emergencias en tiempo real." />
+      </Helmet>
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img src="/favicon.png" alt="Operix" className="mx-auto mb-3 h-14 w-14 rounded-2xl object-cover" />
-          <h1 className="text-xl font-bold text-foreground">Operix</h1>
+          <h1 className="text-xl font-bold text-foreground">Operix — Acceso al Sistema de Despacho</h1>
           <p className="text-xs font-mono text-muted-foreground mt-1">v4.0 — Sistema de Despacho</p>
         </div>
 
