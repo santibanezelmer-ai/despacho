@@ -16,7 +16,6 @@ export interface ClientErrorPayload {
  */
 export async function logClientError(payload: ClientErrorPayload) {
   // Always print to console for local visibility
-  // eslint-disable-next-line no-console
   console.error(`[client-error:${payload.kind}]`, payload);
 
   try {

@@ -8,13 +8,11 @@ import { logClientError } from '@/lib/clientErrorLogger';
 // causes Provider/hook to use different Context instances and produce the
 // "must be used within OrganizationProvider" error.
 declare global {
-  // eslint-disable-next-line no-var
   var __ORG_CONTEXT_MODULE_ID__: string | undefined;
 }
 if (import.meta.env.DEV) {
   const moduleId = `${import.meta.url}#${Math.random().toString(36).slice(2, 8)}`;
   if (globalThis.__ORG_CONTEXT_MODULE_ID__ && globalThis.__ORG_CONTEXT_MODULE_ID__ !== moduleId) {
-    // eslint-disable-next-line no-console
     console.warn(
       '[OrganizationContext] ⚠️ Multiple copies of OrganizationContext detected!\n' +
         `Previous: ${globalThis.__ORG_CONTEXT_MODULE_ID__}\n` +

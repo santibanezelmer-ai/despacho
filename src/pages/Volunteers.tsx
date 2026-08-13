@@ -57,7 +57,11 @@ export default function Volunteers() {
     await (supabase as any).from('volunteers').update({ invitation_sent_at: new Date().toISOString() }).eq('id', v.id);
 
     const url = `${window.location.origin}/invite/${inv.token}`;
-    try { await navigator.clipboard.writeText(url); } catch {}
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      /* portapapeles no disponible */
+    }
     toast.success('Invitación creada. Link copiado al portapapeles.');
     qc.invalidateQueries({ queryKey: ['volunteers'] });
     setBusyId(null);

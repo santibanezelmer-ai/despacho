@@ -137,7 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       key={item.path}
                       onClick={() => {
                         window.open('/pantalla-central', 'central-screen', 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
-                        isMobile && setMobileOpen(false);
+                        if (isMobile) setMobileOpen(false);
                       }}
                       className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       title={collapsed && !isMobile ? item.label : undefined}

@@ -36,7 +36,7 @@ export default function AuditPage() {
 
       // Fetch profiles separately (no FK from audit_log to profiles)
       const userIds = [...new Set((data ?? []).map((l: any) => l.user_id).filter(Boolean))];
-      let profilesMap: Record<string, { display_name: string | null; email: string | null }> = {};
+      const profilesMap: Record<string, { display_name: string | null; email: string | null }> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
