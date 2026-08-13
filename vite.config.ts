@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      // En desarrollo no se genera sw.js: evita el 404 al intentar registrarlo
+      injectRegister: mode === "development" ? null : "auto",
       devOptions: { enabled: false },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
