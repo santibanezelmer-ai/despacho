@@ -174,7 +174,7 @@ export default function CentralScreen() {
     return () => clearInterval(id);
   }, []);
 
-  const active = emergencies ?? [];
+  const active = useMemo(() => emergencies ?? [], [emergencies]);
   const activeEmergencyIds = useMemo(() => active.map(e => e.id), [active]);
   const { data: assignments } = useActiveAssignments(activeEmergencyIds);
 

@@ -19,7 +19,11 @@ export default function SystemSoundsAdmin() {
   };
 
   const playSound = (url: string) => {
-    try { new Audio(url).play().catch(() => {}); } catch {}
+    try {
+      new Audio(url).play().catch(() => undefined);
+    } catch {
+      /* reproducción no soportada */
+    }
   };
 
   return (

@@ -51,7 +51,11 @@ async function ensureNotificationChannel(): Promise<void> {
   try {
     // Remove legacy channels so the old "default" sound stops being used
     for (const legacy of LEGACY_CHANNEL_IDS) {
-      try { await LocalNotifications.deleteChannel({ id: legacy }); } catch (_) {}
+      try {
+        await LocalNotifications.deleteChannel({ id: legacy });
+      } catch {
+        /* el canal puede no existir */
+      }
     }
 
     await LocalNotifications.createChannel({

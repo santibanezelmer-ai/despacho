@@ -4,8 +4,6 @@ import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 export default function VoluntarioLayout({ children, orgName, orgLogoUrl }: { children: React.ReactNode; orgName?: string; orgLogoUrl?: string | null }) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _brand = { orgName, orgLogoUrl };
   const loc = useLocation();
   const hideNav = loc.pathname === '/voluntario/login';
 
