@@ -35,6 +35,7 @@ export default function LandingPage() {
         <ProblemSolutionSection />
         <ComparisonSection />
         <ModulesSection />
+        <ShowcaseSection />
         <TestimonialsSection />
         <StepsSection />
         <PricingSection />
