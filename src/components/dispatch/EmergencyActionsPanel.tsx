@@ -316,10 +316,19 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Phone className="h-3.5 w-3.5" /> Teléfono del solicitante
               </label>
-              <p className="mb-2 font-mono text-sm text-foreground">
-                {callerPhone || 'No registrado'}
-              </p>
-              {callerPhone ? (
+              <div className="mb-2 flex gap-2">
+                <Input
+                  value={callerPhone}
+                  onChange={e => setCallerPhone(e.target.value)}
+                  placeholder="+56 9 1234 5678"
+                  inputMode="tel"
+                  className="bg-muted/50 flex-1 font-mono"
+                />
+                <Button size="sm" onClick={handleSavePhone} disabled={savingPhone}>
+                  {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+              </div>
+              {callerPhone.replace(/\D/g, '').length >= 8 ? (
                 <LocationRequestPanel
                   phone={callerPhone}
                   requestId={locRequestId}
@@ -330,7 +339,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 />
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Registre un teléfono al despachar para poder solicitar la ubicación por enlace.
+                  Ingrese y guarde un teléfono válido para solicitar la ubicación por enlace.
                 </p>
               )}
               <p className="mt-1 text-[10px] text-muted-foreground">
@@ -338,6 +347,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               </p>
             </section>
           )}
+
 
 
 
