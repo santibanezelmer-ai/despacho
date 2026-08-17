@@ -48,6 +48,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [savingPre, setSavingPre] = useState(false);
   const [locating, setLocating] = useState(false);
   const [callerPhone, setCallerPhone] = useState('');
+  const [savingPhone, setSavingPhone] = useState(false);
   const [locRequestId, setLocRequestId] = useState<string | null>(null);
   const [locFix, setLocFix] = useState<LocationFix | null>(null);
 
