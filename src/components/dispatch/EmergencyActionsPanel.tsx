@@ -107,6 +107,26 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
   }, [queryClient]);
 
+  const handleSavePhone = async () => {
+    const cleaned = callerPhone.trim();
+    if (cleaned && cleaned.replace(/\D/g, '').length < 8) {
+      toast.error('Ingrese un número de teléfono válido');
+      return;
+    }
+    setSavingPhone(true);
+    const { error } = await supabase
+      .from('emergencies')
+      .update({ caller_phone: cleaned || null })
+      .eq('id', emergency.id);
+    setSavingPhone(false);
+    if (error) {
+      toast.error('Error al guardar el teléfono');
+      return;
+    }
+    toast.success('Teléfono del solicitante guardado');
+    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+  };
+
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
