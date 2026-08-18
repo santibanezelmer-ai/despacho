@@ -371,6 +371,21 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
             </section>
           )}
 
+          {/* 1c. Coordenadas manuales */}
+          {!isClosed && (
+            <section>
+              <ManualCoordsInput
+                latitude={mapCoords?.lat ?? null}
+                longitude={mapCoords?.lng ?? null}
+                onSubmit={(lat, lng) => {
+                  setMapCoords({ lat, lng });
+                  updateLocation.mutate({ id: emergency.id, latitude: lat, longitude: lng });
+                }}
+              />
+            </section>
+          )}
+
+
 
 
 
