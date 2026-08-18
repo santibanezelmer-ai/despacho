@@ -3,7 +3,6 @@ import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import DispatchNotesPanel from '@/components/dispatch/DispatchNotesPanel';
-import DispatchForm from '@/components/dispatch/DispatchForm';
 import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
 import StatsCard from '@/components/dashboard/StatsCard';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
@@ -15,10 +14,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
+import { useDispatchForm } from '@/contexts/DispatchFormContext';
 
 export default function DispatchConsole() {
   const { formatClock } = useTimeFormat();
-  const [selectedKey, setSelectedKey] = useState<EmergencyKeyRow | null>(null);
+  const { openDispatch } = useDispatchForm();
   const [now, setNow] = useState(new Date());
   const { data: emergencies } = useActiveEmergencies();
 
@@ -38,7 +38,7 @@ export default function DispatchConsole() {
 
   const handleSelectKey = (key: EmergencyKeyRow) => {
     // Solo seleccionar clave, NO reproducir tono aquí
-    setSelectedKey(key);
+    openDispatch(key);
     toast.info(`Clave seleccionada: ${key.code} - ${key.name}`, { duration: 3000 });
   };
 
@@ -145,12 +145,6 @@ export default function DispatchConsole() {
         </div>
       )}
 
-      {selectedKey && (
-        <DispatchForm
-          emergencyKey={selectedKey}
-          onClose={() => setSelectedKey(null)}
-        />
-      )}
     </div>
   );
 }
