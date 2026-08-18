@@ -14,6 +14,39 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 import { resolveToneUrl } from '@/lib/toneUrl';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
+
+type DispatchDraft = {
+  keyId: string;
+  selectedVehicleIds: string[];
+  address: string;
+  reference: string;
+  callerName: string;
+  callerPhone: string;
+  observations: string;
+  locationRequestId: string | null;
+  locationFix: LocationFix | null;
+};
+
+function loadDraft(keyId: string): Partial<DispatchDraft> {
+  try {
+    const raw = localStorage.getItem(DISPATCH_DRAFT_KEY);
+    if (!raw) return {};
+    const d = JSON.parse(raw) as DispatchDraft;
+    return d.keyId === keyId ? d : {};
+  } catch {
+    // Borrador corrupto o almacenamiento no disponible: se abre limpio
+    return {};
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DISPATCH_DRAFT_KEY);
+  } catch {
+    // Almacenamiento no disponible: nada que limpiar
+  }
+}
 
 
 // ── Global tone player (survives component unmount) ──
@@ -80,17 +113,40 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const { data: companies } = useCompanies();
   const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
 
-  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
-  const [address, setAddress] = useState('');
-  const [reference, setReference] = useState('');
-  const [callerName, setCallerName] = useState('');
-  const [callerPhone, setCallerPhone] = useState('');
-  const [observations, setObservations] = useState('');
+  const [draft] = useState(() => loadDraft(emergencyKey.id));
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>(draft.selectedVehicleIds ?? []);
+  const [address, setAddress] = useState(draft.address ?? '');
+  const [reference, setReference] = useState(draft.reference ?? '');
+  const [callerName, setCallerName] = useState(draft.callerName ?? '');
+  const [callerPhone, setCallerPhone] = useState(draft.callerPhone ?? '');
+  const [observations, setObservations] = useState(draft.observations ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
-  const [locationRequestId, setLocationRequestId] = useState<string | null>(null);
-  const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
+  const [locationRequestId, setLocationRequestId] = useState<string | null>(draft.locationRequestId ?? null);
+  const [locationFix, setLocationFix] = useState<LocationFix | null>(draft.locationFix ?? null);
+
+  // Mantener el borrador de la ventana aunque se navegue o se cierre el navegador
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        DISPATCH_DRAFT_KEY,
+        JSON.stringify({
+          keyId: emergencyKey.id,
+          selectedVehicleIds,
+          address,
+          reference,
+          callerName,
+          callerPhone,
+          observations,
+          locationRequestId,
+          locationFix,
+        } satisfies DispatchDraft)
+      );
+    } catch {
+      // Almacenamiento no disponible: el formulario sigue en memoria
+    }
+  }, [emergencyKey.id, selectedVehicleIds, address, reference, callerName, callerPhone, observations, locationRequestId, locationFix]);
 
   const handleLocationFix = useCallback((fix: LocationFix) => {
     setLocationFix(fix);
@@ -240,6 +296,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
        .catch(e => { if (import.meta.env.DEV) console.error('[Dispatch] ✗ Push call failed:', e); });
 
       toast.success(`Emergencia ${emergencyKey.code} despachada correctamente`);
+      clearDraft();
       onClose();
     } catch (err: any) {
       toast.error(err.message || 'Error al despachar');
@@ -265,7 +322,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </span>
             <h2 className="text-lg font-bold text-foreground">{emergencyKey.name}</h2>
           </div>
-          <button onClick={() => { stopGlobalTones(); onClose(); }} className="text-muted-foreground hover:text-foreground">
+          <button onClick={() => { stopGlobalTones(); clearDraft(); onClose(); }} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -360,7 +417,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1" disabled={submitting}>
+            <Button variant="outline" onClick={() => { clearDraft(); onClose(); }} className="flex-1" disabled={submitting}>
               Cancelar
             </Button>
             <Button
