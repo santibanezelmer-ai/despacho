@@ -14,6 +14,8 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 import { resolveToneUrl } from '@/lib/toneUrl';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+import ManualCoordsInput from './ManualCoordsInput';
+
 import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
 
 type DispatchDraft = {
