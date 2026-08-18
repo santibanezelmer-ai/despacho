@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
 import VehicleReturnManager from './VehicleReturnManager';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+import ManualCoordsInput from './ManualCoordsInput';
+
 
 
 interface Emergency {
@@ -368,6 +370,21 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               </p>
             </section>
           )}
+
+          {/* 1c. Coordenadas manuales */}
+          {!isClosed && (
+            <section>
+              <ManualCoordsInput
+                latitude={mapCoords?.lat ?? null}
+                longitude={mapCoords?.lng ?? null}
+                onSubmit={(lat, lng) => {
+                  setMapCoords({ lat, lng });
+                  updateLocation.mutate({ id: emergency.id, latitude: lat, longitude: lng });
+                }}
+              />
+            </section>
+          )}
+
 
 
 

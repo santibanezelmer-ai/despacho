@@ -14,6 +14,8 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 import { resolveToneUrl } from '@/lib/toneUrl';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+import ManualCoordsInput from './ManualCoordsInput';
+
 import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
 
 type DispatchDraft = {
@@ -157,6 +159,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     );
     toast.success('Ubicación recibida correctamente.');
   }, []);
+
+  const handleManualCoords = useCallback((lat: number, lng: number) => {
+    setLocationFix({
+      latitude: lat,
+      longitude: lng,
+      accuracy: null,
+      receivedAt: new Date().toISOString(),
+      address: null,
+    });
+    setAddress(prev => (prev.trim() ? prev : `${lat.toFixed(6)}, ${lng.toFixed(6)}`));
+    toast.success('Coordenadas manuales asignadas');
+  }, []);
+
 
 
   // Register/unregister the global callback so UI updates while playing
@@ -379,6 +394,15 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
                 </div>
               </div>
             </div>
+
+            <div className="md:col-span-2">
+              <ManualCoordsInput
+                latitude={locationFix?.latitude ?? null}
+                longitude={locationFix?.longitude ?? null}
+                onSubmit={handleManualCoords}
+              />
+            </div>
+
 
           </div>
 
