@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
 import VehicleReturnManager from './VehicleReturnManager';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
+import ManualCoordsInput from './ManualCoordsInput';
+
 
 
 interface Emergency {
