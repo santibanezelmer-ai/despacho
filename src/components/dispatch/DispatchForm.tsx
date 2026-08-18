@@ -380,6 +380,15 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               </div>
             </div>
 
+            <div className="md:col-span-2">
+              <ManualCoordsInput
+                latitude={locationFix?.latitude ?? null}
+                longitude={locationFix?.longitude ?? null}
+                onSubmit={handleManualCoords}
+              />
+            </div>
+
+
           </div>
 
           <div>
