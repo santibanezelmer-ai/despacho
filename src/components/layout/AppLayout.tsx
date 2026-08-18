@@ -7,6 +7,8 @@ import { startAutoSync } from '@/services/syncManager';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import DemoBanner from '@/components/demo/DemoBanner';
 import DemoExpiredOverlay from '@/components/demo/DemoExpiredOverlay';
+import DispatchForm from '@/components/dispatch/DispatchForm';
+import { DispatchFormProvider, useDispatchForm } from '@/contexts/DispatchFormContext';
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
@@ -37,6 +39,12 @@ const navItems = [
 ];
 
 const sections = ['Operaciones', 'Recursos', 'Análisis', 'Sistema'];
+
+function GlobalDispatchForm() {
+  const { openKey, closeDispatch } = useDispatchForm();
+  if (!openKey) return null;
+  return <DispatchForm emergencyKey={openKey} onClose={closeDispatch} />;
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -205,6 +213,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
+    <DispatchFormProvider>
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
@@ -238,6 +247,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto flex flex-col">{children}</main>
         <DemoExpiredOverlay />
       </div>
+      <GlobalDispatchForm />
     </div>
+    </DispatchFormProvider>
   );
 }
