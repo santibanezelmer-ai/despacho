@@ -160,6 +160,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     toast.success('Ubicación recibida correctamente.');
   }, []);
 
+  const handleManualCoords = useCallback((lat: number, lng: number) => {
+    setLocationFix({
+      latitude: lat,
+      longitude: lng,
+      accuracy: null,
+      receivedAt: new Date().toISOString(),
+      address: null,
+    });
+    setAddress(prev => (prev.trim() ? prev : `${lat.toFixed(6)}, ${lng.toFixed(6)}`));
+    toast.success('Coordenadas manuales asignadas');
+  }, []);
+
+
 
   // Register/unregister the global callback so UI updates while playing
   useEffect(() => {
