@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
-import { ArrowLeft, MapPin, Navigation, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, Clock, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
@@ -201,10 +201,9 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
           </Section>
         )}
 
-        {(emg.caller_name || emg.caller_phone) && (
-          <Section icon={<Phone className="h-4 w-4" />} label="Llamante">
-            {emg.caller_name && <p className="text-foreground text-sm">{emg.caller_name}</p>}
-            {emg.caller_phone && <a href={`tel:${emg.caller_phone}`} className="text-emergency text-sm font-mono">{emg.caller_phone}</a>}
+        {emg.caller_name && (
+          <Section icon={<FileText className="h-4 w-4" />} label="Solicitante">
+            <p className="text-foreground text-sm">{emg.caller_name}</p>
           </Section>
         )}
       </div>
