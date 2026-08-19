@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
-import { ArrowLeft, MapPin, Navigation, Clock, Phone, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, Clock, FileText, Loader2, Truck, Megaphone, Ban } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
