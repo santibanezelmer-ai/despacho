@@ -201,10 +201,9 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
           </Section>
         )}
 
-        {(emg.caller_name || emg.caller_phone) && (
-          <Section icon={<Phone className="h-4 w-4" />} label="Llamante">
-            {emg.caller_name && <p className="text-foreground text-sm">{emg.caller_name}</p>}
-            {emg.caller_phone && <a href={`tel:${emg.caller_phone}`} className="text-emergency text-sm font-mono">{emg.caller_phone}</a>}
+        {emg.caller_name && (
+          <Section icon={<FileText className="h-4 w-4" />} label="Solicitante">
+            <p className="text-foreground text-sm">{emg.caller_name}</p>
           </Section>
         )}
       </div>
