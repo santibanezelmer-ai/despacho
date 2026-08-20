@@ -200,12 +200,6 @@ export default function VoluntarioDetail({ organizationId, orgName, orgLogoUrl }
             <p className="text-foreground whitespace-pre-wrap text-sm">{emg.observations}</p>
           </Section>
         )}
-
-        {emg.caller_name && (
-          <Section icon={<FileText className="h-4 w-4" />} label="Solicitante">
-            <p className="text-foreground text-sm">{emg.caller_name}</p>
-          </Section>
-        )}
       </div>
 
     </div>
