@@ -14,17 +14,34 @@ const supabase = createClient(
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Metros entre dos coordenadas (Haversine simplificado). */
+function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371000;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const lat1 = (aLat * Math.PI) / 180;
+  const lat2 = (bLat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
 async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   const key = Deno.env.get('GOOGLE_API_KEY');
   if (!key) return null;
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
     const res = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=es&key=${key}`,
+      { signal: ctrl.signal },
     );
+    clearTimeout(timer);
     if (!res.ok) return null;
     const data = await res.json();
     return data?.results?.[0]?.formatted_address ?? null;
   } catch (_e) {
+    // La geocodificación es opcional: nunca debe romper el guardado del GPS.
     return null;
   }
 }
@@ -48,15 +65,18 @@ Deno.serve(async (req) => {
         return json({ valid: false, reason: 'expired' });
       }
 
-      let organizationName: string | null = null;
       const { data: org } = await supabase
         .from('organizations')
         .select('name')
         .eq('id', data.organization_id)
         .maybeSingle();
-      organizationName = org?.name ?? null;
 
-      return json({ valid: true, organizationName, alreadyReceived: data.status === 'received' });
+      return json({
+        valid: true,
+        organizationName: org?.name ?? null,
+        alreadyReceived: data.status === 'received',
+        expiresAt: data.expires_at,
+      });
     }
 
     if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -69,7 +89,8 @@ Deno.serve(async (req) => {
     if (!UUID_RE.test(token)) return json({ error: 'Token inválido' }, 400);
     if (
       !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
-      latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+      latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+      (latitude === 0 && longitude === 0)
     ) {
       return json({ error: 'Coordenadas inválidas' }, 400);
     }
@@ -85,15 +106,35 @@ Deno.serve(async (req) => {
       return isNaN(d.getTime()) ? new Date() : d;
     })();
 
+    // El token solo puede resolver SU propia solicitud (y su emergencia asociada).
     const { data: request } = await supabase
       .from('location_requests')
-      .select('id, organization_id, emergency_id, expires_at, resolved_address')
+      .select('id, organization_id, emergency_id, expires_at, resolved_address, latitude, longitude, accuracy')
       .eq('token', token)
       .maybeSingle();
 
     if (!request) return json({ error: 'Enlace no válido' }, 404);
     if (new Date(request.expires_at).getTime() < Date.now()) {
       return json({ error: 'Enlace expirado' }, 410);
+    }
+
+    // Deduplicación: ignora reenvíos idénticos (reintentos offline o doble watcher).
+    const { data: lastPing } = await supabase
+      .from('location_pings')
+      .select('latitude, longitude, captured_at')
+      .eq('request_id', request.id)
+      .order('captured_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const isDuplicate =
+      !!lastPing &&
+      Math.abs(lastPing.latitude - latitude) < 1e-6 &&
+      Math.abs(lastPing.longitude - longitude) < 1e-6 &&
+      new Date(lastPing.captured_at).getTime() === capturedAt.getTime();
+
+    if (isDuplicate) {
+      return json({ ok: true, duplicate: true, address: request.resolved_address ?? null });
     }
 
     const { error: pingErr } = await supabase.from('location_pings').insert({
@@ -113,9 +154,14 @@ Deno.serve(async (req) => {
       return json({ error: 'No se pudo guardar la ubicación' }, 500);
     }
 
+    // Geocodifica solo la primera vez o si se desplazó más de 150 m.
     let resolvedAddress = request.resolved_address as string | null;
-    if (!resolvedAddress) {
-      resolvedAddress = await reverseGeocode(latitude, longitude);
+    const movedFar =
+      request.latitude == null || request.longitude == null
+        ? true
+        : distanceMeters(request.latitude, request.longitude, latitude, longitude) > 150;
+    if (!resolvedAddress || movedFar) {
+      resolvedAddress = (await reverseGeocode(latitude, longitude)) ?? resolvedAddress;
     }
 
     await supabase
@@ -130,14 +176,25 @@ Deno.serve(async (req) => {
       })
       .eq('id', request.id);
 
+    // No sobrescribe una ubicación precisa con una lectura muy imprecisa.
     if (request.emergency_id) {
-      await supabase
-        .from('emergencies')
-        .update({ latitude, longitude })
-        .eq('id', request.emergency_id);
+      const previousAccuracy = num(request.accuracy);
+      const worseThanExisting =
+        request.latitude != null &&
+        previousAccuracy != null &&
+        accuracy != null &&
+        accuracy > previousAccuracy * 3 &&
+        accuracy > 500;
+
+      if (!worseThanExisting) {
+        await supabase
+          .from('emergencies')
+          .update({ latitude, longitude })
+          .eq('id', request.emergency_id);
+      }
     }
 
-    return json({ ok: true, address: resolvedAddress });
+    return json({ ok: true, address: resolvedAddress, accuracy });
   } catch (e) {
     console.error('location-share error', e);
     return json({ error: (e as Error).message ?? 'Error inesperado' }, 500);
