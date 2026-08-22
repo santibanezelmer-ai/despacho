@@ -15,6 +15,7 @@ import {
   Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
@@ -42,7 +43,11 @@ const sections = ['Operaciones', 'Recursos', 'Análisis', 'Sistema'];
 
 function GlobalDispatchForm() {
   const { openKey, closeDispatch } = useDispatchForm();
+  const { isCompanyAdmin, orgRole } = useOrganization();
+  const { isSuperadmin } = useAuth();
   if (!openKey) return null;
+  // Administrador por compañía no puede despachar
+  if (!canDispatch({ orgRole, isCompanyAdmin, isSuperadmin })) return null;
   return <DispatchForm emergencyKey={openKey} onClose={closeDispatch} />;
 }
 
@@ -51,7 +56,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { user, signOut, isSuperadmin } = useAuth();
-  const { currentOrg, orgRole, memberships, setCurrentOrgId } = useOrganization();
+  const { currentOrg, orgRole, memberships, setCurrentOrgId, isCompanyAdmin } = useOrganization();
+  const accessCtx = { orgRole, isCompanyAdmin, isSuperadmin };
+  const visibleNavItems = navItems.filter((item) => canAccessPath(item.path, accessCtx));
   const { isOnline } = useOnlineStatus();
 
   useEffect(() => { startAutoSync(); }, []);
@@ -127,14 +134,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {sections.map((section) => (
+        {sections.filter((section) => visibleNavItems.some((i) => i.section === section)).map((section) => (
           <div key={section} className="mb-1">
             {(!collapsed || isMobile) && (
               <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {section}
               </p>
             )}
-            {navItems
+            {visibleNavItems
               .filter((item) => item.section === section)
               .map((item) => {
                 const isActive = location.pathname === item.path;

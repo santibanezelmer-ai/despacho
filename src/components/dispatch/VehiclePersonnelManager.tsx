@@ -29,7 +29,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
     queryFn: async () => {
       const { data: evs, error: evErr } = await supabase
         .from('emergency_vehicles')
-        .select('id, vehicle_id, vehicles(code, type, companies(name))')
+        .select('id, vehicle_id, volunteer_count, vehicles(code, type, companies(name))')
         .eq('emergency_id', emergencyId);
       if (evErr) throw evErr;
 
@@ -81,6 +81,24 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // 6-0 Voluntarios: cantidad (sin nombres) por móvil
+  const countMutation = useMutation({
+    mutationFn: async ({ evId, count }: { evId: string; count: number }) => {
+      const { error } = await (supabase as any)
+        .from('emergency_vehicles')
+        .update({ volunteer_count: count })
+        .eq('id', evId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', emergencyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const [counts, setCounts] = useState<Record<string, string>>({});
+
   // Get already assigned volunteer IDs
   const assignedVolunteerIds = new Set(
     (vehiclesWithPersonnel ?? []).flatMap((ev: any) => ev.personnel.map((p: any) => p.volunteer_id))
@@ -107,10 +125,30 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
 
           return (
             <div key={ev.id} className="rounded-md border border-border bg-muted/20 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono font-bold text-foreground">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="truncate text-xs font-mono font-bold text-foreground">
                   {v?.code ?? '—'} · {v?.type ?? ''} {v?.companies?.name ? `(${v.companies.name})` : ''}
                 </span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-semibold uppercase text-muted-foreground">
+                    6-0 Voluntarios
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    inputMode="numeric"
+                    aria-label={`Cantidad de voluntarios en ${v?.code ?? 'móvil'}`}
+                    value={counts[ev.id] ?? String(ev.volunteer_count ?? 0)}
+                    onChange={e => setCounts(prev => ({ ...prev, [ev.id]: e.target.value }))}
+                    onBlur={e => {
+                      const n = Math.min(99, Math.max(0, parseInt(e.target.value || '0', 10) || 0));
+                      setCounts(prev => ({ ...prev, [ev.id]: String(n) }));
+                      if (n !== (ev.volunteer_count ?? 0)) countMutation.mutate({ evId: ev.id, count: n });
+                    }}
+                    className="h-7 w-12 rounded border border-border bg-muted/50 px-1.5 text-center text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
               </div>
 
               {/* Assigned personnel */}

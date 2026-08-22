@@ -52,6 +52,7 @@ import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import SecurityGuard from "@/components/security/SecurityGuard";
 import UserWatermark from "@/components/security/UserWatermark";
+import { canAccessPath, defaultPathFor } from "@/lib/rolePermissions";
 
 const queryClient = new QueryClient();
 
@@ -173,6 +174,16 @@ function AppRoutes() {
         </Routes>
       </MobileLayout>
     );
+  }
+
+  // Restricciones por rol (admin de compañía / operador)
+  const accessCtx = {
+    orgRole: orgCtx.orgRole,
+    isCompanyAdmin: orgCtx.isCompanyAdmin,
+    isSuperadmin,
+  };
+  if (!canAccessPath(location.pathname, accessCtx)) {
+    return <Navigate to={defaultPathFor(accessCtx)} replace />;
   }
 
   return (
