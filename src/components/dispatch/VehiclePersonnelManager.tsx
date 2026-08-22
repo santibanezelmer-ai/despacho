@@ -29,7 +29,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
     queryFn: async () => {
       const { data: evs, error: evErr } = await supabase
         .from('emergency_vehicles')
-        .select('id, vehicle_id, vehicles(code, type, companies(name))')
+        .select('id, vehicle_id, volunteer_count, vehicles(code, type, companies(name))')
         .eq('emergency_id', emergencyId);
       if (evErr) throw evErr;
 
