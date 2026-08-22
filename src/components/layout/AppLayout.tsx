@@ -130,14 +130,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {sections.map((section) => (
+        {sections.filter((section) => visibleNavItems.some((i) => i.section === section)).map((section) => (
           <div key={section} className="mb-1">
             {(!collapsed || isMobile) && (
               <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {section}
               </p>
             )}
-            {navItems
+            {visibleNavItems
               .filter((item) => item.section === section)
               .map((item) => {
                 const isActive = location.pathname === item.path;
