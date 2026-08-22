@@ -81,6 +81,24 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // 6-0 Voluntarios: cantidad (sin nombres) por móvil
+  const countMutation = useMutation({
+    mutationFn: async ({ evId, count }: { evId: string; count: number }) => {
+      const { error } = await (supabase as any)
+        .from('emergency_vehicles')
+        .update({ volunteer_count: count })
+        .eq('id', evId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', emergencyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const [counts, setCounts] = useState<Record<string, string>>({});
+
   // Get already assigned volunteer IDs
   const assignedVolunteerIds = new Set(
     (vehiclesWithPersonnel ?? []).flatMap((ev: any) => ev.personnel.map((p: any) => p.volunteer_id))
