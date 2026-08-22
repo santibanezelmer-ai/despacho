@@ -634,6 +634,7 @@ export type Database = {
           organization_id: string
           released_at: string | null
           vehicle_id: string
+          volunteer_count: number
         }
         Insert: {
           assigned_at?: string
@@ -644,6 +645,7 @@ export type Database = {
           organization_id: string
           released_at?: string | null
           vehicle_id: string
+          volunteer_count?: number
         }
         Update: {
           assigned_at?: string
@@ -654,6 +656,7 @@ export type Database = {
           organization_id?: string
           released_at?: string | null
           vehicle_id?: string
+          volunteer_count?: number
         }
         Relationships: [
           {
