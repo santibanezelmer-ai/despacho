@@ -15,7 +15,7 @@ import {
   Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { canAccessPath } from '@/lib/rolePermissions';
+import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
@@ -43,7 +43,11 @@ const sections = ['Operaciones', 'Recursos', 'Análisis', 'Sistema'];
 
 function GlobalDispatchForm() {
   const { openKey, closeDispatch } = useDispatchForm();
+  const { isCompanyAdmin, orgRole } = useOrganization();
+  const { isSuperadmin } = useAuth();
   if (!openKey) return null;
+  // Administrador por compañía no puede despachar
+  if (!canDispatch({ orgRole, isCompanyAdmin, isSuperadmin })) return null;
   return <DispatchForm emergencyKey={openKey} onClose={closeDispatch} />;
 }
 
