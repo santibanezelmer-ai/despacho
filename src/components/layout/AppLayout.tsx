@@ -15,6 +15,7 @@ import {
   Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { canAccessPath } from '@/lib/rolePermissions';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
@@ -51,7 +52,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { user, signOut, isSuperadmin } = useAuth();
-  const { currentOrg, orgRole, memberships, setCurrentOrgId } = useOrganization();
+  const { currentOrg, orgRole, memberships, setCurrentOrgId, isCompanyAdmin } = useOrganization();
+  const accessCtx = { orgRole, isCompanyAdmin, isSuperadmin };
+  const visibleNavItems = navItems.filter((item) => canAccessPath(item.path, accessCtx));
   const { isOnline } = useOnlineStatus();
 
   useEffect(() => { startAutoSync(); }, []);
