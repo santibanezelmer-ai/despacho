@@ -51,6 +51,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
       setForm({
         id: volunteer.id,
         name: volunteer.name,
+        code: volunteer.code ?? '',
         rut: volunteer.rut ?? '',
         email: volunteer.email ?? '',
         phone: volunteer.phone ?? '',
