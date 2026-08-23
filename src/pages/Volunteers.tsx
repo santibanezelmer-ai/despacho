@@ -105,69 +105,71 @@ export default function Volunteers() {
       </div>
 
       <div className="console-panel overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-muted-foreground">
-              <th className="px-4 py-3 text-left font-medium">ID</th>
-              <th className="px-4 py-3 text-left font-medium">Nombre</th>
-              <th className="px-4 py-3 text-left font-medium">Email</th>
-              <th className="px-4 py-3 text-left font-medium">Compañía</th>
-              <th className="px-4 py-3 text-left font-medium">Estado</th>
-              <th className="px-4 py-3 text-left font-medium">Acceso PWA</th>
-              {canWrite && <th className="px-4 py-3 text-right font-medium">Acciones</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
-              ))
-            ) : (
-              filtered.map((v: any) => (
-                <tr key={v.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3">
-                    {v.code
-                      ? <span className="status-badge bg-primary/20 text-primary font-mono">{v.code}</span>
-                      : <span className="text-xs text-muted-foreground">—</span>}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{v.email ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`status-badge ${v.status === 'activo' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
-                      {v.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{pwaBadge(v)}</td>
-                  {canWrite && (
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-1">
-                        {isOrgAdmin && !v.user_id && (
-                          <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id || !v.email}
-                            onClick={() => inviteToPwa(v)} title={v.email ? 'Invitar a la PWA' : 'Falta email'}>
-                            {busyId === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
-                          </Button>
-                        )}
-                        {isOrgAdmin && v.user_id && (
-                          <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id}
-                            onClick={() => togglePwa(v)} title={v.pwa_enabled ? 'Bloquear acceso PWA' : 'Habilitar acceso PWA'}>
-                            {v.pwa_enabled ? <ShieldOff className="h-3.5 w-3.5 text-destructive" /> : <Shield className="h-3.5 w-3.5 text-success" />}
-                          </Button>
-                        )}
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingVolunteer(v); setDialogOpen(true); }}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => handleDelete(v)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead>
+              <tr className="border-b border-border text-xs text-muted-foreground">
+                <th className="px-4 py-3 text-left font-medium">ID</th>
+                <th className="px-4 py-3 text-left font-medium">Nombre</th>
+                <th className="px-4 py-3 text-left font-medium">Email</th>
+                <th className="px-4 py-3 text-left font-medium">Compañía</th>
+                <th className="px-4 py-3 text-left font-medium">Estado</th>
+                <th className="px-4 py-3 text-left font-medium">Acceso PWA</th>
+                {canWrite && <th className="px-4 py-3 text-right font-medium sticky right-0 bg-background/95 backdrop-blur">Acciones</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                ))
+              ) : (
+                filtered.map((v: any) => (
+                  <tr key={v.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">
+                      {v.code
+                        ? <span className="status-badge bg-primary/20 text-primary font-mono">{v.code}</span>
+                        : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                    <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{v.email ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`status-badge ${v.status === 'activo' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+                        {v.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{pwaBadge(v)}</td>
+                    {canWrite && (
+                      <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur">
+                        <div className="inline-flex items-center gap-1">
+                          {isOrgAdmin && !v.user_id && (
+                            <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id || !v.email}
+                              onClick={() => inviteToPwa(v)} title={v.email ? 'Invitar a la PWA' : 'Falta email'}>
+                              {busyId === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                            </Button>
+                          )}
+                          {isOrgAdmin && v.user_id && (
+                            <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id}
+                              onClick={() => togglePwa(v)} title={v.pwa_enabled ? 'Bloquear acceso PWA' : 'Habilitar acceso PWA'}>
+                              {v.pwa_enabled ? <ShieldOff className="h-3.5 w-3.5 text-destructive" /> : <Shield className="h-3.5 w-3.5 text-success" />}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingVolunteer(v); setDialogOpen(true); }}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => handleDelete(v)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <VolunteerFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} volunteer={editingVolunteer} />
