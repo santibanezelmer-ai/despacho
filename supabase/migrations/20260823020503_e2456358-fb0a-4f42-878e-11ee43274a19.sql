@@ -1,0 +1,2 @@
+ALTER TABLE public.volunteers ADD COLUMN IF NOT EXISTS code text;
+CREATE UNIQUE INDEX IF NOT EXISTS volunteers_org_code_unique ON public.volunteers (organization_id, upper(code)) WHERE code IS NOT NULL;

@@ -1540,6 +1540,7 @@ export type Database = {
       volunteers: {
         Row: {
           available: boolean
+          code: string | null
           company_id: string | null
           created_at: string
           email: string | null
@@ -1558,6 +1559,7 @@ export type Database = {
         }
         Insert: {
           available?: boolean
+          code?: string | null
           company_id?: string | null
           created_at?: string
           email?: string | null
@@ -1576,6 +1578,7 @@ export type Database = {
         }
         Update: {
           available?: boolean
+          code?: string | null
           company_id?: string | null
           created_at?: string
           email?: string | null
