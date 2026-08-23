@@ -26,6 +26,7 @@ export default function Volunteers() {
   );
   const filtered = scoped.filter((v: any) =>
     v.name.toLowerCase().includes(search.toLowerCase()) ||
+    (v.code ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (v.companies?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (v.ranks?.name ?? '').toLowerCase().includes(search.toLowerCase())
   );
