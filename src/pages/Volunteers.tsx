@@ -108,6 +108,7 @@ export default function Volunteers() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-muted-foreground">
+              <th className="px-4 py-3 text-left font-medium">ID</th>
               <th className="px-4 py-3 text-left font-medium">Nombre</th>
               <th className="px-4 py-3 text-left font-medium">Email</th>
               <th className="px-4 py-3 text-left font-medium">Compañía</th>
