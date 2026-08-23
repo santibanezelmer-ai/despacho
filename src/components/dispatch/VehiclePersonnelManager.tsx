@@ -188,10 +188,15 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
                       <SelectValue placeholder="Voluntario..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableVolunteers.map(vol => (
-                        <SelectItem key={vol.id} value={vol.id} className="text-xs">{vol.name}</SelectItem>
-                      ))}
+                      {availableVolunteers.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin voluntarios disponibles</div>
+                      ) : (
+                        availableVolunteers.map(vol => (
+                          <SelectItem key={vol.id} value={vol.id} className="text-xs">{vol.name}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
+
                   </Select>
                   <Select
                     value={addState.role}
