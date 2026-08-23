@@ -59,14 +59,18 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
         organization_id: orgId!,
       });
       if (error) throw error;
+      return evId;
     },
-    onSuccess: () => {
+    onSuccess: (evId) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+      // Solo se cierra el formulario cuando la asignación quedó guardada
+      setAdding(prev => { const next = { ...prev }; delete next[evId]; return next; });
       toast.success('Personal asignado');
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message || 'No se pudo asignar el personal'),
   });
+
 
   const removeMutation = useMutation({
     mutationFn: async (personnelId: string) => {
@@ -184,10 +188,15 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
                       <SelectValue placeholder="Voluntario..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableVolunteers.map(vol => (
-                        <SelectItem key={vol.id} value={vol.id} className="text-xs">{vol.name}</SelectItem>
-                      ))}
+                      {availableVolunteers.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin voluntarios disponibles</div>
+                      ) : (
+                        availableVolunteers.map(vol => (
+                          <SelectItem key={vol.id} value={vol.id} className="text-xs">{vol.name}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
+
                   </Select>
                   <Select
                     value={addState.role}
@@ -204,15 +213,23 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
                   </Select>
                   <Button
                     size="sm"
-                    className="h-7 text-xs"
-                    disabled={!addState.volunteerId || !addState.role || assignMutation.isPending}
+                    className="h-7 text-xs disabled:opacity-50"
+                    disabled={assignMutation.isPending}
                     onClick={() => {
+                      if (!addState.volunteerId) {
+                        toast.error('Selecciona un voluntario');
+                        return;
+                      }
+                      if (!addState.role) {
+                        toast.error('Selecciona el rol (Conductor, Oficial a Cargo o Voluntario)');
+                        return;
+                      }
                       assignMutation.mutate({ evId: ev.id, volunteerId: addState.volunteerId, role: addState.role });
-                      setAdding(prev => { const next = { ...prev }; delete next[ev.id]; return next; });
                     }}
                   >
                     {assignMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Asignar'}
                   </Button>
+
                   <Button
                     size="sm"
                     variant="ghost"
