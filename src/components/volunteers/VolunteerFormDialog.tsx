@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 interface VolunteerData {
   id?: string;
   name: string;
+  code: string;
   rut: string;
   email: string;
   phone: string;
@@ -26,7 +27,7 @@ interface VolunteerData {
 }
 
 const empty: VolunteerData = {
-  name: '', rut: '', email: '', phone: '',
+  name: '', code: '', rut: '', email: '', phone: '',
   company_id: '', rank_id: '', status: 'activo', available: true,
 };
 
