@@ -59,14 +59,18 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
         organization_id: orgId!,
       });
       if (error) throw error;
+      return evId;
     },
-    onSuccess: () => {
+    onSuccess: (evId) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+      // Solo se cierra el formulario cuando la asignación quedó guardada
+      setAdding(prev => { const next = { ...prev }; delete next[evId]; return next; });
       toast.success('Personal asignado');
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message || 'No se pudo asignar el personal'),
   });
+
 
   const removeMutation = useMutation({
     mutationFn: async (personnelId: string) => {
