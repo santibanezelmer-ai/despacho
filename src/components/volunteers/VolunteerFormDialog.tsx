@@ -71,6 +71,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
     try {
       const payload = {
         name: form.name.trim(),
+        code: form.code.trim().toUpperCase() || null,
         rut: form.rut.trim() || null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
