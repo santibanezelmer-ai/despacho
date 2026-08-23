@@ -26,6 +26,7 @@ export default function Volunteers() {
   );
   const filtered = scoped.filter((v: any) =>
     v.name.toLowerCase().includes(search.toLowerCase()) ||
+    (v.code ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (v.companies?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (v.ranks?.name ?? '').toLowerCase().includes(search.toLowerCase())
   );
@@ -107,6 +108,7 @@ export default function Volunteers() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-muted-foreground">
+              <th className="px-4 py-3 text-left font-medium">ID</th>
               <th className="px-4 py-3 text-left font-medium">Nombre</th>
               <th className="px-4 py-3 text-left font-medium">Email</th>
               <th className="px-4 py-3 text-left font-medium">Compañía</th>
@@ -118,11 +120,16 @@ export default function Volunteers() {
           <tbody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
               ))
             ) : (
               filtered.map((v: any) => (
                 <tr key={v.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3">
+                    {v.code
+                      ? <span className="status-badge bg-primary/20 text-primary font-mono">{v.code}</span>
+                      : <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{v.email ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>

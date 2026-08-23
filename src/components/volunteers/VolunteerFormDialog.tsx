@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 interface VolunteerData {
   id?: string;
   name: string;
+  code: string;
   rut: string;
   email: string;
   phone: string;
@@ -26,7 +27,7 @@ interface VolunteerData {
 }
 
 const empty: VolunteerData = {
-  name: '', rut: '', email: '', phone: '',
+  name: '', code: '', rut: '', email: '', phone: '',
   company_id: '', rank_id: '', status: 'activo', available: true,
 };
 
@@ -50,6 +51,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
       setForm({
         id: volunteer.id,
         name: volunteer.name,
+        code: volunteer.code ?? '',
         rut: volunteer.rut ?? '',
         email: volunteer.email ?? '',
         phone: volunteer.phone ?? '',
@@ -69,6 +71,7 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
     try {
       const payload = {
         name: form.name.trim(),
+        code: form.code.trim().toUpperCase() || null,
         rut: form.rut.trim() || null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
@@ -104,9 +107,20 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
           <DialogTitle>{isEdit ? 'Editar Voluntario' : 'Nuevo Voluntario'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Nombre *</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="bg-muted/50" />
+          <div className="grid grid-cols-[6rem_1fr] gap-3">
+            <div>
+              <Label className="text-xs">Identificador</Label>
+              <Input
+                value={form.code}
+                onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().slice(0, 10) }))}
+                placeholder="1, C2..."
+                className="bg-muted/50 uppercase"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Nombre *</Label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="bg-muted/50" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
