@@ -125,6 +125,11 @@ export default function Volunteers() {
             ) : (
               filtered.map((v: any) => (
                 <tr key={v.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3">
+                    {v.code
+                      ? <span className="status-badge bg-primary/20 text-primary font-mono">{v.code}</span>
+                      : <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{v.email ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>
