@@ -208,15 +208,23 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
                   </Select>
                   <Button
                     size="sm"
-                    className="h-7 text-xs"
-                    disabled={!addState.volunteerId || !addState.role || assignMutation.isPending}
+                    className="h-7 text-xs disabled:opacity-50"
+                    disabled={assignMutation.isPending}
                     onClick={() => {
+                      if (!addState.volunteerId) {
+                        toast.error('Selecciona un voluntario');
+                        return;
+                      }
+                      if (!addState.role) {
+                        toast.error('Selecciona el rol (Conductor, Oficial a Cargo o Voluntario)');
+                        return;
+                      }
                       assignMutation.mutate({ evId: ev.id, volunteerId: addState.volunteerId, role: addState.role });
-                      setAdding(prev => { const next = { ...prev }; delete next[ev.id]; return next; });
                     }}
                   >
                     {assignMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Asignar'}
                   </Button>
+
                   <Button
                     size="sm"
                     variant="ghost"
