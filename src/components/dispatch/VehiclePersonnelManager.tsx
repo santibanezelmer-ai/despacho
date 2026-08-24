@@ -5,8 +5,11 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, X, User } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Loader2, UserPlus, X, User, ChevronsUpDown, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Props {
   emergencyId: string;
@@ -102,6 +105,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
   });
 
   const [counts, setCounts] = useState<Record<string, string>>({});
+  const [openVolunteerCombo, setOpenVolunteerCombo] = useState<Record<string, boolean>>({});
 
   // Get already assigned volunteer IDs
   const assignedVolunteerIds = new Set(
@@ -180,24 +184,67 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
               {/* Add personnel form */}
               {addState ? (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Select
-                    value={addState.volunteerId}
-                    onValueChange={val => setAdding(prev => ({ ...prev, [ev.id]: { ...prev[ev.id], volunteerId: val } }))}
-                  >
-                    <SelectTrigger className="h-7 w-40 text-xs bg-muted/50">
-                      <SelectValue placeholder="Voluntario..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableVolunteers.length === 0 ? (
-                        <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin voluntarios disponibles</div>
-                      ) : (
-                        availableVolunteers.map(vol => (
-                          <SelectItem key={vol.id} value={vol.id} className="text-xs">{vol.name}</SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-
-                  </Select>
+                  <Popover open={openVolunteerCombo[ev.id]} onOpenChange={open => setOpenVolunteerCombo(prev => ({ ...prev, [ev.id]: open }))}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openVolunteerCombo[ev.id]}
+                        className="h-7 w-48 justify-between bg-muted/50 px-2 text-xs font-normal"
+                      >
+                        {addState.volunteerId ? (
+                          <span className="truncate">
+                            {(() => {
+                              const vol = availableVolunteers.find(v => v.id === addState.volunteerId);
+                              return vol ? `${vol.name}${vol.code ? ` · ${vol.code}` : ''}` : 'Voluntario...';
+                            })()}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">Buscar voluntario...</span>
+                        )}
+                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <Command
+                        filter={(value, search) => {
+                          const normalized = search.toLowerCase().trim();
+                          if (!normalized) return 1;
+                          const vol = availableVolunteers.find(v => v.id === value);
+                          if (!vol) return 0;
+                          const nameMatch = vol.name?.toLowerCase().includes(normalized) ? 1 : 0;
+                          const codeMatch = vol.code?.toLowerCase().includes(normalized) ? 1 : 0;
+                          return nameMatch || codeMatch ? 1 : 0;
+                        }}
+                      >
+                        <div className="flex items-center border-b px-2" cmdk-input-wrapper="">
+                          <Search className="mr-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                          <CommandInput placeholder="Nombre o identificador..." className="h-9 text-xs" />
+                        </div>
+                        <CommandList>
+                          <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">Sin coincidencias</CommandEmpty>
+                          <CommandGroup>
+                            {availableVolunteers.map(vol => (
+                              <CommandItem
+                                key={vol.id}
+                                value={vol.id}
+                                onSelect={() => {
+                                  setAdding(prev => ({ ...prev, [ev.id]: { ...prev[ev.id], volunteerId: vol.id } }));
+                                  setOpenVolunteerCombo(prev => ({ ...prev, [ev.id]: false }));
+                                }}
+                                className={cn('text-xs', addState.volunteerId === vol.id && 'bg-accent')}
+                              >
+                                <span className="truncate">
+                                  {vol.name}
+                                  {vol.code && <span className="ml-1.5 font-mono text-muted-foreground">{vol.code}</span>}
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <Select
                     value={addState.role}
                     onValueChange={val => setAdding(prev => ({ ...prev, [ev.id]: { ...prev[ev.id], role: val } }))}
