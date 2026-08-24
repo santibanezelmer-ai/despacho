@@ -105,6 +105,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
   });
 
   const [counts, setCounts] = useState<Record<string, string>>({});
+  const [openVolunteerCombo, setOpenVolunteerCombo] = useState<Record<string, boolean>>({});
 
   // Get already assigned volunteer IDs
   const assignedVolunteerIds = new Set(
