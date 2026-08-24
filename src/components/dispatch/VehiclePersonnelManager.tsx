@@ -5,8 +5,11 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, X, User } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Loader2, UserPlus, X, User, ChevronsUpDown, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Props {
   emergencyId: string;
