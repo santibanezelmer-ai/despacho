@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useVehicles } from '@/hooks/useVehicles';
+import { useVolunteers } from '@/hooks/useVolunteers';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,10 +20,11 @@ interface EquipmentData {
   vehicle_id: string;
   condition: string;
   notes: string;
+  assigned_volunteer_id: string;
 }
 
 const empty: EquipmentData = {
-  name: '', quantity: '1', vehicle_id: '', condition: 'bueno', notes: '',
+  name: '', quantity: '1', vehicle_id: '', condition: 'bueno', notes: '', assigned_volunteer_id: '',
 };
 
 interface Props {
@@ -35,6 +37,7 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
   const [form, setForm] = useState<EquipmentData>(empty);
   const [saving, setSaving] = useState(false);
   const { data: vehicles } = useVehicles();
+  const { data: volunteers } = useVolunteers();
   const { orgId } = useOrganization();
   const qc = useQueryClient();
   const isEdit = !!equipment;
@@ -48,6 +51,7 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
         vehicle_id: equipment.vehicle_id ?? '',
         condition: equipment.condition ?? 'bueno',
         notes: equipment.notes ?? '',
+        assigned_volunteer_id: equipment.assigned_volunteer_id ?? '',
       });
     } else {
       setForm(empty);
@@ -55,8 +59,12 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
   }, [equipment, open]);
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.vehicle_id) {
-      toast.error('Nombre y móvil son obligatorios');
+    if (!form.name.trim()) {
+      toast.error('El nombre es obligatorio');
+      return;
+    }
+    if (!form.vehicle_id && !form.assigned_volunteer_id) {
+      toast.error('Asigna el equipo a un móvil o a un voluntario');
       return;
     }
     setSaving(true);
@@ -64,9 +72,13 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
       const payload = {
         name: form.name.trim(),
         quantity: parseInt(form.quantity) || 1,
-        vehicle_id: form.vehicle_id,
+        vehicle_id: form.vehicle_id || null,
         condition: form.condition,
         notes: form.notes.trim() || null,
+        assigned_volunteer_id: form.assigned_volunteer_id || null,
+        assigned_at: form.assigned_volunteer_id
+          ? (equipment?.assigned_at ?? new Date().toISOString())
+          : null,
         organization_id: orgId!,
       };
 
@@ -80,6 +92,7 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
         toast.success('Equipo creado');
       }
       qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['volunteer-equipment'] });
       onClose();
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar');
@@ -118,12 +131,27 @@ export default function EquipmentFormDialog({ open, onClose, equipment }: Props)
             </div>
           </div>
           <div>
-            <Label className="text-xs">Móvil *</Label>
+            <Label className="text-xs">Móvil</Label>
             <Select value={form.vehicle_id} onValueChange={v => setForm(f => ({ ...f, vehicle_id: v }))}>
               <SelectTrigger className="bg-muted/50"><SelectValue placeholder="Seleccionar móvil..." /></SelectTrigger>
               <SelectContent>
                 {(vehicles ?? []).map(v => (
                   <SelectItem key={v.id} value={v.id}>{v.code} - {v.type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">A cargo de (voluntario)</Label>
+            <Select
+              value={form.assigned_volunteer_id || 'none'}
+              onValueChange={v => setForm(f => ({ ...f, assigned_volunteer_id: v === 'none' ? '' : v }))}
+            >
+              <SelectTrigger className="bg-muted/50"><SelectValue placeholder="Sin responsable" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sin responsable</SelectItem>
+                {(volunteers ?? []).map((v: any) => (
+                  <SelectItem key={v.id} value={v.id}>{v.code ? `${v.code} · ` : ''}{v.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -28,7 +28,7 @@ function useEquipment(vehicleId?: string) {
   return useQuery({
     queryKey: ['equipment', vehicleId],
     queryFn: async () => {
-      let q = supabase.from('equipment').select('*, vehicles(id, code, type, company_id)').order('name');
+      let q = supabase.from('equipment').select('*, vehicles(id, code, type, company_id), volunteers:assigned_volunteer_id(name, code)').order('name');
       if (vehicleId) q = q.eq('vehicle_id', vehicleId);
       const { data, error } = await q;
       if (error) throw error;
@@ -231,8 +231,13 @@ export default function Equipment() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground font-mono">
-                  {item.vehicles?.code ?? '—'} · Cant: {item.quantity}
+                  {item.vehicles?.code ?? 'Sin móvil'} · Cant: {item.quantity}
                 </p>
+                {item.volunteers && (
+                  <p className="mt-1 text-xs text-warning">
+                    A cargo: {item.volunteers.code ? `${item.volunteers.code} · ` : ''}{item.volunteers.name}
+                  </p>
+                )}
                 {item.notes && <p className="mt-1 text-xs text-muted-foreground truncate">{item.notes}</p>}
                 {canWrite && (
                   <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

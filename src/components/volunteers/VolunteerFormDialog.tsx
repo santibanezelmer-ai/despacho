@@ -62,6 +62,8 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
         rank_id: volunteer.rank_id ?? '',
         status: volunteer.status,
         available: volunteer.available,
+        join_date: volunteer.join_date ?? '',
+        specialties: (volunteer.specialties ?? []).join(', '),
       });
     } else {
       setForm(empty);
@@ -82,6 +84,8 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
         rank_id: form.rank_id || null,
         status: form.status as any,
         available: form.available,
+        join_date: form.join_date || null,
+        specialties: form.specialties.split(',').map(s => s.trim()).filter(Boolean),
         organization_id: orgId!,
       };
 
@@ -161,6 +165,16 @@ export default function VolunteerFormDialog({ open, onClose, volunteer }: Props)
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Fecha de ingreso</Label>
+              <Input type="date" value={form.join_date} onChange={e => setForm(f => ({ ...f, join_date: e.target.value }))} className="bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs">Especialidades</Label>
+              <Input value={form.specialties} onChange={e => setForm(f => ({ ...f, specialties: e.target.value }))} placeholder="Rescate, HazMat..." className="bg-muted/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
