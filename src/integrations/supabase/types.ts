@@ -684,6 +684,8 @@ export type Database = {
       }
       equipment: {
         Row: {
+          assigned_at: string | null
+          assigned_volunteer_id: string | null
           condition: string | null
           created_at: string
           id: string
@@ -693,9 +695,11 @@ export type Database = {
           organization_id: string
           quantity: number
           updated_at: string
-          vehicle_id: string
+          vehicle_id: string | null
         }
         Insert: {
+          assigned_at?: string | null
+          assigned_volunteer_id?: string | null
           condition?: string | null
           created_at?: string
           id?: string
@@ -705,9 +709,11 @@ export type Database = {
           organization_id: string
           quantity?: number
           updated_at?: string
-          vehicle_id: string
+          vehicle_id?: string | null
         }
         Update: {
+          assigned_at?: string | null
+          assigned_volunteer_id?: string | null
           condition?: string | null
           created_at?: string
           id?: string
@@ -717,9 +723,16 @@ export type Database = {
           organization_id?: string
           quantity?: number
           updated_at?: string
-          vehicle_id?: string
+          vehicle_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "equipment_assigned_volunteer_id_fkey"
+            columns: ["assigned_volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "equipment_organization_id_fkey"
             columns: ["organization_id"]
@@ -1537,6 +1550,60 @@ export type Database = {
           },
         ]
       }
+      volunteer_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          organization_id: string
+          record_date: string
+          record_type: string
+          title: string
+          updated_at: string
+          volunteer_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          organization_id: string
+          record_date?: string
+          record_type?: string
+          title: string
+          updated_at?: string
+          volunteer_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string
+          record_date?: string
+          record_type?: string
+          title?: string
+          updated_at?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_records_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteers: {
         Row: {
           available: boolean
@@ -1546,6 +1613,7 @@ export type Database = {
           email: string | null
           id: string
           invitation_sent_at: string | null
+          join_date: string | null
           name: string
           organization_id: string
           phone: string | null
@@ -1565,6 +1633,7 @@ export type Database = {
           email?: string | null
           id?: string
           invitation_sent_at?: string | null
+          join_date?: string | null
           name: string
           organization_id: string
           phone?: string | null
@@ -1584,6 +1653,7 @@ export type Database = {
           email?: string | null
           id?: string
           invitation_sent_at?: string | null
+          join_date?: string | null
           name?: string
           organization_id?: string
           phone?: string | null
