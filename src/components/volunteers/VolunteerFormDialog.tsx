@@ -24,11 +24,14 @@ interface VolunteerData {
   rank_id: string;
   status: string;
   available: boolean;
+  join_date: string;
+  specialties: string;
 }
 
 const empty: VolunteerData = {
   name: '', code: '', rut: '', email: '', phone: '',
   company_id: '', rank_id: '', status: 'activo', available: true,
+  join_date: '', specialties: '',
 };
 
 interface Props {
