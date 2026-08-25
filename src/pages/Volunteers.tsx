@@ -1,5 +1,5 @@
 import { useVolunteers } from '@/hooks/useVolunteers';
-import { Users, Search, Plus, Pencil, Trash2, Mail, Shield, ShieldOff, Loader2 } from 'lucide-react';
+import { Users, Search, Plus, Pencil, Trash2, Mail, Shield, ShieldOff, Loader2, IdCard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,11 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import VolunteerFormDialog from '@/components/volunteers/VolunteerFormDialog';
+import VolunteerProfileDialog from '@/components/volunteers/VolunteerProfileDialog';
 
 export default function Volunteers() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVolunteer, setEditingVolunteer] = useState<any>(null);
+  const [profileVolunteer, setProfileVolunteer] = useState<any>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const { data: volunteers, isLoading } = useVolunteers();
   const { canWrite } = useAuth();
@@ -131,7 +133,11 @@ export default function Volunteers() {
                         ? <span className="status-badge bg-primary/20 text-primary font-mono">{v.code}</span>
                         : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground">{v.name}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      <button className="hover:text-warning hover:underline text-left" onClick={() => setProfileVolunteer(v)}>
+                        {v.name}
+                      </button>
+                    </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{v.email ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>
                     <td className="px-4 py-3">
@@ -143,6 +149,9 @@ export default function Volunteers() {
                     {canWrite && (
                       <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur">
                         <div className="inline-flex items-center gap-1">
+                          <Button size="sm" variant="ghost" className="h-7 px-2" title="Ver ficha" onClick={() => setProfileVolunteer(v)}>
+                            <IdCard className="h-3.5 w-3.5" />
+                          </Button>
                           {isOrgAdmin && !v.user_id && (
                             <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id || !v.email}
                               onClick={() => inviteToPwa(v)} title={v.email ? 'Invitar a la PWA' : 'Falta email'}>
@@ -171,6 +180,8 @@ export default function Volunteers() {
           </table>
         </div>
       </div>
+
+      <VolunteerProfileDialog open={!!profileVolunteer} onClose={() => setProfileVolunteer(null)} volunteer={profileVolunteer} />
 
       <VolunteerFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} volunteer={editingVolunteer} />
     </div>
