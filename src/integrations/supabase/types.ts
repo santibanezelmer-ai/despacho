@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1359,6 +1359,110 @@ export type Database = {
         }
         Relationships: []
       }
+      support_ticket_messages: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          id: string
+          is_support: boolean
+          message: string
+          organization_id: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          is_support?: boolean
+          message: string
+          organization_id: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          is_support?: boolean
+          message?: string
+          organization_id?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          contact_email: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          organization_id: string
+          priority: Database["public"]["Enums"]["support_ticket_priority"]
+          resolved_at: string | null
+          route: string | null
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          contact_email?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          organization_id: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          resolved_at?: string | null
+          route?: string | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          contact_email?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          organization_id?: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          resolved_at?: string | null
+          route?: string | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -1790,6 +1894,8 @@ export type Database = {
       org_role: "admin" | "operador" | "oficial" | "visor" | "voluntario"
       org_status: "pending" | "active" | "suspended" | "rejected"
       request_status: "pending" | "approved" | "rejected"
+      support_ticket_priority: "baja" | "media" | "alta" | "critica"
+      support_ticket_status: "abierto" | "en_proceso" | "resuelto" | "cerrado"
       vehicle_status:
         | "disponible"
         | "en_servicio"
@@ -1937,6 +2043,8 @@ export const Constants = {
       org_role: ["admin", "operador", "oficial", "visor", "voluntario"],
       org_status: ["pending", "active", "suspended", "rejected"],
       request_status: ["pending", "approved", "rejected"],
+      support_ticket_priority: ["baja", "media", "alta", "critica"],
+      support_ticket_status: ["abierto", "en_proceso", "resuelto", "cerrado"],
       vehicle_status: [
         "disponible",
         "en_servicio",
