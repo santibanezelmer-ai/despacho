@@ -1708,6 +1708,14 @@ export type Database = {
       }
       get_demo_limits: { Args: never; Returns: Json }
       get_invitation_preview: { Args: { _token: string }; Returns: Json }
+      get_member_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          display_name: string
+          user_id: string
+        }[]
+      }
       get_my_organization_ids: { Args: never; Returns: string[] }
       get_user_roles: {
         Args: { _user_id: string }

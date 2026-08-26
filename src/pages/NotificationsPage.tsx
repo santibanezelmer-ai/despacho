@@ -46,11 +46,9 @@ export default function NotificationsPage() {
     queryKey: ['notif-profiles', userIds.join(',')],
     queryFn: async () => {
       if (userIds.length === 0) return [];
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, email')
-        .in('user_id', userIds);
-      return data ?? [];
+      const { data } = await (supabase as any).rpc('get_member_profiles');
+      return ((data ?? []) as { user_id: string; display_name: string | null }[])
+        .filter((p) => userIds.includes(p.user_id));
     },
     enabled: userIds.length > 0,
   });
@@ -118,7 +116,7 @@ export default function NotificationsPage() {
                       {format(new Date(log.created_at), `dd/MM ${pattern()}`, { locale: es })}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {profile?.display_name || profile?.email || log.user_id.slice(0, 8)}
+                      {profile?.display_name || log.user_id.slice(0, 8)}
                     </TableCell>
                     <TableCell>
                       {log.status === 'sent' || log.status === 'opened' ? (
