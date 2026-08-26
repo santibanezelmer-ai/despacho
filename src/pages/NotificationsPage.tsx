@@ -116,7 +116,7 @@ export default function NotificationsPage() {
                       {format(new Date(log.created_at), `dd/MM ${pattern()}`, { locale: es })}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {profile?.display_name || profile?.email || log.user_id.slice(0, 8)}
+                      {profile?.display_name || log.user_id.slice(0, 8)}
                     </TableCell>
                     <TableCell>
                       {log.status === 'sent' || log.status === 'opened' ? (
