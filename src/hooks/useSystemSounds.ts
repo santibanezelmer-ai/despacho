@@ -40,16 +40,17 @@ export function useSystemSound(key: string) {
 
 export function usePlaySystemSound() {
   const { data: sounds } = useSystemSounds();
-  return (key: string) => {
+  return async (key: string): Promise<HTMLAudioElement | null> => {
     const sound = sounds?.find(s => s.sound_key === key);
-    if (sound?.sound_url) {
-      try {
-        const audio = new Audio(sound.sound_url);
-        audio.play().catch(() => {});
-        return audio;
-      } catch { return null; }
-    }
-    return null;
+    if (!sound?.sound_url) return null;
+    // The tones bucket is private: stored URLs can be legacy public URLs or
+    // expired signed URLs, so always resolve to a fresh signed URL first.
+    const url = (await resolveToneUrl(sound.sound_url)) ?? sound.sound_url;
+    try {
+      const audio = new Audio(url);
+      audio.play().catch(() => {});
+      return audio;
+    } catch { return null; }
   };
 }
 
