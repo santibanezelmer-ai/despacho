@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Volume2, Upload, Trash2, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSystemSounds, useUpsertSystemSound, useDeleteSystemSound, SOUND_KEYS } from '@/hooks/useSystemSounds';
+import { resolveToneUrl } from '@/lib/toneUrl';
 
 export default function SystemSoundsAdmin() {
   const { data: sounds, isLoading } = useSystemSounds();
@@ -18,9 +19,11 @@ export default function SystemSoundsAdmin() {
     upsert.mutate({ soundKey: key, file });
   };
 
-  const playSound = (url: string) => {
+  const playSound = async (url: string) => {
     try {
-      new Audio(url).play().catch(() => undefined);
+      // The tones bucket is private: resolve to a fresh signed URL first.
+      const src = (await resolveToneUrl(url)) ?? url;
+      new Audio(src).play().catch(() => undefined);
     } catch {
       /* reproducción no soportada */
     }
