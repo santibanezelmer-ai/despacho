@@ -91,8 +91,8 @@ export default function DispatchConsole() {
             variant="outline"
             size="sm"
             className="text-xs"
-            onClick={() => {
-              const audio = playSystemSound('prueba_sirena');
+            onClick={async () => {
+              const audio = await playSystemSound('prueba_sirena');
               if (!audio) toast.info('Sin sonido de sirena configurado');
             }}
           >
@@ -103,8 +103,8 @@ export default function DispatchConsole() {
             variant="outline"
             size="sm"
             className="text-xs border-warning text-warning hover:bg-warning/10"
-            onClick={() => {
-              const audio = playSystemSound('mediodia');
+            onClick={async () => {
+              const audio = await playSystemSound('mediodia');
               if (!audio) toast.info('Sin sonido de mediodía configurado');
             }}
           >

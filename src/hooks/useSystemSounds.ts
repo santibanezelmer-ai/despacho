@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { resolveToneUrl } from '@/lib/toneUrl';
 import { toast } from 'sonner';
 
 export interface SystemSound {
@@ -40,16 +41,17 @@ export function useSystemSound(key: string) {
 
 export function usePlaySystemSound() {
   const { data: sounds } = useSystemSounds();
-  return (key: string) => {
+  return async (key: string): Promise<HTMLAudioElement | null> => {
     const sound = sounds?.find(s => s.sound_key === key);
-    if (sound?.sound_url) {
-      try {
-        const audio = new Audio(sound.sound_url);
-        audio.play().catch(() => {});
-        return audio;
-      } catch { return null; }
-    }
-    return null;
+    if (!sound?.sound_url) return null;
+    // The tones bucket is private: stored URLs can be legacy public URLs or
+    // expired signed URLs, so always resolve to a fresh signed URL first.
+    const url = (await resolveToneUrl(sound.sound_url)) ?? sound.sound_url;
+    try {
+      const audio = new Audio(url);
+      audio.play().catch(() => {});
+      return audio;
+    } catch { return null; }
   };
 }
 
@@ -61,9 +63,10 @@ export function useUpsertSystemSound() {
       const path = `${orgId}/sounds/${soundKey}-${Date.now()}.mp3`;
       const { error: uploadErr } = await supabase.storage.from('tones').upload(path, file);
       if (uploadErr) throw uploadErr;
-      const { data: urlData, error: signErr } = await supabase.storage.from('tones').createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (signErr || !urlData) throw signErr ?? new Error('No se pudo firmar la URL');
 
+      // Store a stable canonical URL (not a signed URL, which expires).
+      // resolveToneUrl() converts it to a fresh signed URL at playback time.
+      const canonicalUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/tones/${path}`;
 
       // Upsert via delete + insert (unique constraint)
       await supabase.from('system_sounds').delete()
@@ -73,7 +76,7 @@ export function useUpsertSystemSound() {
       const { error } = await supabase.from('system_sounds').insert({
         organization_id: orgId!,
         sound_key: soundKey,
-        sound_url: urlData.signedUrl,
+        sound_url: canonicalUrl,
         label: SOUND_KEYS.find(s => s.key === soundKey)?.label ?? soundKey,
       });
       if (error) throw error;

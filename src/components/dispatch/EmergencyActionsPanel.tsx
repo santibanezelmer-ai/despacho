@@ -259,8 +259,9 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const handleToggle = (field: string, currentValue: boolean, label: string) => {
     toggleFlag.mutate({ id: emergency.id, field, value: !currentValue, label });
     if (field === 'declared' && !currentValue) {
-      const audio = playSystemSound('declarado');
-      if (!audio) toast.info('Sin sonido de declarado configurado');
+      void playSystemSound('declarado').then(audio => {
+        if (!audio) toast.info('Sin sonido de declarado configurado');
+      });
       toast.success('🔊 Emergencia declarada');
       // Re-notify volunteers with the same push flow used for new emergencies,
       // so their PWA plays the dispatch tone again.
