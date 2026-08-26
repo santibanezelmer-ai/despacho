@@ -38,11 +38,10 @@ export default function AuditPage() {
       const userIds = [...new Set((data ?? []).map((l: any) => l.user_id).filter(Boolean))];
       const profilesMap: Record<string, { display_name: string | null; email: string | null }> = {};
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, email')
-          .in('user_id', userIds);
-        (profiles ?? []).forEach((p: any) => { profilesMap[p.user_id] = p; });
+        const { data: profiles } = await (supabase as any).rpc('get_member_profiles');
+        (profiles ?? []).forEach((p: any) => {
+          if (userIds.includes(p.user_id)) profilesMap[p.user_id] = { display_name: p.display_name, email: null };
+        });
       }
 
       return (data ?? []).map((l: any) => ({ ...l, profiles: profilesMap[l.user_id] ?? null }));
