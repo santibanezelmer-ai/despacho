@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { resolveToneUrl } from '@/lib/toneUrl';
 import { toast } from 'sonner';
 
 export interface SystemSound {
