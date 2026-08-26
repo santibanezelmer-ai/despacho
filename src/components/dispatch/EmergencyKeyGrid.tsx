@@ -31,16 +31,14 @@ export default function EmergencyKeyGrid({ onSelectKey }: Props) {
             background: `linear-gradient(135deg, ${key.color}15, ${key.color}08)`,
           }}
         >
-          <div className="flex items-start justify-between gap-1.5">
+          <div className="flex items-start justify-between gap-2">
             <span
-              className={`inline-block rounded px-1.5 py-0.5 font-mono font-bold leading-tight ${
-                (key.code?.length || 0) >= 7 ? 'text-[10px]' : (key.code?.length || 0) >= 5 ? 'text-xs' : 'text-sm'
-              }`}
+              className="inline-block rounded px-2 py-1 font-mono font-bold text-xs uppercase tracking-tight"
               style={{ backgroundColor: key.color, color: '#fff', maxWidth: '100%' }}
             >
               {key.code}
             </span>
-            <Volume2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <Volume2 className="h-4 w-4 text-muted-foreground shrink-0" />
           </div>
           <p className="mt-2 text-sm font-semibold text-foreground leading-tight">
             {key.name}

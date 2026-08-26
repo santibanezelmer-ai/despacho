@@ -148,27 +148,27 @@ export default function Volunteers() {
                     <td className="px-4 py-3">{pwaBadge(v)}</td>
                     {canWrite && (
                       <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur">
-                        <div className="inline-flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 px-2" title="Ver ficha" onClick={() => setProfileVolunteer(v)}>
-                            <IdCard className="h-3.5 w-3.5" />
+                      <div className="inline-flex items-center gap-1">
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Ver ficha" onClick={() => setProfileVolunteer(v)}>
+                            <IdCard className="h-4 w-4" />
                           </Button>
                           {isOrgAdmin && !v.user_id && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id || !v.email}
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" disabled={busyId === v.id || !v.email}
                               onClick={() => inviteToPwa(v)} title={v.email ? 'Invitar a la PWA' : 'Falta email'}>
-                              {busyId === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                              {busyId === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                             </Button>
                           )}
                           {isOrgAdmin && v.user_id && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2" disabled={busyId === v.id}
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" disabled={busyId === v.id}
                               onClick={() => togglePwa(v)} title={v.pwa_enabled ? 'Bloquear acceso PWA' : 'Habilitar acceso PWA'}>
-                              {v.pwa_enabled ? <ShieldOff className="h-3.5 w-3.5 text-destructive" /> : <Shield className="h-3.5 w-3.5 text-success" />}
+                              {v.pwa_enabled ? <ShieldOff className="h-4 w-4 text-destructive" /> : <Shield className="h-4 w-4 text-success" />}
                             </Button>
                           )}
-                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingVolunteer(v); setDialogOpen(true); }}>
-                            <Pencil className="h-3.5 w-3.5" />
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setEditingVolunteer(v); setDialogOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => handleDelete(v)}>
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(v)}>
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
