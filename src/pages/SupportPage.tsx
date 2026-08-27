@@ -163,7 +163,6 @@ export default function SupportPage() {
               Enviar ticket
             </Button>
           </DialogFooter>
-        </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
