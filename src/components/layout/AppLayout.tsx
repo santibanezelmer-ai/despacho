@@ -12,7 +12,7 @@ import { DispatchFormProvider, useDispatchForm } from '@/contexts/DispatchFormCo
 import {
   Siren, Radio, MapPin, Users, Truck, ClipboardList,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
-  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff
+  Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff, LifeBuoy
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
@@ -37,9 +37,10 @@ const navItems = [
   { path: '/notificaciones', label: 'Notificaciones', icon: Bell, section: 'Sistema' },
   { path: '/admin', label: 'Administración', icon: Settings, section: 'Sistema' },
   { path: '/admin/onboarding', label: 'Configuración inicial', icon: ClipboardList, section: 'Sistema' },
+  { path: '/soporte', label: 'Soporte', icon: LifeBuoy, section: 'Ayuda' },
 ];
 
-const sections = ['Operaciones', 'Recursos', 'Análisis', 'Sistema'];
+const sections = ['Operaciones', 'Recursos', 'Análisis', 'Sistema', 'Ayuda'];
 
 function GlobalDispatchForm() {
   const { openKey, closeDispatch } = useDispatchForm();

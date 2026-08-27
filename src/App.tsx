@@ -38,6 +38,8 @@ import SuperadminLayout from "@/pages/superadmin/SuperadminLayout";
 import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
 import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations";
 import SuperadminRequests from "@/pages/superadmin/SuperadminRequests";
+import SuperadminSupport from "@/pages/superadmin/SuperadminSupport";
+import SupportPage from "@/pages/SupportPage";
 import NotFound from "./pages/NotFound";
 import MobileLayout from "@/components/mobile/MobileLayout";
 import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
@@ -123,6 +125,7 @@ function AppRoutes() {
           <Route path="/superadmin" element={<SuperadminDashboard />} />
           <Route path="/superadmin/organizaciones" element={<SuperadminOrganizations />} />
           <Route path="/superadmin/solicitudes" element={<SuperadminRequests />} />
+          <Route path="/superadmin/soporte" element={<SuperadminSupport />} />
           <Route path="*" element={<Navigate to="/superadmin" replace />} />
         </Routes>
       </SuperadminLayout>
@@ -205,6 +208,7 @@ function AppRoutes() {
         <Route path="/simulacion" element={<SimulationPage />} />
         <Route path="/alertas" element={<AlertsPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
+        <Route path="/soporte" element={<SupportPage />} />
         <Route path="/notificaciones" element={<NotificationsPage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin/onboarding" element={<OnboardingPage />} />
