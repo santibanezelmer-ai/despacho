@@ -104,7 +104,7 @@ export default function HeroSection() {
           transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
           className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight"
         >
-          Sistema de Despacho
+          Despacho en tiempo real
           <motion.span
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -112,7 +112,7 @@ export default function HeroSection() {
             className="block text-emergency mt-1 sm:mt-3"
             style={{ textShadow: '0 0 100px hsl(0 85% 55% / 0.5), 0 0 40px hsl(0 85% 55% / 0.25)' }}
           >
-            en Tiempo Real para Bomberos
+            para instituciones bomberiles
           </motion.span>
         </motion.h1>
 
@@ -122,7 +122,7 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mx-auto mt-6 sm:mt-8 max-w-2xl text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed px-2"
         >
-          Despacha en segundos, coordina recursos en terreno y mantén el control operativo total — desde una sola plataforma centralizada y segura.
+          Operix Dispatch centraliza el despacho de emergencias, la ubicación GPS, la gestión de unidades y personal, y la analítica operativa — para que tu institución responda más rápido y con control total, 24/7.
         </motion.p>
 
         {/* CTA Buttons */}
@@ -132,14 +132,14 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 0.65 }}
           className="mt-8 sm:mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
         >
-          <Link to="/register" className="w-full sm:w-auto">
+          <a href="#demo" className="w-full sm:w-auto">
             <Button
               size="lg"
               className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2.5 w-full sm:w-auto text-base sm:text-lg px-10 sm:px-12 h-13 sm:h-15 font-bold shadow-[0_0_40px_hsl(0_85%_55%/0.45),0_4px_20px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_60px_hsl(0_85%_55%/0.55),0_6px_30px_hsl(0_85%_55%/0.35)] transition-all duration-300 hover:scale-[1.03]"
             >
-              Comenzar Ahora <ArrowRight className="h-5 w-5" />
+              Solicitar una demo <ArrowRight className="h-5 w-5" />
             </Button>
-          </Link>
+          </a>
           <Link to="/login" className="w-full sm:w-auto">
             <Button
               size="lg"
