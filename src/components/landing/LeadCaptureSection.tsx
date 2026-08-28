@@ -32,7 +32,7 @@ export default function LeadCaptureSection() {
   };
 
   return (
-    <section className="px-4 sm:px-6 -mt-6 sm:-mt-10 relative z-20">
+    <section id="demo" className="px-4 sm:px-6 -mt-6 sm:-mt-10 relative z-20 scroll-mt-24">
       <motion.div
         initial={{ opacity: 0, y: 35, scale: 0.97 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -45,10 +45,10 @@ export default function LeadCaptureSection() {
 
         <div className="relative">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-emergency/10 px-3 py-1 text-[10px] font-semibold text-emergency mb-4">
-            <Sparkles className="h-3 w-3" /> Acceso anticipado
+            <Sparkles className="h-3 w-3" /> Demostración guiada
           </div>
-          <h2 className="text-lg sm:text-2xl font-bold mb-2">Solicita acceso para tu organización</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-6">Te contactamos en menos de 24 horas</p>
+          <h2 className="text-lg sm:text-2xl font-bold mb-2">Solicita una demo para tu institución</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-6">Te mostramos Operix en funcionamiento y te contactamos en menos de 24 horas</p>
 
           {sent ? (
             <motion.div
@@ -80,7 +80,7 @@ export default function LeadCaptureSection() {
                 disabled={loading}
                 className="bg-emergency text-emergency-foreground hover:bg-emergency/90 h-12 px-7 gap-2 font-bold shadow-[0_0_25px_hsl(0_85%_55%/0.35)] hover:shadow-[0_0_40px_hsl(0_85%_55%/0.45)] transition-all duration-300 text-sm"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Solicitar acceso <ArrowRight className="h-4 w-4" /></>}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Solicitar demo <ArrowRight className="h-4 w-4" /></>}
               </Button>
             </form>
           )}

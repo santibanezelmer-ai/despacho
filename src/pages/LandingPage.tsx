@@ -6,12 +6,11 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import StickyCTA from '@/components/landing/StickyCTA';
 import LandingSEO from '@/components/landing/LandingSEO';
 
-const StatsSection = lazy(() => import('@/components/landing/StatsSection'));
 const ProblemSolutionSection = lazy(() => import('@/components/landing/ProblemSolutionSection'));
 const ComparisonSection = lazy(() => import('@/components/landing/ComparisonSection'));
 const ModulesSection = lazy(() => import('@/components/landing/ModulesSection'));
 const ShowcaseSection = lazy(() => import('@/components/landing/ShowcaseSection'));
-const TestimonialsSection = lazy(() => import('@/components/landing/TestimonialsSection'));
+const WhyOperixSection = lazy(() => import('@/components/landing/WhyOperixSection'));
 const StepsSection = lazy(() => import('@/components/landing/StepsSection'));
 const PricingSection = lazy(() => import('@/components/landing/PricingSection'));
 const FAQSection = lazy(() => import('@/components/landing/FAQSection'));
@@ -31,12 +30,11 @@ export default function LandingPage() {
       <HeroSection />
       <LeadCaptureSection />
       <Suspense fallback={<LazyFallback />}>
-        <StatsSection />
         <ProblemSolutionSection />
+        <WhyOperixSection />
         <ComparisonSection />
         <ModulesSection />
         <ShowcaseSection />
-        <TestimonialsSection />
         <StepsSection />
         <PricingSection />
         <FAQSection />

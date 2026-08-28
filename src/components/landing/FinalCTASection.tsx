@@ -28,20 +28,20 @@ export default function FinalCTASection() {
             <Siren className="h-7 w-7 text-emergency" />
           </motion.div>
 
-          <h2 className="text-2xl sm:text-4xl font-bold">Solicita acceso para tu central hoy</h2>
+          <h2 className="text-2xl sm:text-4xl font-bold">Lleva tu despacho al siguiente nivel</h2>
           <p className="mt-4 text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Únete a la plataforma de despacho bomberil más completa. Comienza a operar en minutos con soporte guiado y capacitación incluida.
+            Agenda una demostración y descubre cómo Operix puede transformar la respuesta de tu institución — implementación guiada y capacitación incluida.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/register" className="w-full sm:w-auto">
+            <a href="#demo" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2.5 w-full sm:w-auto text-base sm:text-lg px-10 h-13 sm:h-15 font-bold shadow-[0_0_45px_hsl(0_85%_55%/0.45),0_4px_20px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_65px_hsl(0_85%_55%/0.55)] hover:scale-[1.03] transition-all duration-300"
               >
-                Solicitar Cuenta <ArrowRight className="h-5 w-5" />
+                Solicitar una demostración <ArrowRight className="h-5 w-5" />
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </motion.div>
