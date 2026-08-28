@@ -63,12 +63,25 @@ export default function ContactFormSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-10"
+          className="text-center mb-8"
         >
           <h2 className="text-2xl sm:text-4xl font-bold">¿Tienes preguntas? Contáctanos</h2>
           <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
             Cuéntanos sobre tu organización y te enviaremos una propuesta personalizada.
           </p>
+
+          <a
+            href="mailto:contacto@operixdispatch.com"
+            className="inline-block mt-6"
+            aria-label="Contactar a Operix: contacto@operixdispatch.com"
+          >
+            <Button
+              size="lg"
+              className="bg-emergency text-emergency-foreground hover:bg-emergency/90 h-12 px-8 gap-2 font-bold shadow-[0_0_25px_hsl(0_85%_55%/0.35)] hover:shadow-[0_0_40px_hsl(0_85%_55%/0.45)] transition-all duration-300 text-sm"
+            >
+              <Mail className="h-4 w-4" /> Contactar a Operix
+            </Button>
+          </a>
         </motion.div>
 
         <motion.div
