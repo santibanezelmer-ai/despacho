@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LocateFixed, Loader2, Flame, Droplets, Crosshair, Shield } from 'lucide-react';
 import L from 'leaflet';
+import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 
@@ -94,7 +95,7 @@ export default function MapScreen() {
       zoomControl: true,
       attributionControl: false,
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    addBaseTileLayer(map);
     const updateBounds = () => {
       const b = map.getBounds();
       setBounds({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });

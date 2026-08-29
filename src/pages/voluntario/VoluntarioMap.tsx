@@ -5,6 +5,7 @@ import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff, Building2 
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
+import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 import { useStations } from '@/hooks/useStations';
@@ -104,7 +105,7 @@ export default function VoluntarioMap() {
     if (initRef.current || mapRef.current) return;
     initRef.current = true;
     const map = L.map(el, { center: [-33.45, -70.65], zoom: 13, zoomControl: false, attributionControl: false });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    addBaseTileLayer(map);
     const updateBounds = () => {
       const b = map.getBounds();
       setBounds({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });

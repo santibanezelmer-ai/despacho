@@ -5,6 +5,7 @@ import { LocateFixed, Loader2, Flame, Droplets, Crosshair, MapPinOff } from 'luc
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import L from 'leaflet';
+import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 
@@ -149,7 +150,7 @@ export default function MobileMapPage() {
       attributionControl: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    addBaseTileLayer(map);
 
     const updateBounds = () => {
       const b = map.getBounds();
