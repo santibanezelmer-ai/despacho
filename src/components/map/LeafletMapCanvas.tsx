@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { addBaseTileLayer, OSM_TILE_URL } from '@/lib/mapTiles';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -10,11 +11,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const DEFAULT_CENTER: [number, number] = [-33.4489, -70.6693];
-const PRIMARY_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const FALLBACK_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const PRIMARY_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-const FALLBACK_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const FALLBACK_TILE_URL = OSM_TILE_URL;
 
 export type MapEmergency = {
   id: string;
@@ -216,23 +213,8 @@ export default function LeafletMapCanvas({
     stationLayerRef.current = stationLayer;
 
 
-    const activateFallbackTiles = () => {
-      if (!mapRef.current || tileUrlRef.current === FALLBACK_TILE_URL) return;
-
-      tileUrlRef.current = FALLBACK_TILE_URL;
-      tileLayerRef.current?.remove();
-      tileLayerRef.current = L.tileLayer(FALLBACK_TILE_URL, {
-        attribution: FALLBACK_ATTRIBUTION,
-      }).addTo(mapRef.current);
-      onCompatibilityModeChange(true);
-    };
-
-    const primaryTileLayer = L.tileLayer(PRIMARY_TILE_URL, {
-      attribution: PRIMARY_ATTRIBUTION,
-    }).addTo(map);
-
-    primaryTileLayer.on('tileerror', activateFallbackTiles);
-    tileLayerRef.current = primaryTileLayer;
+    tileUrlRef.current = OSM_TILE_URL;
+    tileLayerRef.current = addBaseTileLayer(map);
 
     const observer = new ResizeObserver(() => {
       map.invalidateSize({ pan: false });
