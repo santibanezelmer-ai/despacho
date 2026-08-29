@@ -11,7 +11,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const DEFAULT_CENTER: [number, number] = [-33.4489, -70.6693];
-const FALLBACK_TILE_URL = OSM_TILE_URL;
+
 
 export type MapEmergency = {
   id: string;
@@ -176,7 +176,7 @@ export default function LeafletMapCanvas({
   const initialFitDoneRef = useRef(false);
 
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const tileUrlRef = useRef(PRIMARY_TILE_URL);
+  const tileUrlRef = useRef(OSM_TILE_URL);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -254,7 +254,7 @@ export default function LeafletMapCanvas({
       emergencyLayerRef.current = null;
       hydrantLayerRef.current = null;
       tileLayerRef.current = null;
-      tileUrlRef.current = PRIMARY_TILE_URL;
+      tileUrlRef.current = OSM_TILE_URL;
     };
   }, [onCompatibilityModeChange, onBoundsChange]);
 
