@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 
@@ -75,9 +76,7 @@ export default function MobileEmergencyDetailPage() {
       scrollWheelZoom: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-    }).addTo(map);
+    addBaseTileLayer(map);
 
     // Emergency marker
     const emergencyIcon = L.divIcon({
