@@ -425,6 +425,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
             )}
           </section>
 
+          {/* 2b. Assigned Vehicles (unassign) */}
+          <section>
+            <AssignedVehiclesManager emergencyId={emergency.id} />
+          </section>
+
+
           {/* 3. Map Location */}
           <section>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
