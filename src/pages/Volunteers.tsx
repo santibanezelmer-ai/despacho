@@ -124,6 +124,7 @@ export default function Volunteers() {
                 <th className="px-4 py-3 text-left font-medium">Email</th>
                 <th className="px-4 py-3 text-left font-medium">Compañía</th>
                 <th className="px-4 py-3 text-left font-medium">Estado</th>
+                <th className="px-4 py-3 text-left font-medium">Disponibilidad</th>
                 <th className="px-4 py-3 text-left font-medium">Acceso PWA</th>
                 {canWrite && <th className="px-4 py-3 text-right font-medium sticky right-0 bg-background/95 backdrop-blur">Acciones</th>}
               </tr>
