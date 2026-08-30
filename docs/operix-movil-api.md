@@ -22,7 +22,7 @@ Se reutilizan sin cambios: `vehicles` (incluidos sus estados `disponible`, `en_s
 { "code": "A7K2M9QP", "device_name": "Tablet B-1", "platform": "android" }
 ```
 → `{ device_id, device_token, organization, vehicles: [{ id, code, type, status }] }`
-El código se marca usado al instante (un solo uso, expira según lo definido por el administrador).
+El código se reserva de forma atómica antes de crear el dispositivo: si la creación falla, el código se libera. Un reintento de la misma activación (código recién usado, dispositivo aún sin móvil ni actividad) devuelve 200 con el mismo `device_id` y un token nuevo, sin duplicar dispositivos. Devuelve 410 si el código no existe, expiró o ya fue usado por un dispositivo en operación.
 
 ### 2. `POST /select-vehicle` (cambiar móvil)
 ```json
