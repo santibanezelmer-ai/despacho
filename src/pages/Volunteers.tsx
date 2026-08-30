@@ -116,7 +116,7 @@ export default function Volunteers() {
 
       <div className="console-panel overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground">
                 <th className="px-4 py-3 text-left font-medium">ID</th>
@@ -126,7 +126,7 @@ export default function Volunteers() {
                 <th className="px-4 py-3 text-left font-medium">Estado</th>
                 <th className="px-4 py-3 text-left font-medium">Disponibilidad</th>
                 <th className="px-4 py-3 text-left font-medium">Acceso PWA</th>
-                {canWrite && <th className="px-4 py-3 text-right font-medium sticky right-0 bg-background/95 backdrop-blur">Acciones</th>}
+                {canWrite && <th className="px-4 py-3 text-right font-medium">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -167,8 +167,8 @@ export default function Volunteers() {
                     </td>
                     <td className="px-4 py-3">{pwaBadge(v)}</td>
                     {canWrite && (
-                      <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur">
-                      <div className="inline-flex items-center gap-1">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1">
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Ver ficha" onClick={() => setProfileVolunteer(v)}>
                             <IdCard className="h-4 w-4" />
                           </Button>
