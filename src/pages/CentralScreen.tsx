@@ -172,7 +172,6 @@ export default function CentralScreen() {
   const { data: vehicles } = useVehicles({ refetchInterval: 5000 });
   const { data: volunteers } = useVolunteers({ refetchInterval: 5000 });
   const [now, setNow] = useState(new Date());
-  const [volSearch, setVolSearch] = useState('');
   const [vehSearch, setVehSearch] = useState('');
   const [showShare, setShowShare] = useState(false);
 
