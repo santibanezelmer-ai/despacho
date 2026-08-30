@@ -9,3 +9,6 @@ project_id = "ratbcyvzdlokcqyxdvvg"
     verify_jwt = false
   [functions.location-share]
     verify_jwt = false
+  [functions.operix-movil]
+    verify_jwt = false
+

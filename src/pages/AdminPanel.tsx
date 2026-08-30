@@ -14,6 +14,8 @@ import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 import RanksAdmin from '@/components/admin/RanksAdmin';
 import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
 import InvitationsAdmin from '@/components/admin/InvitationsAdmin';
+import VehicleDevicesAdmin from '@/components/admin/VehicleDevicesAdmin';
+
 import OrganizationBrandingCard from '@/components/admin/OrganizationBrandingCard';
 import CompanyAdminsManager from '@/components/admin/CompanyAdminsManager';
 
@@ -310,8 +312,13 @@ export default function AdminPanel() {
       </div>
 
       <div className="border-t border-border pt-6">
+        <VehicleDevicesAdmin />
+      </div>
+
+      <div className="border-t border-border pt-6">
         <SystemSoundsAdmin />
       </div>
+
 
       <div className="border-t border-border pt-6">
         <DemoSettingsAdmin />
