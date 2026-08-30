@@ -58,12 +58,15 @@ export default function RanksAdmin() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, name, level }: { id: string; name: string; level: number }) => {
-      const { error } = await supabase.from('ranks').update({ name, level }).eq('id', id);
+    mutationFn: async ({ id, name, level, is_authority }: { id: string; name: string; level: number; is_authority?: boolean }) => {
+      const payload: any = { name, level };
+      if (is_authority !== undefined) payload.is_authority = is_authority;
+      const { error } = await (supabase as any).from('ranks').update(payload).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ranks'] });
+      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
       toast.success('Rango actualizado');
     },
     onError: (err: Error) => toast.error(err.message),
