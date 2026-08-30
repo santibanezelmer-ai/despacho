@@ -413,107 +413,76 @@ export default function CentralScreen() {
       </div>
 
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Voluntarios - vista compacta agrupada por compañía */}
-        <div className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Voluntarios</h2>
-            <div className="flex items-center gap-2 flex-1 max-w-xs">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Buscar..."
-                  value={volSearch}
-                  onChange={e => setVolSearch(e.target.value)}
-                  className="w-full bg-muted border border-border rounded pl-7 pr-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <span className="text-xs font-mono text-muted-foreground shrink-0">{filteredVolunteers.length}</span>
+      {/* Móviles - ancho completo, agrupados por compañía */}
+      <div className="rounded-lg border border-border bg-card">
+        <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0 flex items-center gap-2">
+            <Truck className="h-4 w-4 text-success" /> Móviles
+          </h2>
+          <div className="flex items-center gap-2 flex-1 max-w-xs">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={vehSearch}
+                onChange={e => setVehSearch(e.target.value)}
+                className="w-full bg-muted border border-border rounded pl-7 pr-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
             </div>
-          </div>
-          <div className="max-h-[42vh] overflow-y-auto">
-            {volunteersByCompany.length > 0 ? (
-              volunteersByCompany.map(([company, vols]) => (
-                <div key={company}>
-                  <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-4 py-1.5 border-b border-border/40">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{company} ({vols.length})</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-px bg-border/30">
-                    {vols.map(volunteer => (
-                      <div key={volunteer.id} className="flex items-center justify-between gap-1 bg-card px-3 py-1.5">
-                        <p className="truncate text-xs font-medium text-foreground">{volunteer.name}</p>
-                        <span
-                          className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                            statusPillClass[volunteer.statusKey] ?? statusPillClass.inactivo
-                          }`}
-                        >
-                          {volunteerStatusLabel[volunteer.statusKey] ?? volunteer.statusKey}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                {volSearch ? 'Sin resultados' : 'Sin voluntarios activos'}
-              </p>
-            )}
+            <span className="text-xs font-mono text-muted-foreground shrink-0">{filteredVehicles.length}</span>
           </div>
         </div>
-
-        {/* Móviles - vista compacta con km */}
-        <div className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Móviles</h2>
-            <div className="flex items-center gap-2 flex-1 max-w-xs">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Buscar..."
-                  value={vehSearch}
-                  onChange={e => setVehSearch(e.target.value)}
-                  className="w-full bg-muted border border-border rounded pl-7 pr-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <span className="text-xs font-mono text-muted-foreground shrink-0">{filteredVehicles.length}</span>
-            </div>
-          </div>
-          <div className="max-h-[42vh] overflow-y-auto">
-            {filteredVehicles.length > 0 ? (
-              <div className="divide-y divide-border/60">
-                {filteredVehicles.map(vehicle => (
-                  <div key={vehicle.id} className="flex items-center justify-between gap-3 px-4 py-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-foreground">{vehicle.code}</p>
-                        <span className="text-xs text-muted-foreground">· {vehicle.type}</span>
+        <div className="max-h-[46vh] overflow-y-auto">
+          {vehiclesByCompany.length > 0 ? (
+            vehiclesByCompany.map(([company, vehs]) => (
+              <div key={company}>
+                <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-4 py-1.5 border-b border-border/40">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{company} ({vehs.length})</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 p-3">
+                  {vehs.map(vehicle => {
+                    const inEmergency = vehicle.statusKey === 'en_emergencia';
+                    return (
+                      <div
+                        key={vehicle.id}
+                        className={`relative overflow-hidden rounded-lg border px-3 py-2.5 ${
+                          inEmergency
+                            ? 'border-emergency/50 bg-emergency/10'
+                            : 'border-success/30 bg-success/5'
+                        }`}
+                      >
+                        <span
+                          className={`absolute inset-y-0 left-0 w-1 ${inEmergency ? 'bg-emergency' : 'bg-success'}`}
+                          aria-hidden="true"
+                        />
+                        <div className="flex items-center justify-between gap-2 pl-1">
+                          <p className="truncate text-base font-mono font-bold text-foreground">{vehicle.code}</p>
+                          <span
+                            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                              statusPillClass[vehicle.statusKey] ?? statusPillClass.fuera_servicio
+                            }`}
+                          >
+                            {vehicleStatusLabel[vehicle.statusKey] ?? vehicle.statusKey}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 flex items-center justify-between gap-2 pl-1 text-xs text-muted-foreground">
+                          <span className="truncate">{vehicle.type}</span>
+                          {vehicle.odometer != null && (
+                            <span className="shrink-0 font-mono text-[10px]">{vehicle.odometer.toLocaleString()} km</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{vehicle.company}</span>
-                        {vehicle.odometer != null && (
-                          <span className="font-mono">{vehicle.odometer.toLocaleString()} km</span>
-                        )}
-                      </div>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        statusPillClass[vehicle.statusKey] ?? statusPillClass.fuera_servicio
-                      }`}
-                    >
-                      {vehicleStatusLabel[vehicle.statusKey] ?? vehicle.statusKey}
-                    </span>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
-            ) : (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                {vehSearch ? 'Sin resultados' : 'Sin móviles operativos'}
-              </p>
-            )}
-          </div>
+            ))
+          ) : (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              {vehSearch ? 'Sin resultados' : 'Sin móviles operativos'}
+            </p>
+          )}
         </div>
       </div>
 
