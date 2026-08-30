@@ -19,11 +19,24 @@ const statusPillClass: Record<string, string> = {
   en_emergencia: 'border-emergency/40 bg-emergency/15 text-emergency',
   activo: 'border-success/40 bg-success/15 text-success',
   disponible: 'border-success/40 bg-success/15 text-success',
+  no_disponible: 'border-destructive/40 bg-destructive/15 text-destructive',
   en_servicio: 'border-warning/40 bg-warning/15 text-warning',
   mantencion: 'border-warning/40 bg-warning/15 text-warning',
   inactivo: 'border-border bg-muted text-muted-foreground',
   licencia: 'border-border bg-muted text-muted-foreground',
   fuera_servicio: 'border-border bg-muted text-muted-foreground',
+};
+
+const availabilityLabel: Record<string, string> = {
+  en_emergencia: 'En emergencia',
+  disponible: 'Disponible',
+  no_disponible: 'No disponible',
+};
+
+const availabilityDot: Record<string, string> = {
+  en_emergencia: '🚨',
+  disponible: '🟢',
+  no_disponible: '🔴',
 };
 
 const volunteerStatusLabel: Record<string, string> = {
