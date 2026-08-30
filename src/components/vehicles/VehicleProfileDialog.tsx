@@ -17,7 +17,7 @@ import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { useVehicleProfile, daysUntil, expiryLevel, maintenanceAlert } from '@/hooks/useVehicleProfile';
 import { toast } from 'sonner';
 import {
-  Truck, Wrench, FileText, ClipboardCheck, NotebookPen, Siren, Gauge,
+  Truck, ClipboardCheck, NotebookPen, Siren, Gauge,
   Loader2, Plus, Trash2, AlertTriangle,
 } from 'lucide-react';
 

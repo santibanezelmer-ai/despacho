@@ -15,15 +15,18 @@ interface VehicleData {
   id?: string;
   code: string;
   type: string;
+  brand: string;
+  model: string;
   plate: string;
   year: string;
   capacity: string;
   company_id: string;
   status: string;
+  fuel_level: string;
 }
 
 const empty: VehicleData = {
-  code: '', type: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible',
+  code: '', type: '', brand: '', model: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible', fuel_level: '',
 };
 
 interface Props {
