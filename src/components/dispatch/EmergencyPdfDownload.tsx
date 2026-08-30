@@ -138,22 +138,21 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         const assignedAt = (ev as any)?.assigned_at ?? emg.created_at;
         const releasedAt = (ev as any)?.released_at ?? null;
 
-        // 6 columns: label+value x3
-        const w6 = [contentW * 0.14, contentW * 0.19, contentW * 0.14, contentW * 0.19, contentW * 0.14, contentW * 0.20];
         // Row 1: MOVIL | CLAVE | HORA SALIDA | KM SALIDA | FECHA
+        const lw = contentW * 0.11; // label width
+        const vw = contentW * 0.09; // value width
         drawDataRow(
-          ['MOVIL', v?.code ?? '', 'CLAVE', ek?.code ?? '', 'HORA SALIDA / KM SALIDA',
-            `${fmtTime(assignedAt)}${(ev as any)?.odometer_start != null ? '  /  ' + (ev as any).odometer_start + ' km' : ''}`,
-          ],
-          [w6[0], w6[1], w6[2], w6[3], w6[4] + 6, w6[5] - 6],
+          ['MOVIL', v?.code ?? '', 'CLAVE', ek?.code ?? '', 'HORA SALIDA', fmtTime(assignedAt),
+            'KM SALIDA', (ev as any)?.odometer_start != null ? String((ev as any).odometer_start) : '',
+            'FECHA', fmtDate(assignedAt)],
+          [lw, vw, lw, vw, lw + 4, vw, lw + 4, vw, lw, contentW - (4 * lw + 3 * vw + 8) - lw + vw + vw],
           11,
         );
         // Row 2: SECTOR | HORA LLEGADA | KM LLEGADA
         drawDataRow(
-          ['SECTOR', emg.address ?? '', 'HORA LLEGADA', fmtTime(releasedAt), 'KM LLEGADA / FECHA',
-            `${(ev as any)?.odometer_end != null ? (ev as any).odometer_end + ' km' : ''}${releasedAt ? (ev as any)?.odometer_end != null ? '  /  ' : '' : ''}${fmtDate(assignedAt)}`,
-          ],
-          [w6[0], w6[1], w6[2], w6[3], w6[4] + 6, w6[5] - 6],
+          ['SECTOR', emg.address ?? '', 'HORA LLEGADA', fmtTime(releasedAt),
+            'KM LLEGADA', (ev as any)?.odometer_end != null ? String((ev as any).odometer_end) : ''],
+          [lw, contentW * 0.40, lw + 6, vw + 4, lw + 6, contentW - (2 * lw + 12) - (2 * vw + 4) - contentW * 0.40],
           11,
         );
         // Row 3: CONDUCTOR/A | A CARGO
