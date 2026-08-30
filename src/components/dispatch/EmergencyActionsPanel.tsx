@@ -15,6 +15,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
 import VehicleReturnManager from './VehicleReturnManager';
+import AssignedVehiclesManager from './AssignedVehiclesManager';
+
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 
@@ -424,6 +426,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               </>
             )}
           </section>
+
+          {/* 2b. Assigned Vehicles (unassign) */}
+          <section>
+            <AssignedVehiclesManager emergencyId={emergency.id} />
+          </section>
+
 
           {/* 3. Map Location */}
           <section>
