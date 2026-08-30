@@ -58,12 +58,15 @@ export default function RanksAdmin() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, name, level }: { id: string; name: string; level: number }) => {
-      const { error } = await supabase.from('ranks').update({ name, level }).eq('id', id);
+    mutationFn: async ({ id, name, level, is_authority }: { id: string; name: string; level: number; is_authority?: boolean }) => {
+      const payload: any = { name, level };
+      if (is_authority !== undefined) payload.is_authority = is_authority;
+      const { error } = await (supabase as any).from('ranks').update(payload).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ranks'] });
+      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
       toast.success('Rango actualizado');
     },
     onError: (err: Error) => toast.error(err.message),
@@ -122,7 +125,7 @@ export default function RanksAdmin() {
   );
 }
 
-function RankRow({ rank, onDelete, onUpdate }: { rank: any; onDelete: (id: string) => void; onUpdate: (data: { id: string; name: string; level: number }) => void }) {
+function RankRow({ rank, onDelete, onUpdate }: { rank: any; onDelete: (id: string) => void; onUpdate: (data: { id: string; name: string; level: number; is_authority?: boolean }) => void }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(rank.name);
   const [level, setLevel] = useState(String(rank.level));
@@ -159,6 +162,18 @@ function RankRow({ rank, onDelete, onUpdate }: { rank: any; onDelete: (id: strin
       <div className="flex items-center gap-3">
         <span className="text-xs font-mono text-muted-foreground w-8">Nv.{rank.level}</span>
         <span className="text-sm text-foreground">{rank.name}</span>
+        <button
+          type="button"
+          onClick={() => onUpdate({ id: rank.id, name: rank.name, level: rank.level, is_authority: !rank.is_authority })}
+          title="Marcar como grado de autoridad (visible en Pantalla Central)"
+          className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+            rank.is_authority
+              ? 'border-warning/40 bg-warning/15 text-warning'
+              : 'border-border bg-muted text-muted-foreground'
+          }`}
+        >
+          {rank.is_authority ? 'Autoridad' : 'Sin mando'}
+        </button>
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setEditing(true)}>

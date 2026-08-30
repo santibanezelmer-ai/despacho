@@ -1271,6 +1271,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_authority: boolean
           level: number
           name: string
           organization_id: string
@@ -1278,6 +1279,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_authority?: boolean
           level?: number
           name: string
           organization_id: string
@@ -1285,6 +1287,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_authority?: boolean
           level?: number
           name?: string
           organization_id?: string

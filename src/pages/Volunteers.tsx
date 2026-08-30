@@ -78,6 +78,14 @@ export default function Volunteers() {
     setBusyId(null);
   };
 
+  const toggleAvailability = async (v: any) => {
+    setBusyId(v.id);
+    const { error } = await (supabase as any).from('volunteers').update({ available: !v.available }).eq('id', v.id);
+    if (error) toast.error(error.message);
+    else { toast.success(v.available ? 'Marcado como No disponible' : 'Marcado como Disponible'); qc.invalidateQueries({ queryKey: ['volunteers'] }); }
+    setBusyId(null);
+  };
+
   const pwaBadge = (v: any) => {
     if (v.user_id) {
       return v.pwa_enabled
@@ -116,6 +124,7 @@ export default function Volunteers() {
                 <th className="px-4 py-3 text-left font-medium">Email</th>
                 <th className="px-4 py-3 text-left font-medium">Compañía</th>
                 <th className="px-4 py-3 text-left font-medium">Estado</th>
+                <th className="px-4 py-3 text-left font-medium">Disponibilidad</th>
                 <th className="px-4 py-3 text-left font-medium">Acceso PWA</th>
                 {canWrite && <th className="px-4 py-3 text-right font-medium sticky right-0 bg-background/95 backdrop-blur">Acciones</th>}
               </tr>
@@ -123,7 +132,7 @@ export default function Volunteers() {
             <tbody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                  <tr key={i}><td colSpan={8} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
                 ))
               ) : (
                 filtered.map((v: any) => (
@@ -144,6 +153,17 @@ export default function Volunteers() {
                       <span className={`status-badge ${v.status === 'activo' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
                         {v.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        disabled={!canWrite || busyId === v.id}
+                        onClick={() => toggleAvailability(v)}
+                        title={canWrite ? 'Cambiar disponibilidad' : undefined}
+                        className={`status-badge ${v.available ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'} ${canWrite ? 'cursor-pointer' : 'cursor-default'}`}
+                      >
+                        {v.available ? 'Disponible' : 'No disponible'}
+                      </button>
                     </td>
                     <td className="px-4 py-3">{pwaBadge(v)}</td>
                     {canWrite && (
