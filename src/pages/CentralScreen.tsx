@@ -227,15 +227,6 @@ export default function CentralScreen() {
     [volunteers, assignedVolunteerIds]
   );
 
-  // Group vehicles by company
-  const vehiclesByCompany = useMemo(() => {
-    const groups: Record<string, typeof filteredVehicles> = {};
-    filteredVehicles.forEach(v => {
-      if (!groups[v.company]) groups[v.company] = [];
-      groups[v.company].push(v);
-    });
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [filteredVehicles]);
 
   const vehicleRows = useMemo(
     () =>
