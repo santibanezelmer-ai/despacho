@@ -33,10 +33,10 @@ const availabilityLabel: Record<string, string> = {
   no_disponible: 'No disponible',
 };
 
-const availabilityDot: Record<string, string> = {
-  en_emergencia: '🚨',
-  disponible: '🟢',
-  no_disponible: '🔴',
+const availabilitySquare: Record<string, string> = {
+  en_emergencia: 'bg-emergency',
+  disponible: 'bg-success',
+  no_disponible: 'bg-destructive',
 };
 
 const volunteerStatusLabel: Record<string, string> = {
