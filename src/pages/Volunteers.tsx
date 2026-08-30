@@ -154,6 +154,17 @@ export default function Volunteers() {
                         {v.status}
                       </span>
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        disabled={!canWrite || busyId === v.id}
+                        onClick={() => toggleAvailability(v)}
+                        title={canWrite ? 'Cambiar disponibilidad' : undefined}
+                        className={`status-badge ${v.available ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'} ${canWrite ? 'cursor-pointer' : 'cursor-default'}`}
+                      >
+                        {v.available ? 'Disponible' : 'No disponible'}
+                      </button>
+                    </td>
                     <td className="px-4 py-3">{pwaBadge(v)}</td>
                     {canWrite && (
                       <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur">
