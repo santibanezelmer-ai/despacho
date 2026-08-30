@@ -388,7 +388,7 @@ export default function CentralScreen() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground flex items-center gap-2">
                     <span
-                      className={`inline-block h-3 w-3 rounded-sm ${availabilitySquare[a.availability] ?? 'bg-muted'}`}
+                      className={`inline-block h-4 w-4 rounded ${availabilitySquare[a.availability] ?? 'bg-muted'}`}
                       aria-hidden="true"
                     />
                     {a.rank} {a.name}
