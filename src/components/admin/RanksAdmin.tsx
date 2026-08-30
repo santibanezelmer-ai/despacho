@@ -125,7 +125,7 @@ export default function RanksAdmin() {
   );
 }
 
-function RankRow({ rank, onDelete, onUpdate }: { rank: any; onDelete: (id: string) => void; onUpdate: (data: { id: string; name: string; level: number }) => void }) {
+function RankRow({ rank, onDelete, onUpdate }: { rank: any; onDelete: (id: string) => void; onUpdate: (data: { id: string; name: string; level: number; is_authority?: boolean }) => void }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(rank.name);
   const [level, setLevel] = useState(String(rank.level));
