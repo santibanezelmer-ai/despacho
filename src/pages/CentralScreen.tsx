@@ -210,6 +210,30 @@ export default function CentralScreen() {
     [volunteers, assignedVolunteerIds]
   );
 
+  // Voluntarios con grado/cargo de autoridad — disponibilidad operacional
+  const authorityRows = useMemo(
+    () =>
+      (volunteers ?? [])
+        .filter((v: any) => v.ranks?.is_authority && v.status === 'activo')
+        .map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          rank: v.ranks?.name ?? '—',
+          company: v.companies?.name ?? 'Sin compañía',
+          availability: assignedVolunteerIds.has(v.id)
+            ? 'en_emergencia'
+            : v.available
+              ? 'disponible'
+              : 'no_disponible',
+        }))
+        .sort((a, b) => {
+          const order = { en_emergencia: 0, disponible: 1, no_disponible: 2 } as Record<string, number>;
+          const diff = order[a.availability] - order[b.availability];
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }),
+    [volunteers, assignedVolunteerIds]
+  );
+
   const filteredVolunteers = useMemo(() => {
     if (!volSearch) return volunteerRows;
     const q = volSearch.toLowerCase();
