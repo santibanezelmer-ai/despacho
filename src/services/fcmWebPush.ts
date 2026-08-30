@@ -25,11 +25,14 @@ function isSupported(): boolean {
   return true;
 }
 
-async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+export async function ensureVolunteerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    const reg = await navigator.serviceWorker.register('/voluntario-sw.js', { scope: '/voluntario' });
-    await navigator.serviceWorker.ready;
+    const reg = await navigator.serviceWorker.register('/voluntario-sw.js', {
+      scope: '/voluntario',
+      updateViaCache: 'none',
+    });
+    await reg.update();
     return reg;
   } catch (e) {
     console.error('[FCM Web] SW register failed', e);
@@ -65,15 +68,18 @@ export async function registerVolunteerPush(organizationId: string, userId: stri
     return null;
   }
 
-  const perm = await requestNotificationPermission();
-  console.log('[FCM Web] Notification permission:', perm);
-  if (perm !== 'granted') return null;
-
-  const swReg = await ensureServiceWorker();
+  // The volunteer worker owns /voluntario independently from notification
+  // permission. This prevents an older root app-shell worker from serving a
+  // stale PWA bundle when notifications have been denied.
+  const swReg = await ensureVolunteerServiceWorker();
   if (!swReg) {
     console.error('[FCM Web] Service worker registration failed.');
     return null;
   }
+
+  const perm = await requestNotificationPermission();
+  console.log('[FCM Web] Notification permission:', perm);
+  if (perm !== 'granted') return null;
 
   try {
     const token = await getToken(m, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });

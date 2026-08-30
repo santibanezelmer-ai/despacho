@@ -99,4 +99,23 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    // Previous app-shell versions cached compiled bundles that referenced the
+    // retired Carto layer. This worker intentionally does not cache the shell;
+    // remove only Operix/Workbox app caches and leave messaging data alone.
+    const cacheNames = await caches.keys();
+    const staleAppCaches = cacheNames.filter((name) =>
+      /(^|-)precache-v\d+-|(^|-)runtime-/.test(name) || name === 'supabase-api'
+    );
+    await Promise.allSettled(staleAppCaches.map((name) => caches.delete(name)));
+    await self.clients.claim();
+
+    const clientsArr = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientsArr) {
+      if (client.url.includes('/voluntario')) {
+        try { client.postMessage({ type: 'operix-pwa-updated' }); } catch { /* ignore */ }
+      }
+    }
+  })());
+});
