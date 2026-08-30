@@ -33,10 +33,10 @@ const availabilityLabel: Record<string, string> = {
   no_disponible: 'No disponible',
 };
 
-const availabilityDot: Record<string, string> = {
-  en_emergencia: '🚨',
-  disponible: '🟢',
-  no_disponible: '🔴',
+const availabilitySquare: Record<string, string> = {
+  en_emergencia: 'bg-emergency',
+  disponible: 'bg-success',
+  no_disponible: 'bg-destructive',
 };
 
 const volunteerStatusLabel: Record<string, string> = {
@@ -386,8 +386,11 @@ export default function CentralScreen() {
             {authorityRows.map(a => (
               <div key={a.id} className="flex items-center justify-between gap-3 bg-card px-4 py-2.5">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">
-                    <span className="mr-1">{availabilityDot[a.availability]}</span>
+                  <p className="truncate text-sm font-semibold text-foreground flex items-center gap-2">
+                    <span
+                      className={`inline-block h-4 w-4 rounded ${availabilitySquare[a.availability] ?? 'bg-muted'}`}
+                      aria-hidden="true"
+                    />
                     {a.rank} {a.name}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{a.company}</p>
