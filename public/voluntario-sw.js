@@ -111,11 +111,12 @@ self.addEventListener('activate', (event) => {
     await Promise.allSettled(staleAppCaches.map((name) => caches.delete(name)));
     await self.clients.claim();
 
-    const clientsArr = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of clientsArr) {
-      if (client.url.includes('/voluntario')) {
-        try { client.postMessage({ type: 'operix-pwa-updated' }); } catch { /* ignore */ }
-      }
+    if (staleAppCaches.length > 0) {
+      const clientsArr = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      await Promise.allSettled(clientsArr.map((client) => {
+        if (!client.url.includes('/voluntario')) return Promise.resolve();
+        return client.navigate(client.url);
+      }));
     }
   })());
 });
