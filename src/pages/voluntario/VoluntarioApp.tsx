@@ -11,7 +11,7 @@ import VoluntarioDetail from './VoluntarioDetail';
 import VoluntarioHistory from './VoluntarioHistory';
 import VoluntarioProfile from './VoluntarioProfile';
 import VoluntarioMap from './VoluntarioMap';
-import { listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
+import { ensureVolunteerServiceWorker, listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
 import { playDefaultDispatchTone } from '@/services/defaultDispatchTone';
 import { toast } from 'sonner';
 
@@ -30,6 +30,12 @@ export default function VoluntarioApp() {
   const [checking, setChecking] = useState(true);
   const [membership, setMembership] = useState<VolunteerMembership | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Keep the volunteer PWA under its dedicated worker even when push
+  // permission is denied, so an old root app cache cannot retain map code.
+  useEffect(() => {
+    ensureVolunteerServiceWorker().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (loading) return;
