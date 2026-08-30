@@ -250,6 +250,16 @@ export default function CentralScreen() {
     return vehicleRows.filter(v => v.code.toLowerCase().includes(q) || v.company.toLowerCase().includes(q) || v.type.toLowerCase().includes(q));
   }, [vehicleRows, vehSearch]);
 
+  // Group vehicles by company
+  const vehiclesByCompany = useMemo(() => {
+    const groups: Record<string, typeof filteredVehicles> = {};
+    filteredVehicles.forEach(v => {
+      if (!groups[v.company]) groups[v.company] = [];
+      groups[v.company].push(v);
+    });
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filteredVehicles]);
+
   const totalVehicles = (vehicles ?? []).length;
   const totalVolunteers = (volunteers ?? []).length;
   const availableVehicles = vehicleRows.filter(v => v.statusKey === 'disponible').length;
