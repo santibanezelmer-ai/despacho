@@ -17,6 +17,37 @@ const VAPID_KEY = 'BMQbEtdZaI13l21Czf-WTTDGUGb3JfDdHi_5kUTQG_-ZcwjFYr4ucBZpKzQM5
 let app: FirebaseApp | null = null;
 let messaging: Messaging | null = null;
 
+function canRegisterVolunteerWorker(): boolean {
+  if (!import.meta.env.PROD) return false;
+  try {
+    if (window.self !== window.top) return false;
+  } catch {
+    return false;
+  }
+
+  const hostname = window.location.hostname;
+  return !(
+    hostname.startsWith('id-preview--') ||
+    hostname.startsWith('preview--') ||
+    hostname === 'lovableproject.com' ||
+    hostname.endsWith('.lovableproject.com') ||
+    hostname === 'lovableproject-dev.com' ||
+    hostname.endsWith('.lovableproject-dev.com') ||
+    hostname === 'beta.lovable.dev' ||
+    hostname.endsWith('.beta.lovable.dev') ||
+    new URLSearchParams(window.location.search).get('sw') === 'off'
+  );
+}
+
+async function unregisterVolunteerWorker(): Promise<void> {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(
+    registrations
+      .filter((registration) => new URL(registration.scope).pathname.startsWith('/voluntario'))
+      .map((registration) => registration.unregister()),
+  );
+}
+
 function isSupported(): boolean {
   if (typeof window === 'undefined') return false;
   if (!('serviceWorker' in navigator)) return false;
@@ -27,6 +58,10 @@ function isSupported(): boolean {
 
 export async function ensureVolunteerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
+  if (!canRegisterVolunteerWorker()) {
+    await unregisterVolunteerWorker();
+    return null;
+  }
   try {
     const reg = await navigator.serviceWorker.register('/voluntario-sw.js', {
       scope: '/voluntario',
