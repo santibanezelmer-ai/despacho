@@ -56,7 +56,16 @@ import SecurityGuard from "@/components/security/SecurityGuard";
 import UserWatermark from "@/components/security/UserWatermark";
 import { canAccessPath, defaultPathFor } from "@/lib/rolePermissions";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Evitar refetch/re-render al cambiar de pestaña o volver al navegador.
+      // Las vistas operativas ya usan polling con intervalos propios.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  },
+});
 
 function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
