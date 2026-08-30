@@ -371,6 +371,45 @@ export default function CentralScreen() {
         )}
       </div>
 
+      {/* Disponibilidad del personal de mando (solo lectura) */}
+      <div className="rounded-lg border border-border bg-card mb-4">
+        <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Shield className="h-4 w-4 text-warning" /> Disponibilidad del personal de mando
+          </h2>
+          <span className="text-xs font-mono text-muted-foreground">
+            {authorityRows.filter(a => a.availability === 'disponible').length}/{authorityRows.length} disponibles
+          </span>
+        </div>
+        {authorityRows.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-border/30">
+            {authorityRows.map(a => (
+              <div key={a.id} className="flex items-center justify-between gap-3 bg-card px-4 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    <span className="mr-1">{availabilityDot[a.availability]}</span>
+                    {a.rank} {a.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{a.company}</p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    statusPillClass[a.availability] ?? statusPillClass.inactivo
+                  }`}
+                >
+                  {availabilityLabel[a.availability]}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+            Sin personal de mando configurado — marca los grados de autoridad en Ajustes › Rangos
+          </p>
+        )}
+      </div>
+
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* Voluntarios - vista compacta agrupada por compañía */}
         <div className="rounded-lg border border-border bg-card">
