@@ -13,7 +13,7 @@ export function useVolunteers(options: UseVolunteersOptions = {}) {
   const query = useQuery({
     queryKey: ['volunteers', orgId],
     queryFn: async () => {
-      const q = supabase.from('volunteers').select('*, companies(name), ranks(name)');
+      const q = supabase.from('volunteers').select('*, companies(name), ranks(name, is_authority)');
       const { data, error } = await (q as any).eq('organization_id', orgId).order('name');
       if (error) throw error;
       return data;
