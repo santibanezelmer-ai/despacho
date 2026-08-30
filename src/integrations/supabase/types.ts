@@ -1594,13 +1594,210 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_checklists: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          emergency_id: string | null
+          fuel_level: number | null
+          id: string
+          items: Json
+          kind: string
+          notes: string | null
+          odometer: number | null
+          organization_id: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          emergency_id?: string | null
+          fuel_level?: number | null
+          id?: string
+          items?: Json
+          kind?: string
+          notes?: string | null
+          odometer?: number | null
+          organization_id: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          emergency_id?: string | null
+          fuel_level?: number | null
+          id?: string
+          items?: Json
+          kind?: string
+          notes?: string | null
+          odometer?: number | null
+          organization_id?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_checklists_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_checklists_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_checklists_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          doc_number: string | null
+          doc_type: string
+          expires_at: string | null
+          file_url: string | null
+          id: string
+          issued_at: string | null
+          notes: string | null
+          organization_id: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          doc_number?: string | null
+          doc_type: string
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          issued_at?: string | null
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          doc_number?: string | null
+          doc_type?: string
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          issued_at?: string | null
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_maintenance: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          maintenance_type: string
+          next_service_date: string | null
+          next_service_odometer: number | null
+          notes: string | null
+          odometer: number | null
+          organization_id: string
+          provider: string | null
+          service_date: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          maintenance_type: string
+          next_service_date?: string | null
+          next_service_odometer?: number | null
+          notes?: string | null
+          odometer?: number | null
+          organization_id: string
+          provider?: string | null
+          service_date?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          maintenance_type?: string
+          next_service_date?: string | null
+          next_service_odometer?: number | null
+          notes?: string | null
+          odometer?: number | null
+          organization_id?: string
+          provider?: string | null
+          service_date?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_maintenance_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_maintenance_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
+          brand: string | null
           capacity: number
           code: string
           company_id: string | null
           created_at: string
+          fuel_level: number | null
+          fuel_updated_at: string | null
           id: string
+          model: string | null
           odometer: number | null
           organization_id: string
           plate: string | null
@@ -1610,11 +1807,15 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          brand?: string | null
           capacity?: number
           code: string
           company_id?: string | null
           created_at?: string
+          fuel_level?: number | null
+          fuel_updated_at?: string | null
           id?: string
+          model?: string | null
           odometer?: number | null
           organization_id: string
           plate?: string | null
@@ -1624,11 +1825,15 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          brand?: string | null
           capacity?: number
           code?: string
           company_id?: string | null
           created_at?: string
+          fuel_level?: number | null
+          fuel_updated_at?: string | null
           id?: string
+          model?: string | null
           odometer?: number | null
           organization_id?: string
           plate?: string | null
