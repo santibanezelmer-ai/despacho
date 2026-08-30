@@ -15,15 +15,18 @@ interface VehicleData {
   id?: string;
   code: string;
   type: string;
+  brand: string;
+  model: string;
   plate: string;
   year: string;
   capacity: string;
   company_id: string;
   status: string;
+  fuel_level: string;
 }
 
 const empty: VehicleData = {
-  code: '', type: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible',
+  code: '', type: '', brand: '', model: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible', fuel_level: '',
 };
 
 interface Props {
@@ -46,11 +49,14 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         id: vehicle.id,
         code: vehicle.code,
         type: vehicle.type,
+        brand: vehicle.brand ?? '',
+        model: vehicle.model ?? '',
         plate: vehicle.plate ?? '',
         year: vehicle.year?.toString() ?? '',
         capacity: vehicle.capacity?.toString() ?? '6',
         company_id: vehicle.company_id ?? '',
         status: vehicle.status,
+        fuel_level: vehicle.fuel_level?.toString() ?? '',
       });
     } else {
       setForm(empty);
@@ -64,16 +70,20 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
     }
     setSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         code: form.code.trim(),
         type: form.type.trim(),
+        brand: form.brand.trim() || null,
+        model: form.model.trim() || null,
         plate: form.plate.trim() || null,
         year: form.year ? parseInt(form.year) : null,
         capacity: parseInt(form.capacity) || 6,
         company_id: form.company_id || null,
         status: form.status as any,
         organization_id: orgId!,
+        fuel_level: form.fuel_level === '' ? null : Math.max(0, Math.min(100, parseInt(form.fuel_level))),
       };
+      if (form.fuel_level !== '') payload.fuel_updated_at = new Date().toISOString();
 
       if (isEdit) {
         const { error } = await supabase.from('vehicles').update(payload).eq('id', form.id!);
@@ -112,12 +122,26 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <Label className="text-xs">Marca</Label>
+              <Input value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} placeholder="Mercedes-Benz" className="bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs">Modelo</Label>
+              <Input value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} placeholder="Atego 1725" className="bg-muted/50" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
               <Label className="text-xs">Patente</Label>
               <Input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} className="bg-muted/50" />
             </div>
             <div>
               <Label className="text-xs">Año</Label>
               <Input value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} type="number" className="bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs">Combustible %</Label>
+              <Input value={form.fuel_level} onChange={e => setForm(f => ({ ...f, fuel_level: e.target.value }))} type="number" min={0} max={100} className="bg-muted/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
