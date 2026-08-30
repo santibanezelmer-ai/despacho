@@ -78,6 +78,14 @@ export default function Volunteers() {
     setBusyId(null);
   };
 
+  const toggleAvailability = async (v: any) => {
+    setBusyId(v.id);
+    const { error } = await (supabase as any).from('volunteers').update({ available: !v.available }).eq('id', v.id);
+    if (error) toast.error(error.message);
+    else { toast.success(v.available ? 'Marcado como No disponible' : 'Marcado como Disponible'); qc.invalidateQueries({ queryKey: ['volunteers'] }); }
+    setBusyId(null);
+  };
+
   const pwaBadge = (v: any) => {
     if (v.user_id) {
       return v.pwa_enabled
