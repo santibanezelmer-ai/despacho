@@ -138,22 +138,20 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         const assignedAt = (ev as any)?.assigned_at ?? emg.created_at;
         const releasedAt = (ev as any)?.released_at ?? null;
 
-        // Row 1: MOVIL | CLAVE | HORA SALIDA | KM SALIDA | FECHA
-        const lw = contentW * 0.11; // label width
-        const vw = contentW * 0.09; // value width
+        // Row 1: MOVIL | CLAVE | HORA SALIDA | KM SALIDA | FECHA (5 label/value pairs)
+        const r1: number[] = [18, 24, 16, 24, 22, 24, 20, 24, 16, contentW - 188];
         drawDataRow(
-          ['MOVIL', v?.code ?? '', 'CLAVE', ek?.code ?? '', 'HORA SALIDA', fmtTime(assignedAt),
-            'KM SALIDA', (ev as any)?.odometer_start != null ? String((ev as any).odometer_start) : '',
+          ['MOVIL', v?.code ?? '', 'CLAVE', ek?.code ?? '', 'HORA\nSALIDA', fmtTime(assignedAt),
+            'KM\nSALIDA', (ev as any)?.odometer_start != null ? String((ev as any).odometer_start) : '',
             'FECHA', fmtDate(assignedAt)],
-          [lw, vw, lw, vw, lw + 4, vw, lw + 4, vw, lw, contentW - (4 * lw + 3 * vw + 8) - lw + vw + vw],
-          11,
+          r1, 11,
         );
         // Row 2: SECTOR | HORA LLEGADA | KM LLEGADA
+        const r2: number[] = [18, 70, 22, 26, 22, contentW - 158];
         drawDataRow(
-          ['SECTOR', emg.address ?? '', 'HORA LLEGADA', fmtTime(releasedAt),
-            'KM LLEGADA', (ev as any)?.odometer_end != null ? String((ev as any).odometer_end) : ''],
-          [lw, contentW * 0.40, lw + 6, vw + 4, lw + 6, contentW - (2 * lw + 12) - (2 * vw + 4) - contentW * 0.40],
-          11,
+          ['SECTOR', emg.address ?? '', 'HORA\nLLEGADA', fmtTime(releasedAt),
+            'KM\nLLEGADA', (ev as any)?.odometer_end != null ? String((ev as any).odometer_end) : ''],
+          r2, 11,
         );
         // Row 3: CONDUCTOR/A | A CARGO
         drawDataRow(
