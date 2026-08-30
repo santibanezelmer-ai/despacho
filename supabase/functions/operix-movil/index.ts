@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         .eq('code', code)
         .maybeSingle();
 
-      if (!codeRow) return json({ error: 'Código no válido' }, 404);
+      if (!codeRow) return json({ error: 'Código no válido' }, 410);
       if (new Date(codeRow.expires_at).getTime() < Date.now()) {
         return json({ error: 'El código ha expirado' }, 410);
       }
