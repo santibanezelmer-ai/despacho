@@ -82,57 +82,109 @@ Deno.serve(async (req) => {
     const action = new URL(req.url).pathname.split('/').filter(Boolean).pop() ?? '';
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
 
-    // ---------- 1. Activación del dispositivo ----------
+    // ---------- 1. Activación del dispositivo (atómica) ----------
     if (action === 'activate') {
       const code = String(body?.code ?? '').trim().toUpperCase();
       if (code.length < 6) return json({ error: 'Código no válido' }, 400);
 
       const { data: codeRow } = await supabase
         .from('vehicle_device_codes')
-        .select('id, organization_id, label, expires_at, used_at')
+        .select('id, organization_id, label, expires_at, used_at, used_by_device_id')
         .eq('code', code)
         .maybeSingle();
 
       if (!codeRow) return json({ error: 'Código no válido' }, 404);
-      if (codeRow.used_at) return json({ error: 'El código ya fue utilizado' }, 410);
       if (new Date(codeRow.expires_at).getTime() < Date.now()) {
         return json({ error: 'El código ha expirado' }, 410);
       }
 
+      const deviceName = String(body?.device_name ?? codeRow.label ?? 'Dispositivo móvil').slice(0, 80);
+      const platform = String(body?.platform ?? 'unknown').slice(0, 40);
       const token = newDeviceToken();
-      const { data: device, error } = await supabase
-        .from('vehicle_devices')
-        .insert({
-          organization_id: codeRow.organization_id,
-          name: String(body?.device_name ?? codeRow.label ?? 'Dispositivo móvil').slice(0, 80),
-          platform: String(body?.platform ?? 'unknown').slice(0, 40),
-          token_hash: await sha256(token),
-        })
-        .select('id, organization_id, name')
-        .single();
-      if (error) return json({ error: error.message }, 400);
+      const tokenHash = await sha256(token);
 
-      // Consumo de un solo uso.
-      await supabase
+      // Reserva atómica del código: solo un intento puede pasar de aquí.
+      const { data: claimed } = await supabase
         .from('vehicle_device_codes')
-        .update({ used_at: new Date().toISOString(), used_by_device_id: device.id })
+        .update({ used_at: new Date().toISOString() })
         .eq('id', codeRow.id)
-        .is('used_at', null);
+        .is('used_at', null)
+        .select('id')
+        .maybeSingle();
+
+      let deviceId: string | null = null;
+
+      if (claimed) {
+        const { data: device, error } = await supabase
+          .from('vehicle_devices')
+          .insert({
+            organization_id: codeRow.organization_id,
+            name: deviceName,
+            platform,
+            token_hash: tokenHash,
+          })
+          .select('id')
+          .single();
+
+        if (error || !device) {
+          // Falla al crear: se libera el código para que pueda reintentarse.
+          await supabase
+            .from('vehicle_device_codes')
+            .update({ used_at: null, used_by_device_id: null })
+            .eq('id', codeRow.id);
+          return json({ error: error?.message ?? 'No se pudo crear el dispositivo' }, 400);
+        }
+
+        deviceId = device.id;
+        await supabase
+          .from('vehicle_device_codes')
+          .update({ used_by_device_id: device.id })
+          .eq('id', codeRow.id);
+      } else {
+        // El código ya fue consumido: solo se permite reintento idempotente
+        // (misma solicitud repetida) sobre el dispositivo recién creado que
+        // aún no ha tenido actividad. Evita duplicados y falsos 410.
+        const usedAt = codeRow.used_at ? new Date(codeRow.used_at).getTime() : 0;
+        const fresh = Date.now() - usedAt < 15 * 60 * 1000;
+        if (!codeRow.used_by_device_id || !fresh) {
+          return json({ error: 'El código ya fue utilizado' }, 410);
+        }
+
+        const { data: existing } = await supabase
+          .from('vehicle_devices')
+          .select('id, status, last_seen_at, vehicle_id')
+          .eq('id', codeRow.used_by_device_id)
+          .eq('organization_id', codeRow.organization_id)
+          .maybeSingle();
+
+        if (!existing || existing.status !== 'active' || existing.last_seen_at || existing.vehicle_id) {
+          return json({ error: 'El código ya fue utilizado' }, 410);
+        }
+
+        // Se rota el token del mismo dispositivo (no se crea otro).
+        const { error: rotErr } = await supabase
+          .from('vehicle_devices')
+          .update({ token_hash: tokenHash, name: deviceName, platform })
+          .eq('id', existing.id);
+        if (rotErr) return json({ error: 'El código ya fue utilizado' }, 410);
+        deviceId = existing.id;
+      }
 
       const { data: org } = await supabase
         .from('organizations')
         .select('id, name, time_format')
-        .eq('id', device.organization_id)
+        .eq('id', codeRow.organization_id)
         .maybeSingle();
 
       return json({
-        device_id: device.id,
+        device_id: deviceId,
         device_token: token,
-        device_name: device.name,
+        device_name: deviceName,
         organization: org,
-        vehicles: await vehiclesOfOrg(device.organization_id),
+        vehicles: await vehiclesOfOrg(codeRow.organization_id),
       });
     }
+
 
     // ---------- Rutas autenticadas por dispositivo ----------
     const device = await authDevice(req);
