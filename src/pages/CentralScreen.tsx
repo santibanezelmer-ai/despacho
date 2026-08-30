@@ -39,12 +39,6 @@ const availabilitySquare: Record<string, string> = {
   no_disponible: 'bg-destructive',
 };
 
-const volunteerStatusLabel: Record<string, string> = {
-  en_emergencia: 'EN EMERG.',
-  activo: 'ACTIVO',
-  inactivo: 'INACTIVO',
-  licencia: 'LICENCIA',
-};
 
 const vehicleStatusLabel: Record<string, string> = {
   en_emergencia: 'EN EMERG.',
@@ -234,21 +228,15 @@ export default function CentralScreen() {
     [volunteers, assignedVolunteerIds]
   );
 
-  const filteredVolunteers = useMemo(() => {
-    if (!volSearch) return volunteerRows;
-    const q = volSearch.toLowerCase();
-    return volunteerRows.filter(v => v.name.toLowerCase().includes(q) || v.company.toLowerCase().includes(q));
-  }, [volunteerRows, volSearch]);
-
-  // Group volunteers by company
-  const volunteersByCompany = useMemo(() => {
-    const groups: Record<string, typeof filteredVolunteers> = {};
-    filteredVolunteers.forEach(v => {
+  // Group vehicles by company
+  const vehiclesByCompany = useMemo(() => {
+    const groups: Record<string, typeof filteredVehicles> = {};
+    filteredVehicles.forEach(v => {
       if (!groups[v.company]) groups[v.company] = [];
       groups[v.company].push(v);
     });
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [filteredVolunteers]);
+  }, [filteredVehicles]);
 
   const vehicleRows = useMemo(
     () =>
