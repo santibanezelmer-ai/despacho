@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban } from 'lucide-react';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
+import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
@@ -66,6 +78,9 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
     ? STATUS_ORDER[currentIdx + 1]
     : null;
   const [showActions, setShowActions] = useState(false);
+  const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
+  const unassign = useUnassignVehicle();
+
 
   const flags = [
     emergency.external_support && { icon: Shield, label: '10-12', color: 'text-warning' },
@@ -154,13 +169,27 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
 
           {emergency.vehicleCodes.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {emergency.vehicleCodes.map(v => (
-                <span key={v} className="rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+              {emergency.vehicleCodes.map((v, i) => (
+                <span
+                  key={v}
+                  className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground"
+                >
                   {v}
+                  {emergency.vehicleIds?.[i] && (
+                    <button
+                      type="button"
+                      title={`Quitar móvil ${v} de la emergencia`}
+                      className="text-destructive/70 hover:text-destructive"
+                      onClick={() => setUnassignTarget({ vehicleId: emergency.vehicleIds[i], code: v })}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </span>
               ))}
             </div>
           )}
+
 
           <div className="mt-3 flex gap-2">
             {/* Actions button */}
@@ -194,6 +223,38 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
           onClose={() => setShowActions(false)}
         />
       )}
+
+      <AlertDialog open={!!unassignTarget} onOpenChange={open => { if (!open) setUnassignTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar asignación del móvil {unassignTarget?.code}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se quitará el móvil {unassignTarget?.code} de la emergencia {emergency.folio} junto con el personal
+              asignado a él. El móvil volverá a estado disponible y la acción quedará registrada en la bitácora de la
+              emergencia. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unassign.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={unassign.isPending}
+              onClick={e => {
+                e.preventDefault();
+                if (!unassignTarget) return;
+                unassign.mutate(
+                  { emergencyId: emergency.id, ...unassignTarget },
+                  { onSuccess: () => setUnassignTarget(null) },
+                );
+              }}
+            >
+              {unassign.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Eliminar asignación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </>
   );
 }
