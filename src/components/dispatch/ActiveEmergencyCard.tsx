@@ -223,6 +223,38 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
           onClose={() => setShowActions(false)}
         />
       )}
+
+      <AlertDialog open={!!unassignTarget} onOpenChange={open => { if (!open) setUnassignTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar asignación del móvil {unassignTarget?.code}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se quitará el móvil {unassignTarget?.code} de la emergencia {emergency.folio} junto con el personal
+              asignado a él. El móvil volverá a estado disponible y la acción quedará registrada en la bitácora de la
+              emergencia. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unassign.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={unassign.isPending}
+              onClick={e => {
+                e.preventDefault();
+                if (!unassignTarget) return;
+                unassign.mutate(
+                  { emergencyId: emergency.id, ...unassignTarget },
+                  { onSuccess: () => setUnassignTarget(null) },
+                );
+              }}
+            >
+              {unassign.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Eliminar asignación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </>
   );
 }
