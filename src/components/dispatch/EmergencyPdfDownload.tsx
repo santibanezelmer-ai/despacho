@@ -139,7 +139,7 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         const releasedAt = (ev as any)?.released_at ?? null;
 
         // Row 1: MOVIL | CLAVE | HORA SALIDA | KM SALIDA | FECHA (5 label/value pairs)
-        const r1: number[] = [18, 24, 16, 24, 22, 24, 20, 24, 16, contentW - 188];
+        const r1: number[] = [16, 22, 14, 22, 18, 22, 18, 22, 14, contentW - 168];
         drawDataRow(
           ['MOVIL', v?.code ?? '', 'CLAVE', ek?.code ?? '', 'HORA\nSALIDA', fmtTime(assignedAt),
             'KM\nSALIDA', (ev as any)?.odometer_start != null ? String((ev as any).odometer_start) : '',
