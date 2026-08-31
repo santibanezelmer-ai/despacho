@@ -78,6 +78,9 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
     ? STATUS_ORDER[currentIdx + 1]
     : null;
   const [showActions, setShowActions] = useState(false);
+  const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
+  const unassign = useUnassignVehicle();
+
 
   const flags = [
     emergency.external_support && { icon: Shield, label: '10-12', color: 'text-warning' },
