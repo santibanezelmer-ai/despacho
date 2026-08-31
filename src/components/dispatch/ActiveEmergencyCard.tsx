@@ -154,13 +154,27 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
 
           {emergency.vehicleCodes.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {emergency.vehicleCodes.map(v => (
-                <span key={v} className="rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+              {emergency.vehicleCodes.map((v, i) => (
+                <span
+                  key={v}
+                  className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground"
+                >
                   {v}
+                  {emergency.vehicleIds?.[i] && (
+                    <button
+                      type="button"
+                      title={`Quitar móvil ${v} de la emergencia`}
+                      className="text-destructive/70 hover:text-destructive"
+                      onClick={() => setUnassignTarget({ vehicleId: emergency.vehicleIds[i], code: v })}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </span>
               ))}
             </div>
           )}
+
 
           <div className="mt-3 flex gap-2">
             {/* Actions button */}
