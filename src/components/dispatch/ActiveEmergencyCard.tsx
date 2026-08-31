@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban } from 'lucide-react';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
+import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
