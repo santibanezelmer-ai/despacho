@@ -45,6 +45,7 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
       return data as any[];
     },
     enabled: !!emergencyId,
+    refetchInterval: 5000,
   });
 
   const unassign = useMutation({
@@ -83,6 +84,7 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-assigned', emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-return', emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['emergency-personnel', emergencyId] });
+      queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       toast.success('Asignación eliminada');

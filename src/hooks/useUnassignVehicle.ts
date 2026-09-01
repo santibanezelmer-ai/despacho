@@ -62,6 +62,7 @@ export function useUnassignVehicle() {
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-assigned', vars.emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-return', vars.emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['emergency-personnel', vars.emergencyId] });
+      queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', vars.emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       toast.success(`Móvil ${vars.code} desasignado`);
