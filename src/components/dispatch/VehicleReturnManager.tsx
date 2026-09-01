@@ -32,6 +32,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
       return data as any[];
     },
     enabled: !!emergencyId,
+    refetchInterval: 5000,
   });
 
   const returnMutation = useMutation({

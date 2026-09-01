@@ -92,7 +92,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     return () => { cancelled = true; };
   }, [emergency.id, isClosed]);
 
-  const { data: allVehicles } = useVehicles();
+  const { data: allVehicles } = useVehicles({ refetchInterval: 5000 });
   const available = (allVehicles ?? []).filter(
     v => v.status === 'disponible' && !assignedVehicleIds.includes(v.id)
   );

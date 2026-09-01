@@ -48,6 +48,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
       }));
     },
     enabled: !!emergencyId,
+    refetchInterval: 5000,
   });
 
   const [adding, setAdding] = useState<Record<string, { volunteerId: string; role: string }>>({});
