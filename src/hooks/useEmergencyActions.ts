@@ -9,6 +9,10 @@ function useInvalidate() {
   return () => {
     qc.invalidateQueries({ queryKey: ['active-emergencies'] });
     qc.invalidateQueries({ queryKey: ['vehicles'] });
+    qc.invalidateQueries({ queryKey: ['emergency-vehicles-assigned'] });
+    qc.invalidateQueries({ queryKey: ['emergency-vehicles-return'] });
+    qc.invalidateQueries({ queryKey: ['emergency-vehicle-personnel'] });
+    qc.invalidateQueries({ queryKey: ['emergency-personnel'] });
   };
 }
 
