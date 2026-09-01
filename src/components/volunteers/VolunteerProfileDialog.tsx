@@ -13,6 +13,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVolunteerProfile, seniority } from '@/hooks/useVolunteerProfile';
+import VolunteerPdfDownload from './VolunteerPdfDownload';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { toast } from 'sonner';
 import {
@@ -92,12 +93,21 @@ export default function VolunteerProfileDialog({ open, onClose, volunteer }: Pro
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <User className="h-4 w-4 text-warning" />
             {volunteer.code && (
               <span className="status-badge bg-primary/20 text-primary font-mono">{volunteer.code}</span>
             )}
             {volunteer.name}
+            <span className="ml-auto">
+              <VolunteerPdfDownload
+                volunteer={volunteer}
+                training={(training.data as any[]) ?? []}
+                equipment={(equipment.data as any[]) ?? []}
+                attendance={att}
+                records={(records.data as any[]) ?? []}
+              />
+            </span>
           </DialogTitle>
         </DialogHeader>
 
