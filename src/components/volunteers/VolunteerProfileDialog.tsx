@@ -13,6 +13,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVolunteerProfile, seniority } from '@/hooks/useVolunteerProfile';
+import VolunteerPdfDownload from './VolunteerPdfDownload';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { toast } from 'sonner';
 import {
