@@ -165,12 +165,13 @@ export function buildVolunteerPdf({
     }
 
     rows.forEach(row => {
+      // La medición debe hacerse con la misma tipografía usada al dibujar
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
       const lines = row.map((c, i) => doc.splitTextToSize(c || '—', widths[i] - 3));
       const h = Math.max(6, Math.max(...lines.map(l => l.length)) * 3.7 + 2.8);
       ensure(h);
       let cx = M;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
       lines.forEach((l, i) => {
         doc.rect(cx, y, widths[i], h);
         doc.text(l, cx + 1.5, y + 4);
