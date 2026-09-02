@@ -289,6 +289,10 @@ export default function MapScreen() {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Droplets className="w-3 h-3 text-[hsl(var(--info))]" /> Grifos
         </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Truck className="w-3 h-3 text-success" /> Móviles GPS
+        </div>
+
       </div>
 
       {loadingEmg && (
