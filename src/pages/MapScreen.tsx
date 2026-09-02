@@ -100,6 +100,8 @@ export default function MapScreen() {
   const { data: emergencies, isLoading: loadingEmg } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const { data: sharedHydrants } = useSharedHydrants(bounds);
+  const { data: vehiclePositions } = useVehicleLastPositions({ refetchInterval: 5000 });
+
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
