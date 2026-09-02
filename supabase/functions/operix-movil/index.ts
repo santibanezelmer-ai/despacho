@@ -75,6 +75,51 @@ async function vehiclesOfOrg(orgId: string) {
   return data ?? [];
 }
 
+/**
+ * Política de frecuencia GPS adaptativa (reglas determinísticas, sin IA).
+ * La decisión final la aplica LocationService en Android; aquí se publica la
+ * regla vigente para que el cliente no necesite lógica de negocio duplicada.
+ */
+function gpsPolicy(status: string | null | undefined, hasEmergency: boolean) {
+  if (hasEmergency) {
+    return {
+      reason: 'emergencia_activa',
+      tracking: true,
+      interval_seconds: 5,
+      idle_interval_seconds: 5, // la emergencia ignora la detección de detención
+      idle_after_seconds: null as number | null,
+      idle_distance_meters: 25,
+    };
+  }
+  const base = {
+    reason: status ?? 'desconocido',
+    tracking: true,
+    interval_seconds: 30,
+    idle_interval_seconds: 60,
+    idle_after_seconds: 120 as number | null,
+    idle_distance_meters: 25,
+  };
+  switch (status) {
+    case 'en_servicio':
+      return { ...base, interval_seconds: 15 };
+    case 'disponible':
+      return { ...base, interval_seconds: 30 };
+    case 'mantencion':
+    case 'fuera_servicio':
+      return {
+        reason: status,
+        tracking: false,
+        interval_seconds: null,
+        idle_interval_seconds: null,
+        idle_after_seconds: null as number | null,
+        idle_distance_meters: 25,
+      };
+    default:
+      return base;
+  }
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -238,12 +283,18 @@ Deno.serve(async (req) => {
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', device.id);
 
+      const emergency = vehicle
+        ? await activeEmergencyForVehicle(device.organization_id, vehicle.id)
+        : null;
+
       return json({
         device: { id: device.id, name: device.name, organization_id: device.organization_id },
         vehicle,
         last_position: last,
-        emergency: vehicle ? await activeEmergencyForVehicle(device.organization_id, vehicle.id) : null,
+        emergency,
+        gps_policy: gpsPolicy(vehicle?.status, !!emergency),
       });
+
     }
 
     // ---------- 3. Ubicación GPS (individual o por lotes) ----------
@@ -287,7 +338,19 @@ Deno.serve(async (req) => {
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', device.id);
 
-      return json({ ok: true, accepted: rows.length, emergency_id: emergency?.id ?? null });
+      const { data: statusRow } = await supabase
+        .from('vehicles')
+        .select('status')
+        .eq('id', device.vehicle_id)
+        .maybeSingle();
+
+      return json({
+        ok: true,
+        accepted: rows.length,
+        emergency_id: emergency?.id ?? null,
+        gps_policy: gpsPolicy(statusRow?.status, !!emergency),
+      });
+
     }
 
     // ---------- 4. Estado operacional (estados existentes) ----------
