@@ -2,11 +2,13 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { LocateFixed, Loader2, Flame, Droplets, Crosshair, Shield } from 'lucide-react';
+import { LocateFixed, Loader2, Flame, Droplets, Crosshair, Shield, Truck } from 'lucide-react';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
+import { useVehicleLastPositions, isPositionStale, formatPositionAge } from '@/hooks/useVehiclePositions';
+
 
 function useHydrants() {
   return useQuery({
