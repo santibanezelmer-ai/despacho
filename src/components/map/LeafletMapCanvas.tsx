@@ -384,7 +384,52 @@ export default function LeafletMapCanvas({
     }
   }, [emergencies, hydrants, stations, positions, showEmergencies, showHydrants, showStations]);
 
+  // Móviles con GPS (Operix Móvil) — marcadores persistentes, actualizados en sitio
+  const vehicleMarkersRef = useRef<Map<string, L.Marker>>(new Map());
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers = vehicleMarkersRef.current;
+
+    if (!showVehicles) {
+      markers.forEach((m) => m.remove());
+      markers.clear();
+      return;
+    }
+
+    const seen = new Set<string>();
+    vehicles.forEach((v) => {
+      seen.add(v.vehicleId);
+      const latlng: [number, number] = [v.latitude, v.longitude];
+      let marker = markers.get(v.vehicleId);
+      if (!marker) {
+        marker = L.marker(latlng, { icon: buildVehicleIcon(v), zIndexOffset: 800 }).addTo(map);
+        markers.set(v.vehicleId, marker);
+      } else {
+        marker.setLatLng(latlng);
+        marker.setIcon(buildVehicleIcon(v));
+      }
+      marker.bindPopup(buildVehiclePopup(v));
+    });
+
+    markers.forEach((marker, id) => {
+      if (!seen.has(id)) {
+        marker.remove();
+        markers.delete(id);
+      }
+    });
+  }, [vehicles, showVehicles]);
+
+  useEffect(() => {
+    const markers = vehicleMarkersRef.current;
+    return () => {
+      markers.forEach((m) => m.remove());
+      markers.clear();
+    };
+  }, []);
+
   // Geolocation
+
   const locationMarkerRef = useRef<L.Marker | null>(null);
   useEffect(() => {
     if (!locateRequested || !mapRef.current) return;
