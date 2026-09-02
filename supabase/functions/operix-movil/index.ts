@@ -283,12 +283,18 @@ Deno.serve(async (req) => {
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', device.id);
 
+      const emergency = vehicle
+        ? await activeEmergencyForVehicle(device.organization_id, vehicle.id)
+        : null;
+
       return json({
         device: { id: device.id, name: device.name, organization_id: device.organization_id },
         vehicle,
         last_position: last,
-        emergency: vehicle ? await activeEmergencyForVehicle(device.organization_id, vehicle.id) : null,
+        emergency,
+        gps_policy: gpsPolicy(vehicle?.status, !!emergency),
       });
+
     }
 
     // ---------- 3. Ubicación GPS (individual o por lotes) ----------
