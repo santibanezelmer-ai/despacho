@@ -49,8 +49,9 @@ export function useVehicleLastPositions(options: { emergencyId?: string; refetch
     queryFn: async () => {
       let q = (supabase as any)
         .from('vehicle_last_positions')
-        .select('*, vehicles(id, code, status)')
+        .select('*, vehicles(id, code, status, type), emergencies(id, folio, status)')
         .eq('organization_id', orgId);
+
       if (options.emergencyId) q = q.eq('emergency_id', options.emergencyId);
       const { data, error } = await q;
       if (error) throw error;
