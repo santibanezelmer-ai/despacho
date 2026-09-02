@@ -2,11 +2,13 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { LocateFixed, Loader2, Flame, Droplets, Crosshair, Shield } from 'lucide-react';
+import { LocateFixed, Loader2, Flame, Droplets, Crosshair, Shield, Truck } from 'lucide-react';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
+import { useVehicleLastPositions, isPositionStale, formatPositionAge } from '@/hooks/useVehiclePositions';
+
 
 function useHydrants() {
   return useQuery({
@@ -69,6 +71,24 @@ function hydrantIcon(own: boolean) {
   });
 }
 
+function vehicleIcon(code: string, stale: boolean, hasEmergency: boolean, heading: number | null) {
+  const bg = stale ? '#6b7280' : hasEmergency ? '#dc2626' : '#22c55e';
+  const arrow =
+    heading != null && !stale
+      ? `<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(${heading}deg);transform-origin:50% 22px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid ${bg};"></div>`
+      : '';
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;">
+      ${arrow}
+      <div style="background:${bg};color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;${stale ? 'opacity:0.75;' : ''}">${code}</div>
+    </div>`,
+    iconSize: [44, 22],
+    iconAnchor: [22, 11],
+  });
+}
+
+
 export default function MapScreen() {
   const { formatClock } = useTimeFormat();
   const mapRef = useRef<L.Map | null>(null);
@@ -80,6 +100,8 @@ export default function MapScreen() {
   const { data: emergencies, isLoading: loadingEmg } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const { data: sharedHydrants } = useSharedHydrants(bounds);
+  const { data: vehiclePositions } = useVehicleLastPositions({ refetchInterval: 5000 });
+
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -165,6 +187,38 @@ export default function MapScreen() {
     return () => { markers.forEach(m => m.remove()); };
   }, [hydrants, sharedHydrants]);
 
+  // Vehicles GPS layer (Operix Móvil)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers: L.Marker[] = [];
+    (vehiclePositions ?? []).forEach((p) => {
+      if (p.latitude == null || p.longitude == null) return;
+      const stale = isPositionStale(p.captured_at);
+      const code = p.vehicles?.code ?? 'Móvil';
+      const hasEmergency = !!p.emergency_id;
+      const m = L.marker([p.latitude, p.longitude], {
+        icon: vehicleIcon(code, stale, hasEmergency, p.heading ?? null),
+        zIndexOffset: 800,
+      })
+        .bindPopup(`
+          <div style="min-width:170px">
+            <div style="font-weight:700;font-size:13px">Móvil ${code}</div>
+            ${p.vehicles?.type ? `<div style="font-size:12px">Tipo: ${p.vehicles.type}</div>` : ''}
+            ${p.vehicles?.status ? `<div style="font-size:12px">Estado: ${p.vehicles.status}</div>` : ''}
+            ${hasEmergency ? `<div style="font-size:12px;font-weight:700;color:#dc2626">En emergencia${p.emergencies?.folio ? ` · ${p.emergencies.folio}` : ''}</div>` : ''}
+            <div style="font-size:12px">Velocidad: ${p.speed != null ? `${Math.round(p.speed)} km/h` : 'N/D'}</div>
+            <div style="font-size:12px">Última posición: ${formatPositionAge(p.captured_at)}</div>
+            ${stale ? '<div style="font-size:12px;font-weight:700;color:#f59e0b">GPS desactualizado</div>' : ''}
+          </div>
+        `)
+        .addTo(map);
+      markers.push(m);
+    });
+    return () => { markers.forEach(m => m.remove()); };
+  }, [vehiclePositions]);
+
+
   const handleLocate = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -235,6 +289,10 @@ export default function MapScreen() {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Droplets className="w-3 h-3 text-[hsl(var(--info))]" /> Grifos
         </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Truck className="w-3 h-3 text-success" /> Móviles GPS
+        </div>
+
       </div>
 
       {loadingEmg && (
