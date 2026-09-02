@@ -13,8 +13,10 @@ export type VehicleLastPosition = {
   heading: number | null;
   captured_at: string;
   updated_at: string;
-  vehicles: { id: string; code: string; status: string } | null;
+  vehicles: { id: string; code: string; status: string; type: string | null } | null;
+  emergencies: { id: string; folio: string; status: string } | null;
 };
+
 
 /** Antigüedad de la posición en segundos. */
 export function positionAgeSeconds(capturedAt: string): number {
@@ -47,8 +49,9 @@ export function useVehicleLastPositions(options: { emergencyId?: string; refetch
     queryFn: async () => {
       let q = (supabase as any)
         .from('vehicle_last_positions')
-        .select('*, vehicles(id, code, status)')
+        .select('*, vehicles(id, code, status, type), emergencies(id, folio, status)')
         .eq('organization_id', orgId);
+
       if (options.emergencyId) q = q.eq('emergency_id', options.emergencyId);
       const { data, error } = await q;
       if (error) throw error;

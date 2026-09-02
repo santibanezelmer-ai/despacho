@@ -45,13 +45,30 @@ export type MapStation = {
   address: string | null;
 };
 
+export type MapVehicle = {
+  vehicleId: string;
+  code: string;
+  type: string | null;
+  status: string | null;
+  latitude: number;
+  longitude: number;
+  heading: number | null;
+  speed: number | null;
+  emergencyFolio: string | null;
+  hasEmergency: boolean;
+  ageLabel: string;
+  stale: boolean;
+};
+
 type LeafletMapCanvasProps = {
   emergencies: MapEmergency[];
   hydrants: MapHydrant[];
   stations?: MapStation[];
+  vehicles?: MapVehicle[];
   showEmergencies: boolean;
   showHydrants: boolean;
   showStations?: boolean;
+  showVehicles?: boolean;
   onCompatibilityModeChange: (enabled: boolean) => void;
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
@@ -63,6 +80,7 @@ type LeafletMapCanvasProps = {
   /** Ubicación en vivo compartida por el solicitante de una emergencia */
   liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
 };
+
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
 const getEmergencyIcon = (color: string) => {
@@ -148,13 +166,49 @@ const buildStationPopup = (station: MapStation) => {
   </div>`;
 };
 
+const buildVehicleIcon = (vehicle: MapVehicle) => {
+  const bg = vehicle.stale ? '#6b7280' : vehicle.hasEmergency ? '#dc2626' : '#22c55e';
+  const rotation = vehicle.heading != null && !vehicle.stale ? vehicle.heading : null;
+  const arrow =
+    rotation != null
+      ? `<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(${rotation}deg);transform-origin:50% 22px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid ${bg};"></div>`
+      : '';
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;">
+      ${arrow}
+      <div style="background:${bg};color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;${vehicle.stale ? 'opacity:0.75;' : ''}">${escapeHtml(vehicle.code)}</div>
+    </div>`,
+    iconSize: [44, 22],
+    iconAnchor: [22, 11],
+  });
+};
+
+const buildVehiclePopup = (vehicle: MapVehicle) => {
+  const rows = [
+    `<div style="font-weight:700;">Móvil ${escapeHtml(vehicle.code)}</div>`,
+    vehicle.type ? `<div style="font-size:12px;">Tipo: ${escapeHtml(vehicle.type)}</div>` : '',
+    vehicle.status ? `<div style="font-size:12px;">Estado: ${escapeHtml(vehicle.status)}</div>` : '',
+    vehicle.hasEmergency
+      ? `<div style="font-size:12px;font-weight:700;color:#dc2626;">En emergencia${vehicle.emergencyFolio ? ` · ${escapeHtml(vehicle.emergencyFolio)}` : ''}</div>`
+      : `<div style="font-size:12px;color:hsl(var(--muted-foreground));">Sin emergencia asociada</div>`,
+    `<div style="font-size:12px;">Velocidad: ${vehicle.speed != null ? `${Math.round(vehicle.speed)} km/h` : 'N/D'}</div>`,
+    `<div style="font-size:12px;">Última posición: ${escapeHtml(vehicle.ageLabel)}</div>`,
+    `<div style="font-size:11px;">${vehicle.latitude.toFixed(5)}, ${vehicle.longitude.toFixed(5)}</div>`,
+    vehicle.stale ? `<div style="font-size:12px;font-weight:700;color:#f59e0b;">GPS desactualizado</div>` : '',
+  ].filter(Boolean);
+  return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:3px;min-width:180px;">${rows.join('')}</div>`;
+};
+
 export default function LeafletMapCanvas({
   emergencies,
   hydrants,
   stations = [],
+  vehicles = [],
   showEmergencies,
   showHydrants,
   showStations = true,
+  showVehicles = true,
   onCompatibilityModeChange,
   onBoundsChange,
   onMapClick,
@@ -164,6 +218,7 @@ export default function LeafletMapCanvas({
   onLocateResult,
   liveLocation,
 }: LeafletMapCanvasProps) {
+
   const hydrantsRef = useRef(hydrants);
   hydrantsRef.current = hydrants;
   const onHydrantActionRef = useRef(onHydrantAction);
@@ -329,7 +384,52 @@ export default function LeafletMapCanvas({
     }
   }, [emergencies, hydrants, stations, positions, showEmergencies, showHydrants, showStations]);
 
+  // Móviles con GPS (Operix Móvil) — marcadores persistentes, actualizados en sitio
+  const vehicleMarkersRef = useRef<Map<string, L.Marker>>(new Map());
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers = vehicleMarkersRef.current;
+
+    if (!showVehicles) {
+      markers.forEach((m) => m.remove());
+      markers.clear();
+      return;
+    }
+
+    const seen = new Set<string>();
+    vehicles.forEach((v) => {
+      seen.add(v.vehicleId);
+      const latlng: [number, number] = [v.latitude, v.longitude];
+      let marker = markers.get(v.vehicleId);
+      if (!marker) {
+        marker = L.marker(latlng, { icon: buildVehicleIcon(v), zIndexOffset: 800 }).addTo(map);
+        markers.set(v.vehicleId, marker);
+      } else {
+        marker.setLatLng(latlng);
+        marker.setIcon(buildVehicleIcon(v));
+      }
+      marker.bindPopup(buildVehiclePopup(v));
+    });
+
+    markers.forEach((marker, id) => {
+      if (!seen.has(id)) {
+        marker.remove();
+        markers.delete(id);
+      }
+    });
+  }, [vehicles, showVehicles]);
+
+  useEffect(() => {
+    const markers = vehicleMarkersRef.current;
+    return () => {
+      markers.forEach((m) => m.remove());
+      markers.clear();
+    };
+  }, []);
+
   // Geolocation
+
   const locationMarkerRef = useRef<L.Marker | null>(null);
   useEffect(() => {
     if (!locateRequested || !mapRef.current) return;

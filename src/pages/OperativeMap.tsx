@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed, Building2 } from 'lucide-react';
+import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed, Building2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import LeafletMapCanvas, { type MapEmergency, type MapHydrant } from '@/components/map/LeafletMapCanvas';
+import LeafletMapCanvas, { type MapEmergency, type MapHydrant, type MapVehicle } from '@/components/map/LeafletMapCanvas';
+import { useVehicleLastPositions, formatPositionAge, isPositionStale } from '@/hooks/useVehiclePositions';
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 import { useStations } from '@/hooks/useStations';
@@ -26,9 +27,11 @@ export default function OperativeMap() {
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const stations = useStations();
+  const { data: vehiclePositions } = useVehicleLastPositions({ refetchInterval: 5000 });
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
   const [showStations, setShowStations] = useState(true);
+  const [showVehicles, setShowVehicles] = useState(true);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
 
 
@@ -173,6 +176,27 @@ export default function OperativeMap() {
     return [...orgHydrants, ...nationalHydrants];
   }, [hydrants, sharedHydrants]);
 
+  const mapVehicles = useMemo<MapVehicle[]>(
+    () =>
+      (vehiclePositions ?? [])
+        .filter((p) => p.latitude != null && p.longitude != null)
+        .map((p) => ({
+          vehicleId: p.vehicle_id,
+          code: p.vehicles?.code ?? 'Móvil',
+          type: p.vehicles?.type ?? null,
+          status: p.vehicles?.status ?? null,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          heading: p.heading,
+          speed: p.speed,
+          emergencyFolio: p.emergencies?.folio ?? null,
+          hasEmergency: !!p.emergency_id,
+          ageLabel: formatPositionAge(p.captured_at),
+          stale: isPositionStale(p.captured_at),
+        })),
+    [vehiclePositions]
+  );
+
   return (
     <div className="flex w-full flex-col h-full" style={{ width: '100%' }}>
       <div className="flex items-center justify-between p-3 border-b border-border bg-card">
@@ -196,6 +220,12 @@ export default function OperativeMap() {
             <Switch checked={showStations} onCheckedChange={setShowStations} id="show-stations" />
             <Label htmlFor="show-stations" className="text-xs flex items-center gap-1">
               <Building2 className="h-3 w-3 text-warning" /> Cuarteles
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={showVehicles} onCheckedChange={setShowVehicles} id="show-vehicles" />
+            <Label htmlFor="show-vehicles" className="text-xs flex items-center gap-1">
+              <Truck className="h-3 w-3 text-success" /> Móviles GPS
             </Label>
           </div>
 
@@ -224,9 +254,11 @@ export default function OperativeMap() {
           emergencies={mapEmergencies}
           hydrants={mapHydrants}
           stations={stations}
+          vehicles={mapVehicles}
           showEmergencies={showEmergencies}
           showHydrants={showHydrants}
           showStations={showStations}
+          showVehicles={showVehicles}
 
           onCompatibilityModeChange={setCompatibilityMode}
           onBoundsChange={handleBoundsChange}
@@ -266,6 +298,18 @@ export default function OperativeMap() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <div className="w-3 h-3 rounded bg-[#f59e0b] border border-white" />
             Cuartel
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-[#22c55e] border border-white" />
+            Móvil con GPS
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-[#dc2626] border border-white" />
+            Móvil en emergencia
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-[#6b7280] border border-white" />
+            GPS desactualizado
           </div>
 
         </div>
