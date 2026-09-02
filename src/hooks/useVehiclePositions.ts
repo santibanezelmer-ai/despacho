@@ -13,8 +13,10 @@ export type VehicleLastPosition = {
   heading: number | null;
   captured_at: string;
   updated_at: string;
-  vehicles: { id: string; code: string; status: string } | null;
+  vehicles: { id: string; code: string; status: string; type: string | null } | null;
+  emergencies: { id: string; folio: string; status: string } | null;
 };
+
 
 /** Antigüedad de la posición en segundos. */
 export function positionAgeSeconds(capturedAt: string): number {
