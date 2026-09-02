@@ -45,13 +45,30 @@ export type MapStation = {
   address: string | null;
 };
 
+export type MapVehicle = {
+  vehicleId: string;
+  code: string;
+  type: string | null;
+  status: string | null;
+  latitude: number;
+  longitude: number;
+  heading: number | null;
+  speed: number | null;
+  emergencyFolio: string | null;
+  hasEmergency: boolean;
+  ageLabel: string;
+  stale: boolean;
+};
+
 type LeafletMapCanvasProps = {
   emergencies: MapEmergency[];
   hydrants: MapHydrant[];
   stations?: MapStation[];
+  vehicles?: MapVehicle[];
   showEmergencies: boolean;
   showHydrants: boolean;
   showStations?: boolean;
+  showVehicles?: boolean;
   onCompatibilityModeChange: (enabled: boolean) => void;
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
@@ -63,6 +80,7 @@ type LeafletMapCanvasProps = {
   /** Ubicación en vivo compartida por el solicitante de una emergencia */
   liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
 };
+
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
 const getEmergencyIcon = (color: string) => {
