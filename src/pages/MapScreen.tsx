@@ -187,6 +187,38 @@ export default function MapScreen() {
     return () => { markers.forEach(m => m.remove()); };
   }, [hydrants, sharedHydrants]);
 
+  // Vehicles GPS layer (Operix Móvil)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers: L.Marker[] = [];
+    (vehiclePositions ?? []).forEach((p) => {
+      if (p.latitude == null || p.longitude == null) return;
+      const stale = isPositionStale(p.captured_at);
+      const code = p.vehicles?.code ?? 'Móvil';
+      const hasEmergency = !!p.emergency_id;
+      const m = L.marker([p.latitude, p.longitude], {
+        icon: vehicleIcon(code, stale, hasEmergency, p.heading ?? null),
+        zIndexOffset: 800,
+      })
+        .bindPopup(`
+          <div style="min-width:170px">
+            <div style="font-weight:700;font-size:13px">Móvil ${code}</div>
+            ${p.vehicles?.type ? `<div style="font-size:12px">Tipo: ${p.vehicles.type}</div>` : ''}
+            ${p.vehicles?.status ? `<div style="font-size:12px">Estado: ${p.vehicles.status}</div>` : ''}
+            ${hasEmergency ? `<div style="font-size:12px;font-weight:700;color:#dc2626">En emergencia${p.emergencies?.folio ? ` · ${p.emergencies.folio}` : ''}</div>` : ''}
+            <div style="font-size:12px">Velocidad: ${p.speed != null ? `${Math.round(p.speed)} km/h` : 'N/D'}</div>
+            <div style="font-size:12px">Última posición: ${formatPositionAge(p.captured_at)}</div>
+            ${stale ? '<div style="font-size:12px;font-weight:700;color:#f59e0b">GPS desactualizado</div>' : ''}
+          </div>
+        `)
+        .addTo(map);
+      markers.push(m);
+    });
+    return () => { markers.forEach(m => m.remove()); };
+  }, [vehiclePositions]);
+
+
   const handleLocate = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
