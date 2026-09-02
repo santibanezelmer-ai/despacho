@@ -338,7 +338,19 @@ Deno.serve(async (req) => {
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', device.id);
 
-      return json({ ok: true, accepted: rows.length, emergency_id: emergency?.id ?? null });
+      const { data: statusRow } = await supabase
+        .from('vehicles')
+        .select('status')
+        .eq('id', device.vehicle_id)
+        .maybeSingle();
+
+      return json({
+        ok: true,
+        accepted: rows.length,
+        emergency_id: emergency?.id ?? null,
+        gps_policy: gpsPolicy(statusRow?.status, !!emergency),
+      });
+
     }
 
     // ---------- 4. Estado operacional (estados existentes) ----------
