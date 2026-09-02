@@ -71,6 +71,24 @@ function hydrantIcon(own: boolean) {
   });
 }
 
+function vehicleIcon(code: string, stale: boolean, hasEmergency: boolean, heading: number | null) {
+  const bg = stale ? '#6b7280' : hasEmergency ? '#dc2626' : '#22c55e';
+  const arrow =
+    heading != null && !stale
+      ? `<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(${heading}deg);transform-origin:50% 22px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid ${bg};"></div>`
+      : '';
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;">
+      ${arrow}
+      <div style="background:${bg};color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;${stale ? 'opacity:0.75;' : ''}">${code}</div>
+    </div>`,
+    iconSize: [44, 22],
+    iconAnchor: [22, 11],
+  });
+}
+
+
 export default function MapScreen() {
   const { formatClock } = useTimeFormat();
   const mapRef = useRef<L.Map | null>(null);
