@@ -1,4 +1,5 @@
 import { Mail, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const contactLinks = [
   { email: 'contacto@operixdispatch.com', label: 'Contacto general' },
@@ -60,9 +61,17 @@ export default function LandingFooter() {
             <span className="font-semibold text-foreground">Operix</span>
             <span className="text-xs">v4.0</span>
           </div>
-          <p className="text-xs text-muted-foreground/50">
-            Plataforma de despacho en tiempo real para cuerpos de bomberos
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            <Link
+              to="/terminos"
+              className="text-xs text-muted-foreground hover:text-emergency transition-colors"
+            >
+              Términos y Condiciones
+            </Link>
+            <p className="text-xs text-muted-foreground/50">
+              Plataforma de despacho en tiempo real para cuerpos de bomberos
+            </p>
+          </div>
         </div>
       </div>
     </footer>
