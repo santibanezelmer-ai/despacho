@@ -100,7 +100,12 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
               disabled={unassign.isPending}
               onClick={e => {
                 e.preventDefault();
-                if (target) unassign.mutate(target);
+                if (target) {
+                  unassign.mutate(
+                    { emergencyId, vehicleId: target.vehicleId, code: target.code },
+                    { onSettled: () => setTarget(null) }
+                  );
+                }
               }}
             >
               {unassign.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4" />}
