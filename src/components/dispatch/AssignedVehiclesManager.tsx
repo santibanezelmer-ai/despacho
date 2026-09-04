@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -15,23 +13,20 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Loader2, Truck, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
 
 interface Props {
   emergencyId: string;
 }
 
 interface Target {
-  evId: string;
   vehicleId: string;
   code: string;
 }
 
 export default function AssignedVehiclesManager({ emergencyId }: Props) {
-  const { orgId } = useOrganization();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [target, setTarget] = useState<Target | null>(null);
+  const unassign = useUnassignVehicle();
 
   const { data: assigned, isLoading } = useQuery({
     queryKey: ['emergency-vehicles-assigned', emergencyId],
@@ -46,51 +41,6 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
     },
     enabled: !!emergencyId,
     refetchInterval: 5000,
-  });
-
-  const unassign = useMutation({
-    mutationFn: async ({ evId, vehicleId, code }: Target) => {
-      // Quitar personal asignado a ese móvil en la emergencia
-      const { error: pErr } = await supabase
-        .from('emergency_personnel')
-        .delete()
-        .eq('emergency_vehicle_id', evId);
-      if (pErr) throw pErr;
-
-      const { error: evErr } = await supabase
-        .from('emergency_vehicles')
-        .delete()
-        .eq('id', evId);
-      if (evErr) throw evErr;
-
-      // Liberar el móvil si no está asignado a otra emergencia activa
-      const { data: otherActive } = await supabase
-        .from('emergency_vehicles')
-        .select('id')
-        .eq('vehicle_id', vehicleId)
-        .is('released_at', null);
-      if (!otherActive || otherActive.length === 0) {
-        await supabase.from('vehicles').update({ status: 'disponible' as const }).eq('id', vehicleId);
-      }
-
-      await supabase.from('emergency_log').insert({
-        emergency_id: emergencyId,
-        organization_id: orgId!,
-        message: `Asignación eliminada: móvil ${code} desasignado de la emergencia`,
-        created_by: user?.id ?? null,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-assigned', emergencyId] });
-      queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-return', emergencyId] });
-      queryClient.invalidateQueries({ queryKey: ['emergency-personnel', emergencyId] });
-      queryClient.invalidateQueries({ queryKey: ['emergency-vehicle-personnel', emergencyId] });
-      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      toast.success('Asignación eliminada');
-      setTarget(null);
-    },
-    onError: (err: Error) => toast.error(err.message || 'Error al eliminar la asignación'),
   });
 
   if (isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
@@ -123,7 +73,7 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setTarget({ evId: ev.id, vehicleId: ev.vehicle_id, code: v?.code ?? '—' })}
+                  onClick={() => setTarget({ vehicleId: ev.vehicle_id, code: v?.code ?? '—' })}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -150,7 +100,12 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
               disabled={unassign.isPending}
               onClick={e => {
                 e.preventDefault();
-                if (target) unassign.mutate(target);
+                if (target) {
+                  unassign.mutate(
+                    { emergencyId, vehicleId: target.vehicleId, code: target.code },
+                    { onSettled: () => setTarget(null) }
+                  );
+                }
               }}
             >
               {unassign.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4" />}
