@@ -29,8 +29,8 @@ const reasons = [
   },
   {
     icon: ShieldCheck,
-    title: 'Seguridad y operación 24/7',
-    text: 'Datos cifrados y aislados por organización, con respaldo en la nube y disponibilidad continua para tu central.',
+    title: 'Seguridad y disponibilidad 24/7',
+    text: 'Datos cifrados y aislados por organización, con respaldo en la nube y alta disponibilidad de infraestructura para tu central.',
   },
 ];
 

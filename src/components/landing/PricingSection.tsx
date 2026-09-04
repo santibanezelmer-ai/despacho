@@ -30,7 +30,7 @@ const plans = [
   {
     name: 'Institucional',
     description: 'Para grandes instituciones con múltiples cuarteles',
-    features: ['Multi-cuartel', 'Personalización completa', 'Integraciones a medida', 'Soporte prioritario 24/7'],
+    features: ['Multi-cuartel', 'Personalización completa', 'Integraciones a medida', 'Soporte técnico según plan'],
     cta: 'Contactar',
     link: '/register',
     highlighted: false,

@@ -122,7 +122,7 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mx-auto mt-6 sm:mt-8 max-w-2xl text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed px-2"
         >
-          Operix Dispatch centraliza el despacho de emergencias, la ubicación GPS, la gestión de unidades y personal, y la analítica operativa — para que tu institución responda más rápido y con control total, 24/7.
+          Operix Dispatch centraliza el despacho de emergencias, la ubicación GPS, la gestión de unidades y personal, y la analítica operativa — para que tu institución responda más rápido y con control total.
         </motion.p>
 
         {/* CTA Buttons */}
