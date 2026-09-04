@@ -171,7 +171,7 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
             <div className="mt-3 flex flex-wrap gap-1.5">
               {emergency.vehicleCodes.map((v, i) => (
                 <span
-                  key={v}
+                  key={emergency.vehicleIds?.[i] ?? `${v}-${i}`}
                   className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground"
                 >
                   {v}
