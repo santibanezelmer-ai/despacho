@@ -73,7 +73,7 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setTarget({ evId: ev.id, vehicleId: ev.vehicle_id, code: v?.code ?? '—' })}
+                  onClick={() => setTarget({ vehicleId: ev.vehicle_id, code: v?.code ?? '—' })}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
