@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: '¿Incluye capacitación?',
-    a: 'Todos los planes incluyen capacitación inicial para operadores y administradores. El plan Institucional añade sesiones de entrenamiento continuo y soporte prioritario.',
+    a: 'Todos los planes incluyen capacitación inicial para operadores y administradores. El plan Institucional añade sesiones de entrenamiento continuo y soporte técnico según condiciones del plan.',
   },
 ];
 

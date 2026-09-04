@@ -48,7 +48,7 @@ export default function LeadCaptureSection() {
             <Sparkles className="h-3 w-3" /> Demostración guiada
           </div>
           <h2 className="text-lg sm:text-2xl font-bold mb-2">Solicita una demo para tu institución</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-6">Te mostramos Operix en funcionamiento y te contactamos en menos de 24 horas</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-6">Te mostramos Operix en funcionamiento y te contactamos a la brevedad</p>
 
           {sent ? (
             <motion.div

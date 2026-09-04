@@ -47,7 +47,7 @@ export default function ContactFormSection() {
       } as any);
       if (error) throw error;
       setSent(true);
-      toast.success('¡Mensaje enviado! Te contactaremos pronto.');
+      toast.success('¡Mensaje enviado! Te contactaremos a la brevedad para coordinar una demostración.');
     } catch {
       toast.error('Error al enviar. Intenta nuevamente.');
     } finally {
@@ -103,7 +103,7 @@ export default function ContactFormSection() {
                 <CheckCircle2 className="h-7 w-7 text-success" />
               </div>
               <p className="text-lg font-bold text-success">¡Mensaje recibido!</p>
-              <p className="text-sm text-muted-foreground">Te contactaremos en menos de 24 horas.</p>
+              <p className="text-sm text-muted-foreground">Te contactaremos a la brevedad para coordinar una demostración.</p>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5 relative">
