@@ -104,7 +104,7 @@ export default function HeroSection() {
           transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
           className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight"
         >
-          Despacho en tiempo real
+          Despacho en tiempo real{' '}
           <motion.span
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
