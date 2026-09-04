@@ -30,17 +30,26 @@ export function useMobileEmergencies(filter: 'all' | 'live' | 'finished' = 'all'
         (data ?? []).map(async (e: any) => {
           const { data: evData } = await supabase
             .from('emergency_vehicles')
-            .select('vehicle_id, vehicles(code)')
-            .eq('emergency_id', e.id);
+            .select('vehicle_id, released_at, vehicles(code)')
+            .eq('emergency_id', e.id)
+            .is('released_at', null);
 
           const { count } = await supabase
             .from('emergency_personnel')
             .select('id', { count: 'exact', head: true })
             .eq('emergency_id', e.id);
 
+          const codes = new Map<string, string>();
+          for (const ev of evData ?? []) {
+            const id = (ev as any).vehicle_id as string | null;
+            const code = (ev as any).vehicles?.code as string | undefined;
+            if (!id || !code || codes.has(id)) continue;
+            codes.set(id, code);
+          }
+
           return {
             ...e,
-            vehicleCodes: (evData ?? []).map((ev: any) => ev.vehicles?.code).filter(Boolean) as string[],
+            vehicleCodes: Array.from(codes.values()),
             personnelCount: count ?? 0,
           };
         })
