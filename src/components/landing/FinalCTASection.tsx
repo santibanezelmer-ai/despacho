@@ -37,7 +37,7 @@ export default function FinalCTASection() {
             <a href="#demo" className="w-full sm:w-auto">
               <Button
                 size="lg"
-                className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2.5 w-full sm:w-auto text-base sm:text-lg px-10 h-13 sm:h-15 font-bold shadow-[0_0_45px_hsl(0_85%_55%/0.45),0_4px_20px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_65px_hsl(0_85%_55%/0.55)] hover:scale-[1.03] transition-all duration-300"
+                className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2.5 w-full sm:w-auto text-base sm:text-lg px-10 h-12 sm:h-14 font-bold shadow-[0_0_45px_hsl(0_85%_55%/0.45),0_4px_20px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_65px_hsl(0_85%_55%/0.55)] hover:scale-[1.03] transition-all duration-300"
               >
                 Solicitar una demostración <ArrowRight className="h-5 w-5" />
               </Button>

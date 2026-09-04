@@ -27,7 +27,7 @@ export default function ProblemSolutionSection() {
         viewport={{ once: true }}
         className="text-center mb-12 sm:mb-16"
       >
-        <h2 className="text-2xl sm:text-4xl font-bold">¿Por qué Operix?</h2>
+        <h2 className="text-2xl sm:text-4xl font-bold">Del método manual al despacho digital</h2>
         <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">La diferencia entre reaccionar y gestionar profesionalmente</p>
       </motion.div>
 
