@@ -129,17 +129,18 @@ Deno.serve(async (req: Request) => {
     }
     console.log(`[Push] ✓ Authenticated user: ${userData.user.id}`);
 
-    const { organization_id, emergency_id, title, body, type } = await req.json();
+    const { organization_id, emergency_id, note_id, title, body, type } = await req.json();
     console.log(
-      `[Push] Payload: org=${organization_id} | emergency=${emergency_id} | title="${title}" | type=${type}`,
+      `[Push] Payload: org=${organization_id} | emergency=${emergency_id} | note=${note_id} | title="${title}" | type=${type}`,
     );
 
-    if (!organization_id || !emergency_id || !title) {
+    if (!organization_id || !title || (!emergency_id && !note_id)) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     // Verify caller is a member of the target organization
     const { data: membership } = await anonClient
@@ -259,22 +260,27 @@ Deno.serve(async (req: Request) => {
       error_message: string | null;
     }> = [];
 
+    const isNote = !emergency_id && !!note_id;
+    const collapseId = String(emergency_id ?? note_id);
+
     for (const { id: tokenId, token, platform, user_id } of tokens!) {
       const isWeb = platform === 'web';
       const isIos = platform === 'ios';
-      const emergencyPath = `/voluntario/emergencia/${emergency_id}`;
+      const emergencyPath = isNote ? '/voluntario' : `/voluntario/emergencia/${emergency_id}`;
       const fcmPayload: any = {
         message: {
           token,
           data: {
-            type: String(type ?? 'new_emergency'),
-            emergency_id: String(emergency_id),
-            emergencyId: String(emergency_id),
+            type: String(type ?? (isNote ? 'dispatch_note' : 'new_emergency')),
+            emergency_id: String(emergency_id ?? ''),
+            emergencyId: String(emergency_id ?? ''),
+            note_id: String(note_id ?? ''),
             title: String(title),
             body: String(body ?? ''),
           },
         },
       };
+
       if (isWeb) {
         // IMPORTANT: data-only (no top-level `notification`) so the SW's
         // onBackgroundMessage fires and can play the custom dispatch tone
@@ -294,7 +300,7 @@ Deno.serve(async (req: Request) => {
             'apns-priority': '10',
             'apns-push-type': 'alert',
             'apns-expiration': String(Math.floor(Date.now() / 1000) + 600),
-            'apns-collapse-id': String(emergency_id).slice(0, 63),
+            'apns-collapse-id': collapseId.slice(0, 63),
           },
           payload: {
             aps: {
@@ -404,8 +410,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Insert tracking logs
-    if (logEntries.length > 0) {
+    if (logEntries.length > 0 && !isNote) {
       const { error: logError } = await serviceClient.from('notification_log').insert(logEntries);
+
       if (logError) {
         console.error('[Push] Failed to insert notification_log:', logError.message);
       } else {
