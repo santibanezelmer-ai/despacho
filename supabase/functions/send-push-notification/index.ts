@@ -129,17 +129,18 @@ Deno.serve(async (req: Request) => {
     }
     console.log(`[Push] ✓ Authenticated user: ${userData.user.id}`);
 
-    const { organization_id, emergency_id, title, body, type } = await req.json();
+    const { organization_id, emergency_id, note_id, title, body, type } = await req.json();
     console.log(
-      `[Push] Payload: org=${organization_id} | emergency=${emergency_id} | title="${title}" | type=${type}`,
+      `[Push] Payload: org=${organization_id} | emergency=${emergency_id} | note=${note_id} | title="${title}" | type=${type}`,
     );
 
-    if (!organization_id || !emergency_id || !title) {
+    if (!organization_id || !title || (!emergency_id && !note_id)) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     // Verify caller is a member of the target organization
     const { data: membership } = await anonClient
