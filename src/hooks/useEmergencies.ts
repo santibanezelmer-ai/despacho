@@ -31,15 +31,14 @@ export function useActiveEmergencies() {
           const { data: evData } = await supabase
             .from('emergency_vehicles')
             .select('vehicle_id, released_at, vehicles(code)')
-            .eq('emergency_id', e.id)
-            .is('released_at', null);
+            .eq('emergency_id', e.id);
 
           const { count: personnelCount } = await supabase
             .from('emergency_personnel')
             .select('id', { count: 'exact', head: true })
             .eq('emergency_id', e.id);
 
-          // Un móvil solo debe aparecer una vez, y solo si sigue asignado
+          // Un móvil solo debe aparecer una vez (incluye los que ya retornaron)
           const assigned = new Map<string, string>();
           for (const ev of evData ?? []) {
             const id = (ev as any).vehicle_id as string | null;
