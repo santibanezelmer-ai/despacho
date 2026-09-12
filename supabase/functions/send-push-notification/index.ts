@@ -260,22 +260,27 @@ Deno.serve(async (req: Request) => {
       error_message: string | null;
     }> = [];
 
+    const isNote = !emergency_id && !!note_id;
+    const collapseId = String(emergency_id ?? note_id);
+
     for (const { id: tokenId, token, platform, user_id } of tokens!) {
       const isWeb = platform === 'web';
       const isIos = platform === 'ios';
-      const emergencyPath = `/voluntario/emergencia/${emergency_id}`;
+      const emergencyPath = isNote ? '/voluntario' : `/voluntario/emergencia/${emergency_id}`;
       const fcmPayload: any = {
         message: {
           token,
           data: {
-            type: String(type ?? 'new_emergency'),
-            emergency_id: String(emergency_id),
-            emergencyId: String(emergency_id),
+            type: String(type ?? (isNote ? 'dispatch_note' : 'new_emergency')),
+            emergency_id: String(emergency_id ?? ''),
+            emergencyId: String(emergency_id ?? ''),
+            note_id: String(note_id ?? ''),
             title: String(title),
             body: String(body ?? ''),
           },
         },
       };
+
       if (isWeb) {
         // IMPORTANT: data-only (no top-level `notification`) so the SW's
         // onBackgroundMessage fires and can play the custom dispatch tone
