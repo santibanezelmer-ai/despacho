@@ -41,14 +41,36 @@ export function useCreateDispatchNote() {
   const { orgId } = useOrganization();
   return useMutation({
     mutationFn: async ({ title, content }: { title?: string; content: string }) => {
-      const { error } = await supabase.from('dispatch_notes' as any).insert({
-        organization_id: orgId!,
-        title: title?.trim() || null,
-        content: content.trim(),
-        created_by: user?.id ?? null,
-      });
+      const cleanTitle = title?.trim() || null;
+      const cleanContent = content.trim();
+      const { data, error } = await supabase
+        .from('dispatch_notes' as any)
+        .insert({
+          organization_id: orgId!,
+          title: cleanTitle,
+          content: cleanContent,
+          created_by: user?.id ?? null,
+        })
+        .select('id')
+        .single();
       if (error) throw error;
+
+      // Same push pipeline used by emergencies (permissions, devices, tones)
+      try {
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            organization_id: orgId!,
+            note_id: (data as any)?.id,
+            title: cleanTitle ? `📢 COMUNICADO: ${cleanTitle}` : '📢 COMUNICADO',
+            body: cleanContent,
+            type: 'dispatch_note',
+          },
+        });
+      } catch (e) {
+        console.error('[Comunicado] push failed', e);
+      }
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dispatch-notes'] });
       toast.success('Comunicado publicado');
