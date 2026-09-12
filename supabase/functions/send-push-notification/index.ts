@@ -300,7 +300,7 @@ Deno.serve(async (req: Request) => {
             'apns-priority': '10',
             'apns-push-type': 'alert',
             'apns-expiration': String(Math.floor(Date.now() / 1000) + 600),
-            'apns-collapse-id': String(emergency_id).slice(0, 63),
+            'apns-collapse-id': collapseId.slice(0, 63),
           },
           payload: {
             aps: {
@@ -410,8 +410,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Insert tracking logs
-    if (logEntries.length > 0) {
+    if (logEntries.length > 0 && !isNote) {
       const { error: logError } = await serviceClient.from('notification_log').insert(logEntries);
+
       if (logError) {
         console.error('[Push] Failed to insert notification_log:', logError.message);
       } else {
