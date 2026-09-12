@@ -76,6 +76,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
         .from('dispatch_notes')
         .select('id, title, content, created_at')
         .eq('organization_id', organizationId)
+        .eq('active', true)
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .limit(20);
