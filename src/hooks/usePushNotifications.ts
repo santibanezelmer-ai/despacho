@@ -17,6 +17,9 @@ export function usePushNotifications() {
     if (!Capacitor.isNativePlatform()) return;
 
     const syncRegistration = async (force = false, silent = true) => {
+      // Always await the process-lifetime delivery listeners before asking FCM
+      // to register or refresh a token. Repeated calls share the same setup.
+      await setupPushListeners(navigate);
       let { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         session = await restoreNativeAuthSession();
@@ -27,7 +30,6 @@ export function usePushNotifications() {
 
     const initializePush = async () => {
       console.log('[Push][Hook] initializing push notifications');
-      await setupPushListeners(navigate);
       await syncRegistration(false, false);
     };
 
