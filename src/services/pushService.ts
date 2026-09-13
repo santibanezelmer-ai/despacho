@@ -329,13 +329,26 @@ export function setupPushListeners(navigate: NavigateFunction): void {
   });
 }
 
+/**
+ * Removes ALL push listeners. Only call this on full logout/teardown — never
+ * during the normal auth/init cycle, because it races with an in-flight
+ * PushNotifications.register() and drops the FCM "registration" event.
+ * Registration listeners are intentionally left untouched here so a pending
+ * or future register() call still receives its token.
+ */
 export function removePushListeners(): void {
   if (!Capacitor.isNativePlatform()) return;
-  PushNotifications.removeAllListeners();
-  LocalNotifications.removeAllListeners();
+  console.log('[Push] Removing notification listeners (registration listeners kept)');
   listenersSetup = false;
-  registrationListenersSetup = false;
-  finishRegistration(null);
+  // Remove only notification delivery/action listeners; keep registration
+  // listeners alive so the FCM token flow is never interrupted.
+  PushNotifications.removeAllListeners().then(() => {
+    // Re-attach the registration listeners immediately after the wipe so the
+    // token flow keeps working (removeAllListeners clears everything natively).
+    registrationListenersSetup = false;
+    setupRegistrationListeners();
+  });
+  LocalNotifications.removeAllListeners();
 }
 
 /* ── Helpers ── */
