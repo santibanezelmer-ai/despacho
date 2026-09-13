@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { supabase } from '@/integrations/supabase/client';
-import { registerForPushNotifications, setupPushListeners, removePushListeners } from '@/services/pushService';
+import { registerForPushNotifications, setupPushListeners } from '@/services/pushService';
 import { restoreNativeAuthSession } from '@/services/nativeAuthStorage';
 
 export function usePushNotifications() {
@@ -43,7 +43,10 @@ export function usePushNotifications() {
     return () => {
       subscription.unsubscribe();
       void appStateListener.then((listener) => listener.remove());
-      removePushListeners();
+      // NOTE: we intentionally do NOT call removePushListeners() here.
+      // The push/registration listeners are process-lifetime singletons;
+      // removing them on unmount (or on a React re-mount) races with an
+      // in-flight PushNotifications.register() and loses the FCM token event.
       initialized.current = false;
     };
   }, [navigate]);
