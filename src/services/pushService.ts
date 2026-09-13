@@ -132,7 +132,7 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<boo
   }
 }
 
-function setupRegistrationListeners(): void {
+async function setupRegistrationListeners(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   if (registrationListenersSetup) {
     console.log('[Push] Registration listeners already active, skipping duplicate setup');
@@ -140,7 +140,7 @@ function setupRegistrationListeners(): void {
   }
   registrationListenersSetup = true;
 
-  PushNotifications.addListener('registration', async (tokenData) => {
+  await PushNotifications.addListener('registration', async (tokenData) => {
     lastRegisteredToken = tokenData.value;
     console.log(`[Push] FCM token received: ${tokenData.value.slice(0, 20)}…`);
 
@@ -152,7 +152,7 @@ function setupRegistrationListeners(): void {
     finishRegistration(tokenData.value);
   });
 
-  PushNotifications.addListener('registrationError', (err) => {
+  await PushNotifications.addListener('registrationError', (err) => {
     console.error('[Push] Registration error:', err);
     if (!pendingRegistrationSilent) {
       toast.error('Error al registrar notificaciones');
@@ -160,7 +160,7 @@ function setupRegistrationListeners(): void {
     finishRegistration(null);
   });
 
-  console.log('[Push] Registration listener ready');
+  console.log('[Push] Registration listeners READY');
 }
 
 /* ── Registration ── */
@@ -192,7 +192,7 @@ export async function registerForPushNotifications(options: { force?: boolean; s
   // IMPORTANT: registration/registrationError listeners must be active BEFORE
   // PushNotifications.register() is called — FCM can emit the token immediately
   // and the event is lost if no listener is attached yet.
-  setupRegistrationListeners();
+  await setupRegistrationListeners();
 
   try {
     let permStatus = await PushNotifications.checkPermissions();
