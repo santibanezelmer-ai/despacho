@@ -50,7 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session) {
         void persistNativeAuthSession(session);
       } else if (event === 'SIGNED_OUT') {
-        void clearNativeAuthSession();
+        // No borrar el respaldo nativo aquí: este evento también puede llegar
+        // por un refresh fallido (p. ej. sin conexión). El respaldo solo se
+        // elimina en el cierre de sesión explícito (signOut()).
+        console.warn('[Auth] SIGNED_OUT recibido; se conserva el respaldo nativo');
       }
 
       if (session?.user) {
