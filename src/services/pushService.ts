@@ -287,14 +287,14 @@ async function showLocalNotification(title: string, body: string, data: Record<s
 
 /* ── Push listeners ── */
 
-export function setupPushListeners(navigate: NavigateFunction): void {
+export async function setupPushListeners(navigate: NavigateFunction): Promise<void> {
   if (!Capacitor.isNativePlatform() || listenersSetup) return;
   listenersSetup = true;
   console.log('[Push] Setting up listeners');
 
   // Foreground: FCM delivers data but no banner → show local notification
-  PushNotifications.addListener('pushNotificationReceived', async (notification) => {
-    console.log('[Push] FOREGROUND received:', JSON.stringify(notification));
+  await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+    console.log('[Push] pushNotificationReceived received:', JSON.stringify(notification));
     const payload = (notification.data ?? {}) as PushPayload;
     const title = notification.title || payload.title || 'Nueva emergencia';
     const body = notification.body || payload.body || '';
@@ -307,7 +307,7 @@ export function setupPushListeners(navigate: NavigateFunction): void {
   });
 
   // Background/closed: user tapped the system notification
-  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+  await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     console.log('[Push] Push tap:', JSON.stringify(action));
     const payload = action.notification.data as PushPayload;
     const emergencyId = payload?.emergencyId || payload?.emergency_id || '';
