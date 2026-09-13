@@ -318,7 +318,7 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
   });
 
   // Foreground local notification tap
-  LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+  await LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
     console.log('[Push] Local tap:', JSON.stringify(action));
     const extra = action.notification.extra as PushPayload | undefined;
     const emergencyId = extra?.emergencyId || extra?.emergency_id || '';
@@ -327,6 +327,8 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
       navigate(`/mobile/emergency/${emergencyId}`);
     }
   });
+
+  console.log('[Push] Push listeners READY');
 }
 
 /**
