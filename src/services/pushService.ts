@@ -340,6 +340,10 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
  */
 export function removePushListeners(): void {
   if (!Capacitor.isNativePlatform()) return;
+  if (registrationInFlight) {
+    console.warn('[Push] Skipping listener cleanup: registration in flight');
+    return;
+  }
   console.log('[Push] Removing notification listeners (registration listeners kept)');
   listenersSetup = false;
   // Remove only notification delivery/action listeners; keep registration
@@ -348,7 +352,7 @@ export function removePushListeners(): void {
     // Re-attach the registration listeners immediately after the wipe so the
     // token flow keeps working (removeAllListeners clears everything natively).
     registrationListenersSetup = false;
-    setupRegistrationListeners();
+    void setupRegistrationListeners();
   });
   LocalNotifications.removeAllListeners();
 }
