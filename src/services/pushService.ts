@@ -133,12 +133,16 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<boo
 }
 
 function setupRegistrationListeners(): void {
-  if (!Capacitor.isNativePlatform() || registrationListenersSetup) return;
+  if (!Capacitor.isNativePlatform()) return;
+  if (registrationListenersSetup) {
+    console.log('[Push] Registration listeners already active, skipping duplicate setup');
+    return;
+  }
   registrationListenersSetup = true;
 
   PushNotifications.addListener('registration', async (tokenData) => {
     lastRegisteredToken = tokenData.value;
-    console.log(`[Push] Token: ${tokenData.value.slice(0, 20)}…`);
+    console.log(`[Push] FCM token received: ${tokenData.value.slice(0, 20)}…`);
 
     const saved = await saveTokenToSupabase(tokenData.value, Capacitor.getPlatform());
     if (saved && !pendingRegistrationSilent) {
@@ -155,6 +159,8 @@ function setupRegistrationListeners(): void {
     }
     finishRegistration(null);
   });
+
+  console.log('[Push] Registration listener ready');
 }
 
 /* ── Registration ── */
@@ -183,6 +189,11 @@ export async function registerForPushNotifications(options: { force?: boolean; s
     console.warn('[Push] Local notification permission request failed:', e);
   }
 
+  // IMPORTANT: registration/registrationError listeners must be active BEFORE
+  // PushNotifications.register() is called — FCM can emit the token immediately
+  // and the event is lost if no listener is attached yet.
+  setupRegistrationListeners();
+
   try {
     let permStatus = await PushNotifications.checkPermissions();
     if (permStatus.receive === 'prompt') {
@@ -197,15 +208,17 @@ export async function registerForPushNotifications(options: { force?: boolean; s
     }
     console.log('[Push] Permissions granted');
 
-    setupRegistrationListeners();
-
     if (!force && lastRegisteredToken) {
       console.log('[Push] Reusing token already obtained in this session');
       await saveTokenToSupabase(lastRegisteredToken, platform);
+      console.log('[Push] Registration completed (cached token)');
       return lastRegisteredToken;
     }
 
-    if (registrationInFlight) return registrationInFlight;
+    if (registrationInFlight) {
+      console.log('[Push] Registration already in flight, awaiting result');
+      return registrationInFlight;
+    }
 
     pendingRegistrationSilent = silent;
     registrationInFlight = new Promise<string | null>((resolve) => {
@@ -216,8 +229,11 @@ export async function registerForPushNotifications(options: { force?: boolean; s
       }, 15000);
     });
 
+    console.log('[Push] Calling PushNotifications.register()');
     await PushNotifications.register();
-    return await registrationInFlight;
+    const token = await registrationInFlight;
+    console.log(`[Push] Registration completed token=${token ? 'ok' : 'null'}`);
+    return token;
   } catch (err: any) {
     console.error('[Push] Exception:', err?.message || err);
     finishRegistration(null);
