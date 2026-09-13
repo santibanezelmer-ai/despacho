@@ -25,6 +25,9 @@ const LOCAL_SOUND_FILE =
 let channelCreated = false;
 let listenersSetup = false;
 let registrationListenersSetup = false;
+let pushListenersSetupPromise: Promise<void> | null = null;
+let registrationListenersSetupPromise: Promise<void> | null = null;
+let activeNavigate: NavigateFunction | null = null;
 let registrationInFlight: Promise<string | null> | null = null;
 let registrationTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingRegistrationResolve: ((value: string | null) => void) | null = null;
@@ -138,29 +141,42 @@ async function setupRegistrationListeners(): Promise<void> {
     console.log('[Push] Registration listeners already active, skipping duplicate setup');
     return;
   }
-  registrationListenersSetup = true;
+  if (registrationListenersSetupPromise) {
+    await registrationListenersSetupPromise;
+    return;
+  }
 
-  await PushNotifications.addListener('registration', async (tokenData) => {
-    lastRegisteredToken = tokenData.value;
-    console.log(`[Push] FCM token received: ${tokenData.value.slice(0, 20)}…`);
+  registrationListenersSetupPromise = (async () => {
+    await PushNotifications.addListener('registration', async (tokenData) => {
+      lastRegisteredToken = tokenData.value;
+      console.log(`[Push] FCM token received: ${tokenData.value.slice(0, 20)}…`);
 
-    const saved = await saveTokenToSupabase(tokenData.value, Capacitor.getPlatform());
-    if (saved && !pendingRegistrationSilent) {
-      toast.success('Notificaciones activadas');
-    }
+      const saved = await saveTokenToSupabase(tokenData.value, Capacitor.getPlatform());
+      if (saved && !pendingRegistrationSilent) {
+        toast.success('Notificaciones activadas');
+      }
 
-    finishRegistration(tokenData.value);
-  });
+      finishRegistration(tokenData.value);
+    });
 
-  await PushNotifications.addListener('registrationError', (err) => {
-    console.error('[Push] Registration error:', err);
-    if (!pendingRegistrationSilent) {
-      toast.error('Error al registrar notificaciones');
-    }
-    finishRegistration(null);
-  });
+    await PushNotifications.addListener('registrationError', (err) => {
+      console.error('[Push] Registration error:', err);
+      if (!pendingRegistrationSilent) {
+        toast.error('Error al registrar notificaciones');
+      }
+      finishRegistration(null);
+    });
 
-  console.log('[Push] Registration listeners READY');
+    registrationListenersSetup = true;
+    console.log('[Push] Registration listeners READY');
+  })();
+
+  try {
+    await registrationListenersSetupPromise;
+  } catch (error) {
+    registrationListenersSetupPromise = null;
+    throw error;
+  }
 }
 
 /* ── Registration ── */
@@ -288,73 +304,63 @@ async function showLocalNotification(title: string, body: string, data: Record<s
 /* ── Push listeners ── */
 
 export async function setupPushListeners(navigate: NavigateFunction): Promise<void> {
-  if (!Capacitor.isNativePlatform() || listenersSetup) return;
-  listenersSetup = true;
-  console.log('[Push] Setting up listeners');
-
-  // Foreground: FCM delivers data but no banner → show local notification
-  await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
-    console.log('[Push] pushNotificationReceived received:', JSON.stringify(notification));
-    const payload = (notification.data ?? {}) as PushPayload;
-    const title = notification.title || payload.title || 'Nueva emergencia';
-    const body = notification.body || payload.body || '';
-    const emergencyId = payload.emergencyId || payload.emergency_id || '';
-
-    await showLocalNotification(title, body, {
-      type: payload.type || 'new_emergency',
-      emergencyId,
-    });
-  });
-
-  // Background/closed: user tapped the system notification
-  await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('[Push] Push tap:', JSON.stringify(action));
-    const payload = action.notification.data as PushPayload;
-    const emergencyId = payload?.emergencyId || payload?.emergency_id || '';
-    if (emergencyId) {
-      markNotificationOpened(emergencyId);
-      navigate(`/mobile/emergency/${emergencyId}`);
-    }
-  });
-
-  // Foreground local notification tap
-  await LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
-    console.log('[Push] Local tap:', JSON.stringify(action));
-    const extra = action.notification.extra as PushPayload | undefined;
-    const emergencyId = extra?.emergencyId || extra?.emergency_id || '';
-    if (emergencyId) {
-      markNotificationOpened(emergencyId);
-      navigate(`/mobile/emergency/${emergencyId}`);
-    }
-  });
-
-  console.log('[Push] Push listeners READY');
-}
-
-/**
- * Removes ALL push listeners. Only call this on full logout/teardown — never
- * during the normal auth/init cycle, because it races with an in-flight
- * PushNotifications.register() and drops the FCM "registration" event.
- * Registration listeners are intentionally left untouched here so a pending
- * or future register() call still receives its token.
- */
-export function removePushListeners(): void {
   if (!Capacitor.isNativePlatform()) return;
-  if (registrationInFlight) {
-    console.warn('[Push] Skipping listener cleanup: registration in flight');
+  activeNavigate = navigate;
+  if (listenersSetup) return;
+  if (pushListenersSetupPromise) {
+    await pushListenersSetupPromise;
     return;
   }
-  console.log('[Push] Removing notification listeners (registration listeners kept)');
-  listenersSetup = false;
-  // Remove only notification delivery/action listeners; keep registration
-  // listeners alive so the FCM token flow is never interrupted.
-  PushNotifications.removeAllListeners().then(() => {
-    // Re-attach the registration listeners immediately after the wipe so the
-    // token flow keeps working (removeAllListeners clears everything natively).
-    registrationListenersSetup = false;
-    void setupRegistrationListeners();
-  });
-  LocalNotifications.removeAllListeners();
+
+  pushListenersSetupPromise = (async () => {
+    console.log('[Push] Setting up listeners');
+
+    // Foreground: FCM delivers data but no banner → show local notification
+    await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+      console.log('[Push] pushNotificationReceived received:', JSON.stringify(notification));
+      const payload = (notification.data ?? {}) as PushPayload;
+      const title = notification.title || payload.title || 'Nueva emergencia';
+      const body = notification.body || payload.body || '';
+      const emergencyId = payload.emergencyId || payload.emergency_id || '';
+
+      await showLocalNotification(title, body, {
+        type: payload.type || 'new_emergency',
+        emergencyId,
+      });
+    });
+
+    // Background/closed: user tapped the system notification
+    await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      console.log('[Push] Push tap:', JSON.stringify(action));
+      const payload = action.notification.data as PushPayload;
+      const emergencyId = payload?.emergencyId || payload?.emergency_id || '';
+      if (emergencyId) {
+        markNotificationOpened(emergencyId);
+        activeNavigate?.(`/mobile/emergency/${emergencyId}`);
+      }
+    });
+
+    // Foreground local notification tap
+    await LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+      console.log('[Push] Local tap:', JSON.stringify(action));
+      const extra = action.notification.extra as PushPayload | undefined;
+      const emergencyId = extra?.emergencyId || extra?.emergency_id || '';
+      if (emergencyId) {
+        markNotificationOpened(emergencyId);
+        activeNavigate?.(`/mobile/emergency/${emergencyId}`);
+      }
+    });
+
+    listenersSetup = true;
+    console.log('[Push] Push listeners READY');
+  })();
+
+  try {
+    await pushListenersSetupPromise;
+  } catch (error) {
+    pushListenersSetupPromise = null;
+    throw error;
+  }
 }
 
 /* ── Helpers ── */

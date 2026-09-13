@@ -16,9 +16,6 @@ export function usePushNotifications() {
 
     if (!Capacitor.isNativePlatform()) return;
 
-    console.log('[Push][Hook] initializing push notifications');
-    void setupPushListeners(navigate);
-
     const syncRegistration = async (force = false, silent = true) => {
       let { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -28,7 +25,13 @@ export function usePushNotifications() {
       await registerForPushNotifications({ force, silent });
     };
 
-    syncRegistration(false, false);
+    const initializePush = async () => {
+      console.log('[Push][Hook] initializing push notifications');
+      await setupPushListeners(navigate);
+      await syncRegistration(false, false);
+    };
+
+    void initializePush();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -43,10 +46,8 @@ export function usePushNotifications() {
     return () => {
       subscription.unsubscribe();
       void appStateListener.then((listener) => listener.remove());
-      // NOTE: we intentionally do NOT call removePushListeners() here.
-      // The push/registration listeners are process-lifetime singletons;
-      // removing them on unmount (or on a React re-mount) races with an
-      // in-flight PushNotifications.register() and loses the FCM token event.
+      // Push and registration listeners are process-lifetime singletons.
+      // They deliberately remain active across React unmounts and remounts.
       initialized.current = false;
     };
   }, [navigate]);
