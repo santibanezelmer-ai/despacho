@@ -52,7 +52,9 @@ export async function restoreNativeAuthSession(): Promise<Session | null> {
     });
 
     if (error) {
-      console.warn('[Auth] Native session restore failed:', error.message);
+      // No borrar el respaldo: puede ser un error de red transitorio y el
+      // refresh_token podría seguir siendo válido en el próximo arranque.
+      console.warn('[Auth] Native session restore failed (backup kept):', error.message);
       return null;
     }
 
