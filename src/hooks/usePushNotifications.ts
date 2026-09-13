@@ -17,7 +17,7 @@ export function usePushNotifications() {
     if (!Capacitor.isNativePlatform()) return;
 
     console.log('[Push][Hook] initializing push notifications');
-    setupPushListeners(navigate);
+    void setupPushListeners(navigate);
 
     const syncRegistration = async (force = false, silent = true) => {
       let { data: { session } } = await supabase.auth.getSession();
