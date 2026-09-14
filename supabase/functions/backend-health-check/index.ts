@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 
-const ALERT_EMAIL = 'soporte@operixdispatch.com'
+const ALERT_EMAIL = 'Contacto@operixdistpach.com'
 const ALERT_COOLDOWN_MINUTES = 30
 
 function json(data: unknown, status = 200) {
