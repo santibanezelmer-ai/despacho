@@ -38,11 +38,11 @@ export function useActiveEmergencies() {
             .select('id', { count: 'exact', head: true })
             .eq('emergency_id', e.id);
 
-          // Un móvil solo debe aparecer una vez (incluye los que ya retornaron)
+          // Solo móviles aún asignados (los que ya retornaron se excluyen)
           const assigned = new Map<string, string>();
           for (const ev of evData ?? []) {
             const id = (ev as any).vehicle_id as string | null;
-            if (!id || assigned.has(id)) continue;
+            if (!id || (ev as any).released_at || assigned.has(id)) continue;
             assigned.set(id, ((ev as any).vehicles?.code as string) ?? '—');
           }
 

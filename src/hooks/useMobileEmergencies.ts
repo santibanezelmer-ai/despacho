@@ -42,7 +42,7 @@ export function useMobileEmergencies(filter: 'all' | 'live' | 'finished' = 'all'
           for (const ev of evData ?? []) {
             const id = (ev as any).vehicle_id as string | null;
             const code = (ev as any).vehicles?.code as string | undefined;
-            if (!id || !code || codes.has(id)) continue;
+            if (!id || !code || (ev as any).released_at || codes.has(id)) continue;
             codes.set(id, code);
           }
 
