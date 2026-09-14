@@ -52,9 +52,17 @@ export async function restoreNativeAuthSession(): Promise<Session | null> {
     });
 
     if (error) {
-      // No borrar el respaldo: puede ser un error de red transitorio y el
-      // refresh_token podría seguir siendo válido en el próximo arranque.
-      console.warn('[Auth] Native session restore failed (backup kept):', error.message);
+      // Si el token fue revocado (p. ej. cierre de sesión), el respaldo ya no
+      // sirve y debe eliminarse. Ante fallos de red se conserva para reintentar.
+      const status = (error as any).status as number | undefined;
+      const revoked = status === 400 || status === 401 || status === 403 ||
+        /invalid|revoked|expired|not found/i.test(error.message ?? '');
+      if (revoked) {
+        console.warn('[Auth] Native session backup discarded (token revoked)');
+        await clearNativeAuthSession();
+      } else {
+        console.warn('[Auth] Native session restore failed (backup kept):', error.message);
+      }
       return null;
     }
 

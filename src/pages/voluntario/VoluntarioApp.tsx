@@ -150,7 +150,7 @@ export default function VoluntarioApp() {
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm text-center space-y-4">
             <AlertTriangle className="mx-auto h-10 w-10 text-warning" />
             <p className="text-sm text-foreground">{error}</p>
-            <Button variant="outline" className="w-full" onClick={async () => { const { supabase } = await import('@/integrations/supabase/client'); await supabase.auth.signOut(); }}>
+            <Button variant="outline" className="w-full" onClick={async () => { const { supabase } = await import('@/integrations/supabase/client'); const { clearNativeAuthSession } = await import('@/services/nativeAuthStorage'); await supabase.auth.signOut(); await clearNativeAuthSession(); }}>
               Cerrar sesión
             </Button>
           </div>
