@@ -15,7 +15,7 @@ const corsHeaders = {
 }
 
 // Configuration
-const SITE_NAME = "Command Center Hub"
+const SITE_NAME = "despacho"
 const SENDER_DOMAIN = "notify.operixdispatch.com"
 const ROOT_DOMAIN = "operixdispatch.com"
 const FROM_DOMAIN = "operixdispatch.com"
