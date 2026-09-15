@@ -3,12 +3,13 @@ project_id = "ratbcyvzdlokcqyxdvvg"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
-  [functions.process-email-queue]
-    verify_jwt = true
   [functions.send-invitation]
     verify_jwt = false
   [functions.location-share]
     verify_jwt = false
   [functions.operix-movil]
     verify_jwt = false
-
+  [functions.preview-transactional-email]
+    verify_jwt = false
+  [functions.backend-health-check]
+    verify_jwt = false
