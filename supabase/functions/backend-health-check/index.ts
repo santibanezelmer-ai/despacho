@@ -1,7 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts'
 
 const ALERT_EMAIL = 'Contacto@operixdistpach.com'
+const ALERT_TEMPLATE = 'backend-health-alert'
+const ALERT_LOG_NAME = 'backend_health_alert'
 const ALERT_COOLDOWN_MINUTES = 30
 
 function json(data: unknown, status = 200) {
@@ -36,7 +39,7 @@ Deno.serve(async (req) => {
     const { data: recentAlert } = await supabase
       .from('email_send_log')
       .select('created_at')
-      .eq('template_name', 'backend_health_alert')
+      .eq('template_name', ALERT_LOG_NAME)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -47,28 +50,43 @@ Deno.serve(async (req) => {
         ALERT_COOLDOWN_MINUTES * 60 * 1000
 
     if (canSend) {
-      const alertPayload = {
-        to: ALERT_EMAIL,
-        subject: 'ALERTA: Operix backend no responde',
-        html: `<p>La verificación de salud del backend de Operix falló.</p>
-<p><strong>Error:</strong> ${message}</p>
-<p><strong>Check ID:</strong> ${checkId}</p>
-<p><strong>Hora UTC:</strong> ${checkedAt}</p>`,
-        text: `La verificación de salud del backend de Operix falló. Error: ${message}. Check ID: ${checkId}. Hora UTC: ${checkedAt}`,
-        purpose: 'transactional',
-        label: 'backend_health_alert',
-        message_id: `health-alert-${checkId}`,
-      }
+      const messageId = `health-alert-${checkId}`
+      try {
+        const result = await sendTemplateEmail(ALERT_TEMPLATE, ALERT_EMAIL, {
+          templateData: { message, checkId, checkedAt },
+          idempotencyKey: messageId,
+        })
 
-      const { error: enqueueError } = await supabase.rpc('enqueue_email', {
-        queue_name: 'transactional_emails',
-        payload: alertPayload,
-      })
-
-      if (enqueueError) {
-        console.error('[HealthCheck] Failed to enqueue alert email', enqueueError)
-      } else {
-        console.log('[HealthCheck] Alert email enqueued', { checkId, to: ALERT_EMAIL })
+        if (result.sent) {
+          const { error: logError } = await supabase.from('email_send_log').insert({
+            message_id: messageId,
+            template_name: ALERT_LOG_NAME,
+            recipient_email: ALERT_EMAIL,
+            status: 'sent',
+          })
+          if (logError) console.error('[HealthCheck] Failed to log alert send', logError)
+          console.log('[HealthCheck] Alert email sent', { checkId })
+        } else {
+          const { error: logError } = await supabase.from('email_send_log').insert({
+            message_id: messageId,
+            template_name: ALERT_LOG_NAME,
+            recipient_email: ALERT_EMAIL,
+            status: 'suppressed',
+          })
+          if (logError) console.error('[HealthCheck] Failed to log suppressed alert', logError)
+          console.warn('[HealthCheck] Alert recipient is suppressed', { checkId })
+        }
+      } catch (sendError) {
+        const sendMessage = sendError instanceof Error ? sendError.message : String(sendError)
+        console.error('[HealthCheck] Failed to send alert email', { checkId, error: sendMessage })
+        const { error: logError } = await supabase.from('email_send_log').insert({
+          message_id: messageId,
+          template_name: ALERT_LOG_NAME,
+          recipient_email: ALERT_EMAIL,
+          status: 'failed',
+          error_message: sendMessage.slice(0, 1000),
+        })
+        if (logError) console.error('[HealthCheck] Failed to log alert failure', logError)
       }
     } else {
       console.log('[HealthCheck] Alert skipped (cooldown)', { checkId })
