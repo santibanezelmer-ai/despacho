@@ -600,39 +600,12 @@ export default function TermsPage() {
             <p>Para consultas relacionadas con estos Términos y Condiciones:</p>
             <ul className="mt-2 list-disc pl-5 space-y-1">
               <li>
-                <strong className="text-foreground">Contacto general:</strong>{' '}
+                <strong className="text-foreground">Contacto general, ventas, soporte y denuncias:</strong>{' '}
                 <a
                   href="mailto:contacto@operixdispatch.com"
                   className="text-emergency hover:underline"
                 >
                   contacto@operixdispatch.com
-                </a>
-              </li>
-              <li>
-                <strong className="text-foreground">Ventas:</strong>{' '}
-                <a
-                  href="mailto:ventas@operixdispatch.com"
-                  className="text-emergency hover:underline"
-                >
-                  ventas@operixdispatch.com
-                </a>
-              </li>
-              <li>
-                <strong className="text-foreground">Soporte técnico:</strong>{' '}
-                <a
-                  href="mailto:soporte@operixdispatch.com"
-                  className="text-emergency hover:underline"
-                >
-                  soporte@operixdispatch.com
-                </a>
-              </li>
-              <li>
-                <strong className="text-foreground">Canal de denuncias:</strong>{' '}
-                <a
-                  href="mailto:denuncias@operixdispatch.com"
-                  className="text-emergency hover:underline"
-                >
-                  denuncias@operixdispatch.com
                 </a>
               </li>
             </ul>
