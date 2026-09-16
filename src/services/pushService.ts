@@ -33,6 +33,8 @@ let registrationTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingRegistrationResolve: ((value: string | null) => void) | null = null;
 let pendingRegistrationSilent = false;
 let lastRegisteredToken: string | null = null;
+let pendingTokenToSave: string | null = null;
+
 
 function finishRegistration(value: string | null) {
   if (registrationTimeout) {
