@@ -49,7 +49,9 @@ export function useVehicleLastPositions(options: { emergencyId?: string; refetch
     queryFn: async () => {
       let q = (supabase as any)
         .from('vehicle_last_positions')
-        .select('*, vehicles(id, code, status, type), emergencies(id, folio, status)')
+        .select(
+          'vehicle_id, organization_id, emergency_id, latitude, longitude, accuracy, speed, heading, captured_at, updated_at, vehicles(id, code, status, type), emergencies(id, folio, status)'
+        )
         .eq('organization_id', orgId);
 
       if (options.emergencyId) q = q.eq('emergency_id', options.emergencyId);
@@ -58,6 +60,6 @@ export function useVehicleLastPositions(options: { emergencyId?: string; refetch
       return (data ?? []) as VehicleLastPosition[];
     },
     enabled: !!orgId,
-    refetchInterval: options.refetchInterval ?? 5000,
+    refetchInterval: options.refetchInterval ?? 10000,
   });
 }
