@@ -1,10 +1,8 @@
-import { Mail, AlertTriangle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const contactLinks = [
   { email: 'contacto@operixdispatch.com', label: 'Contacto general' },
-  { email: 'ventas@operixdispatch.com', label: 'Ventas' },
-  { email: 'soporte@operixdispatch.com', label: 'Soporte' },
 ];
 
 export default function LandingFooter() {
@@ -35,22 +33,6 @@ export default function LandingFooter() {
                 </li>
               ))}
             </ul>
-          </div>
-
-          {/* Complaints channel - visually separated */}
-          <div className="md:border-l md:border-border/30 md:pl-12">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-foreground mb-4 flex items-center gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 text-emergency" />
-              Canal de denuncias
-            </h3>
-            <a
-              href="mailto:denuncias@operixdispatch.com"
-              className="group inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-emergency transition-colors"
-              aria-label="Enviar correo al canal de denuncias: denuncias@operixdispatch.com"
-            >
-              <Mail className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emergency transition-colors" />
-              <span>denuncias@operixdispatch.com</span>
-            </a>
           </div>
         </div>
 
