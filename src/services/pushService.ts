@@ -135,12 +135,15 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<boo
   }
 }
 
-async function setupRegistrationListeners(): Promise<void> {
+/**
+ * Attaches the registration/registrationError listeners. Started eagerly at
+ * module load (see bottom of file) so the native `registration` event can never
+ * fire before a JS listener exists — that race is what loses the FCM token in
+ * the Google Play build, where the app boots much faster than in dev.
+ */
+export async function ensureRegistrationListeners(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
-  if (registrationListenersSetup) {
-    console.log('[Push] Registration listeners already active, skipping duplicate setup');
-    return;
-  }
+  if (registrationListenersSetup) return;
   if (registrationListenersSetupPromise) {
     await registrationListenersSetupPromise;
     return;
@@ -152,15 +155,20 @@ async function setupRegistrationListeners(): Promise<void> {
       console.log(`[Push] FCM token received: ${tokenData.value.slice(0, 20)}…`);
 
       const saved = await saveTokenToSupabase(tokenData.value, Capacitor.getPlatform());
-      if (saved && !pendingRegistrationSilent) {
-        toast.success('Notificaciones activadas');
+      if (saved) {
+        pendingTokenToSave = null;
+        if (!pendingRegistrationSilent) toast.success('Notificaciones activadas');
+      } else {
+        // No session/org yet (cold start). Keep it and retry on the next sync.
+        pendingTokenToSave = tokenData.value;
+        console.warn('[Push] Token not saved yet; will retry when session is ready');
       }
 
       finishRegistration(tokenData.value);
     });
 
     await PushNotifications.addListener('registrationError', (err) => {
-      console.error('[Push] Registration error:', err);
+      console.error('[Push] Registration error:', JSON.stringify(err));
       if (!pendingRegistrationSilent) {
         toast.error('Error al registrar notificaciones');
       }
@@ -168,7 +176,7 @@ async function setupRegistrationListeners(): Promise<void> {
     });
 
     registrationListenersSetup = true;
-    console.log('[Push] Registration listeners READY');
+    console.log('[Push] Registration listener READY');
   })();
 
   try {
@@ -177,6 +185,14 @@ async function setupRegistrationListeners(): Promise<void> {
     registrationListenersSetupPromise = null;
     throw error;
   }
+}
+
+/** Retries saving a token that arrived before the session was available. */
+export async function flushPendingToken(): Promise<void> {
+  const token = pendingTokenToSave ?? lastRegisteredToken;
+  if (!token) return;
+  const saved = await saveTokenToSupabase(token, Capacitor.getPlatform());
+  if (saved) pendingTokenToSave = null;
 }
 
 /* ── Registration ── */
@@ -189,11 +205,17 @@ export async function registerForPushNotifications(options: { force?: boolean; s
   console.log(`[Push] platform=${platform} native=${isNative}`);
   if (!isNative) return null;
 
+  // FIRST: listeners, always, before any other await and before register().
+  await ensureRegistrationListeners();
+
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) {
     console.warn('[Push] Skipping registration: no authenticated session yet');
     return null;
   }
+
+  // A token may have arrived before the session existed — persist it now.
+  await flushPendingToken();
 
   await ensureNotificationChannel();
 
@@ -205,10 +227,6 @@ export async function registerForPushNotifications(options: { force?: boolean; s
     console.warn('[Push] Local notification permission request failed:', e);
   }
 
-  // IMPORTANT: registration/registrationError listeners must be active BEFORE
-  // PushNotifications.register() is called — FCM can emit the token immediately
-  // and the event is lost if no listener is attached yet.
-  await setupRegistrationListeners();
 
   try {
     let permStatus = await PushNotifications.checkPermissions();
