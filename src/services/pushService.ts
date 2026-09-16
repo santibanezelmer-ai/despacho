@@ -383,7 +383,17 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
   }
 }
 
+/* ── Eager bootstrap ──
+   Attach the registration listeners as soon as this module is imported, before
+   any React effect runs, so `registration` can never fire without a listener. */
+if (Capacitor.isNativePlatform()) {
+  void ensureRegistrationListeners().catch((err) =>
+    console.error('[Push] Eager registration listener setup failed:', err),
+  );
+}
+
 /* ── Helpers ── */
+
 
 export function simulatePushNotification(navigate: NavigateFunction, emergencyId: string): void {
   toast.info('Simulación: Nueva emergencia', {
