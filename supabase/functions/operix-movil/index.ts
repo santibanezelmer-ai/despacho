@@ -293,10 +293,7 @@ Deno.serve(async (req) => {
             .maybeSingle()).data
         : null;
 
-      await supabase
-        .from('vehicle_devices')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', device.id);
+      await touchDevice(device);
 
       const emergency = vehicle
         ? await activeEmergencyForVehicle(device.organization_id, vehicle.id)
@@ -348,10 +345,7 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from('vehicle_positions').insert(rows as any[]);
       if (error) return json({ error: error.message }, 400);
 
-      await supabase
-        .from('vehicle_devices')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', device.id);
+      await touchDevice(device);
 
       const { data: statusRow } = await supabase
         .from('vehicles')
