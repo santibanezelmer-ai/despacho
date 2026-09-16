@@ -2323,6 +2323,7 @@ export type Database = {
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_org_volunteer: { Args: { _org_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      purge_old_vehicle_positions: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "operador" | "oficial" | "visor"
