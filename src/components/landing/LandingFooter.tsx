@@ -1,10 +1,8 @@
-import { Mail, AlertTriangle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const contactLinks = [
   { email: 'contacto@operixdispatch.com', label: 'Contacto general' },
-  { email: 'ventas@operixdispatch.com', label: 'Ventas' },
-  { email: 'soporte@operixdispatch.com', label: 'Soporte' },
 ];
 
 export default function LandingFooter() {
