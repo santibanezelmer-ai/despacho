@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { supabase } from '@/integrations/supabase/client';
-import { registerForPushNotifications, setupPushListeners } from '@/services/pushService';
+import { registerForPushNotifications, setupPushListeners, ensureRegistrationListeners, flushPendingToken } from '@/services/pushService';
 import { restoreNativeAuthSession } from '@/services/nativeAuthStorage';
 
 export function usePushNotifications() {
