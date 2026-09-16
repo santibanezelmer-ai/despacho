@@ -26,34 +26,48 @@ export function useActiveEmergencies() {
       const { data, error } = await (q as any).eq('organization_id', orgId);
       if (error) throw error;
 
-      const enriched = await Promise.all(
-        (data ?? []).map(async (e: any) => {
-          const { data: evData } = await supabase
-            .from('emergency_vehicles')
-            .select('vehicle_id, released_at, vehicles(code)')
-            .eq('emergency_id', e.id);
+      const ids = (data ?? []).map((e: any) => e.id);
 
-          const { count: personnelCount } = await supabase
-            .from('emergency_personnel')
-            .select('id', { count: 'exact', head: true })
-            .eq('emergency_id', e.id);
+      // Dos consultas por lote en lugar de dos por emergencia (evita saturar la base).
+      const [{ data: evRows }, { data: perRows }] = ids.length
+        ? await Promise.all([
+            supabase
+              .from('emergency_vehicles')
+              .select('emergency_id, vehicle_id, released_at, vehicles(code)')
+              .in('emergency_id', ids)
+              .is('released_at', null),
+            supabase
+              .from('emergency_personnel')
+              .select('emergency_id')
+              .in('emergency_id', ids),
+          ])
+        : [{ data: [] as any[] }, { data: [] as any[] }];
 
-          // Solo móviles aún asignados (los que ya retornaron se excluyen)
-          const assigned = new Map<string, string>();
-          for (const ev of evData ?? []) {
-            const id = (ev as any).vehicle_id as string | null;
-            if (!id || (ev as any).released_at || assigned.has(id)) continue;
-            assigned.set(id, ((ev as any).vehicles?.code as string) ?? '—');
-          }
+      const assignedByEmergency = new Map<string, Map<string, string>>();
+      for (const ev of evRows ?? []) {
+        const emgId = (ev as any).emergency_id as string;
+        const id = (ev as any).vehicle_id as string | null;
+        if (!emgId || !id) continue;
+        if (!assignedByEmergency.has(emgId)) assignedByEmergency.set(emgId, new Map());
+        const m = assignedByEmergency.get(emgId)!;
+        if (!m.has(id)) m.set(id, ((ev as any).vehicles?.code as string) ?? '—');
+      }
 
-          return {
-            ...e,
-            vehicleCodes: Array.from(assigned.values()),
-            vehicleIds: Array.from(assigned.keys()),
-            personnelCount: personnelCount ?? 0,
-          };
-        })
-      );
+      const personnelByEmergency = new Map<string, number>();
+      for (const p of perRows ?? []) {
+        const emgId = (p as any).emergency_id as string;
+        personnelByEmergency.set(emgId, (personnelByEmergency.get(emgId) ?? 0) + 1);
+      }
+
+      const enriched = (data ?? []).map((e: any) => {
+        const assigned = assignedByEmergency.get(e.id) ?? new Map<string, string>();
+        return {
+          ...e,
+          vehicleCodes: Array.from(assigned.values()),
+          vehicleIds: Array.from(assigned.keys()),
+          personnelCount: personnelByEmergency.get(e.id) ?? 0,
+        };
+      });
 
       // Mark emergencies with pending offline operations
       try {

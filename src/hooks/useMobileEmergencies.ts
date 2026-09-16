@@ -25,36 +25,45 @@ export function useMobileEmergencies(filter: 'all' | 'live' | 'finished' = 'all'
       const { data, error } = await q;
       if (error) throw error;
 
-      // Enrich with vehicle codes and personnel count
-      const enriched = await Promise.all(
-        (data ?? []).map(async (e: any) => {
-          const { data: evData } = await supabase
-            .from('emergency_vehicles')
-            .select('vehicle_id, released_at, vehicles(code)')
-            .eq('emergency_id', e.id);
+      // Enriquecido por lote: dos consultas en total, no dos por emergencia.
+      const ids = (data ?? []).map((e: any) => e.id);
 
-          const { count } = await supabase
-            .from('emergency_personnel')
-            .select('id', { count: 'exact', head: true })
-            .eq('emergency_id', e.id);
+      const [{ data: evRows }, { data: perRows }] = ids.length
+        ? await Promise.all([
+            supabase
+              .from('emergency_vehicles')
+              .select('emergency_id, vehicle_id, released_at, vehicles(code)')
+              .in('emergency_id', ids)
+              .is('released_at', null),
+            supabase
+              .from('emergency_personnel')
+              .select('emergency_id')
+              .in('emergency_id', ids),
+          ])
+        : [{ data: [] as any[] }, { data: [] as any[] }];
 
-          const codes = new Map<string, string>();
-          for (const ev of evData ?? []) {
-            const id = (ev as any).vehicle_id as string | null;
-            const code = (ev as any).vehicles?.code as string | undefined;
-            if (!id || !code || (ev as any).released_at || codes.has(id)) continue;
-            codes.set(id, code);
-          }
+      const codesByEmergency = new Map<string, Map<string, string>>();
+      for (const ev of evRows ?? []) {
+        const emgId = (ev as any).emergency_id as string;
+        const id = (ev as any).vehicle_id as string | null;
+        const code = (ev as any).vehicles?.code as string | undefined;
+        if (!emgId || !id || !code) continue;
+        if (!codesByEmergency.has(emgId)) codesByEmergency.set(emgId, new Map());
+        const m = codesByEmergency.get(emgId)!;
+        if (!m.has(id)) m.set(id, code);
+      }
 
-          return {
-            ...e,
-            vehicleCodes: Array.from(codes.values()),
-            personnelCount: count ?? 0,
-          };
-        })
-      );
+      const personnelByEmergency = new Map<string, number>();
+      for (const p of perRows ?? []) {
+        const emgId = (p as any).emergency_id as string;
+        personnelByEmergency.set(emgId, (personnelByEmergency.get(emgId) ?? 0) + 1);
+      }
 
-      return enriched;
+      return (data ?? []).map((e: any) => ({
+        ...e,
+        vehicleCodes: Array.from((codesByEmergency.get(e.id) ?? new Map()).values()),
+        personnelCount: personnelByEmergency.get(e.id) ?? 0,
+      }));
     },
     enabled: !!orgId,
     refetchInterval: 5000,

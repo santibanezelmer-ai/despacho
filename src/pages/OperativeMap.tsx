@@ -27,7 +27,7 @@ export default function OperativeMap() {
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
   const stations = useStations();
-  const { data: vehiclePositions } = useVehicleLastPositions({ refetchInterval: 5000 });
+  const { data: vehiclePositions } = useVehicleLastPositions({ refetchInterval: 10000 });
   const [showHydrants, setShowHydrants] = useState(true);
   const [showEmergencies, setShowEmergencies] = useState(true);
   const [showStations, setShowStations] = useState(true);

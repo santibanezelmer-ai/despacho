@@ -123,7 +123,7 @@ function useActiveAssignments(emergencyIds: string[]) {
         vehicleIds: [...new Set((vehiclesResult.data ?? []).map(row => row.vehicle_id))],
       };
     },
-    refetchInterval: 3000,
+    refetchInterval: 8000,
   });
 }
 

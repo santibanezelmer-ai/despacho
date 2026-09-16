@@ -36,11 +36,26 @@ async function authDevice(req: Request) {
   if (token.length < 20) return null;
   const { data } = await supabase
     .from('vehicle_devices')
-    .select('id, organization_id, vehicle_id, name, status')
+    .select('id, organization_id, vehicle_id, name, status, last_seen_at')
     .eq('token_hash', await sha256(token))
     .maybeSingle();
   if (!data || data.status !== 'active') return null;
   return data;
+}
+
+/**
+ * Marca actividad del dispositivo como máximo una vez por minuto.
+ * Sin esta limitación, cada envío GPS generaba un UPDATE (decenas de miles
+ * por día) y contribuía a saturar la base de datos.
+ */
+const TOUCH_INTERVAL_MS = 60_000;
+async function touchDevice(device: { id: string; last_seen_at?: string | null }) {
+  const last = device.last_seen_at ? new Date(device.last_seen_at).getTime() : 0;
+  if (Date.now() - last < TOUCH_INTERVAL_MS) return;
+  await supabase
+    .from('vehicle_devices')
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq('id', device.id);
 }
 
 /** Emergencia activa a la que está asignado el móvil (lógica existente). */
@@ -278,10 +293,7 @@ Deno.serve(async (req) => {
             .maybeSingle()).data
         : null;
 
-      await supabase
-        .from('vehicle_devices')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', device.id);
+      await touchDevice(device);
 
       const emergency = vehicle
         ? await activeEmergencyForVehicle(device.organization_id, vehicle.id)
@@ -333,10 +345,7 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from('vehicle_positions').insert(rows as any[]);
       if (error) return json({ error: error.message }, 400);
 
-      await supabase
-        .from('vehicle_devices')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', device.id);
+      await touchDevice(device);
 
       const { data: statusRow } = await supabase
         .from('vehicles')
