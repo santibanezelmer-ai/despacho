@@ -336,10 +336,10 @@ export default function TermsPage() {
             <p className="mt-2">
               Las incidencias técnicas deberán comunicarse preferentemente a:{' '}
               <a
-                href="mailto:soporte@operixdispatch.com"
+                href="mailto:contacto@operixdispatch.com"
                 className="text-emergency hover:underline"
               >
-                soporte@operixdispatch.com
+                contacto@operixdispatch.com
               </a>
             </p>
             <p className="mt-2">
