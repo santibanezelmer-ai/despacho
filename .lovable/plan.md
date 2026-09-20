@@ -1,20 +1,24 @@
-# Reorganizar la ventana Acciones
+# Mejora visual del módulo de Grifos
 
-## Objetivo
-Convertir la ventana larga actual en una herramienta compacta y fácil de recorrer, evitando que el mapa capture el desplazamiento de la página.
+## Resultado
+- Mantener el mapa operativo limpio y mostrar cada grifo con un marcador verde, amarillo, rojo o negro según su estado.
+- Al seleccionar un grifo, abrir una ficha rápida con número, estado, bocas y diámetros destacados, caudal/presión, ubicación, última inspección y observaciones; cualquier dato ausente se mostrará como “Sin información”.
+- Incorporar una ficha completa lateral para consultar todos los datos sin abandonar el mapa.
+- Agregar filtros compactos por estado y diámetro, además del control actual para mostrar u ocultar grifos.
 
-## Cambios
-- Dividir el contenido en pestañas claras: **Ubicación**, **Móviles y personal**, **Preinforme** y **Acciones operativas**.
-- Abrir por defecto **Ubicación**, reuniendo dirección, teléfono, solicitud de ubicación, coordenadas manuales y mapa en un mismo lugar.
-- Mantener el encabezado visible y mostrar la dirección sin ocupar demasiado espacio.
-- Ajustar el mapa a una altura contenida y adaptable, con sus botones siempre cercanos.
-- Desactivar el zoom del mapa con la rueda del mouse para que el desplazamiento siga moviendo la ventana; el zoom seguirá disponible con los controles `+` y `−`.
-- Mantener intactos los guardados, asignaciones, retornos, ubicación compartida y acciones operativas existentes.
+## Datos y edición
+- Ampliar los grifos propios de cada organización con campos opcionales: número, estado, diámetros de bocas, caudal, presión, última inspección y observaciones.
+- Actualizar el formulario existente para crear y editar esos datos, destacando visualmente las bocas y sus diámetros.
+- Los grifos nacionales conservarán solamente los datos existentes (ubicación, modelo, año y diámetros disponibles); no se completarán valores inventados y su estado será “Sin información” cuando no exista.
+- No se crearán tablas nuevas ni se alterará el aislamiento entre organizaciones.
 
-## Resultado esperado
-La persona operadora podrá cambiar de módulo sin recorrer una ventana extensa y podrá marcar o corregir una ubicación sin quedar atrapada en el mapa al hacer scroll.
+## Alcance técnico
+- Reutilizar el mapa y las consultas actuales, cargando únicamente los campos necesarios y manteniendo la consulta por área visible para los grifos nacionales.
+- Extender el marcador y la selección de grifos dentro del mapa compartido, sin cambiar emergencias, móviles, ubicación compartida, rutas ni lógica de despacho.
+- Mantener controles accesibles, una leyenda clara y una presentación adaptable para escritorio y pantallas pequeñas.
 
 ## Verificación
-- Revisar la ventana en escritorio y ancho reducido.
-- Confirmar navegación entre pestañas, apertura y cierre del mapa, colocación/arrastre del marcador y desplazamiento normal sobre el mapa.
-- Confirmar que el proyecto compile sin errores.
+- Comprobar los cuatro estados y la leyenda.
+- Seleccionar grifos propios y nacionales, revisar ficha rápida y ficha completa, y confirmar el tratamiento de datos faltantes.
+- Probar filtros por estado y diámetro, creación/edición y persistencia.
+- Confirmar que emergencias, móviles, cuarteles, ubicación compartida y navegación del mapa siguen funcionando sin cambios.
