@@ -133,15 +133,15 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-info" /> {editingHydrant ? 'Editar Grifo' : 'Agregar Grifo'}
           </DialogTitle>
           <DialogDescription>Registra la condición y las conexiones disponibles sin completar datos que no conozcas.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="max-h-[72vh] space-y-4 overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="grid max-h-[72vh] grid-cols-1 gap-4 overflow-y-auto pr-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="hydrant-number">ID / número</Label>
               <Input id="hydrant-number" value={hydrantNumber} onChange={(e) => setHydrantNumber(e.target.value)} placeholder="Ej: G-024" />
@@ -159,12 +159,12 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="hydrant-name">Nombre / Ubicación</Label>
             <Input id="hydrant-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Grifo Av. Principal 123" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="hydrant-lat">Latitud *</Label>
               <Input id="hydrant-lat" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="-33.4489" required />
@@ -175,7 +175,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
             </div>
           </div>
 
-          {initialCoords && <p className="text-xs text-muted-foreground">Coordenadas capturadas del mapa</p>}
+          {initialCoords && <p className="text-xs text-muted-foreground sm:col-span-2">Coordenadas capturadas del mapa</p>}
 
           <div className="space-y-2">
             <Label htmlFor="hydrant-type">Tipo</Label>
@@ -193,7 +193,12 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
             </Select>
           </div>
 
-          <div className="rounded-md border border-info/30 bg-info/5 p-3 space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="hydrant-inspection">Última inspección</Label>
+            <Input id="hydrant-inspection" type="date" value={lastInspection} onChange={(e) => setLastInspection(e.target.value)} />
+          </div>
+
+          <div className="space-y-3 rounded-md border border-info/30 bg-info/5 p-4 sm:col-span-2">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <Label>Bocas / salidas</Label>
@@ -215,11 +220,10 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
             <div className="space-y-2"><Label htmlFor="hydrant-flow">Caudal (L/min)</Label><Input id="hydrant-flow" type="number" min="0" step="0.1" value={flowLpm} onChange={(e) => setFlowLpm(e.target.value)} /></div>
             <div className="space-y-2"><Label htmlFor="hydrant-pressure">Presión (bar)</Label><Input id="hydrant-pressure" type="number" min="0" step="0.1" value={pressureBar} onChange={(e) => setPressureBar(e.target.value)} /></div>
           </div>
-          <div className="space-y-2"><Label htmlFor="hydrant-inspection">Última inspección</Label><Input id="hydrant-inspection" type="date" value={lastInspection} onChange={(e) => setLastInspection(e.target.value)} /></div>
           <div className="space-y-2"><Label htmlFor="hydrant-observations">Observaciones operativas</Label><Textarea id="hydrant-observations" value={observations} onChange={(e) => setObservations(e.target.value)} placeholder="Novedades de inspección, acceso o funcionamiento..." rows={3} /></div>
 
           <div className="space-y-2">
@@ -227,7 +231,7 @@ export default function HydrantFormDialog({ open, onOpenChange, initialCoords, e
             <Textarea id="hydrant-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Notas adicionales..." rows={2} />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-2 sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => { resetForm(); onOpenChange(false); }}>
               Cancelar
             </Button>
