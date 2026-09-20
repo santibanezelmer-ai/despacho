@@ -9,3 +9,4 @@
 - [x] Permitir múltiples bocas por grifo, cada una con su diámetro individual y presentación visual clara.
 - [x] Validar visualmente el mapa de grifos y confirmar que despacho, emergencias y rutas siguen intactos.
 - [x] Incorporar estados y ficha rápida de grifos en la segunda pantalla “Mapa” de Pantalla Central.
+- [ ] Ampliar y reorganizar la ventana del Mapa Operativo para evitar controles angostos.
