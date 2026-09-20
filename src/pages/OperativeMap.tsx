@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed, Building2, Truck } from 'lucide-react';
+import { Map, Flame, Droplets, Layers, Plus, MousePointer2, LocateFixed, Building2, Truck, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,9 @@ import { useVehicleLastPositions, formatPositionAge, isPositionStale } from '@/h
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 import { useStations } from '@/hooks/useStations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import HydrantDetailSheet from '@/components/map/HydrantDetailSheet';
+import { isHydrantStatus, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
 
 
 
@@ -43,6 +46,10 @@ export default function OperativeMap() {
   const [locateCounter, setLocateCounter] = useState(0);
   const [locating, setLocating] = useState(false);
   const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number; accuracy: number | null; ts: number } | null>(null);
+  const [hydrantStatusFilter, setHydrantStatusFilter] = useState<HydrantStatus | 'all'>('all');
+  const [hydrantDiameterFilter, setHydrantDiameterFilter] = useState<string>('all');
+  const [selectedHydrant, setSelectedHydrant] = useState<MapHydrant | null>(null);
+  const [hydrantDetailOpen, setHydrantDetailOpen] = useState(false);
 
   // Ubicación compartida por solicitantes: carga inicial + tiempo real
   useEffect(() => {
@@ -120,7 +127,20 @@ export default function OperativeMap() {
     if (!latlng) toast.error('No se pudo obtener tu ubicación');
   }, []);
 
-  const handleHydrantAction = useCallback(async (action: 'edit' | 'delete', hydrant: MapHydrant) => {
+  const editHydrant = useCallback((hydrant: MapHydrant) => {
+    if (!hydrant.isOwn) return;
+    setEditingHydrant({ id: hydrant.id, name: hydrant.name, lat: hydrant.latitude, lng: hydrant.longitude, type: hydrant.type, description: hydrant.description, hydrantNumber: hydrant.number, status: hydrant.status, outlets: hydrant.outlets, flowLpm: hydrant.flowLpm, pressureBar: hydrant.pressureBar, lastInspection: hydrant.lastInspection, observations: hydrant.observations });
+    setClickedCoords({ lat: hydrant.latitude, lng: hydrant.longitude });
+    setHydrantDetailOpen(false);
+    setHydrantDialogOpen(true);
+  }, []);
+
+  const handleHydrantAction = useCallback(async (action: 'edit' | 'delete' | 'details', hydrant: MapHydrant) => {
+    if (action === 'details') {
+      setSelectedHydrant(hydrant);
+      setHydrantDetailOpen(true);
+      return;
+    }
     if (action === 'delete') {
       if (!confirm('¿Eliminar este grifo?')) return;
       const { error } = await supabase.from('hydrants').delete().eq('id', hydrant.id);
@@ -128,11 +148,9 @@ export default function OperativeMap() {
       toast.success('Grifo eliminado');
       queryClient.invalidateQueries({ queryKey: ['hydrants'] });
     } else if (action === 'edit') {
-      setEditingHydrant({ id: hydrant.id, name: hydrant.name, lat: hydrant.latitude, lng: hydrant.longitude, type: hydrant.type, description: hydrant.description });
-      setClickedCoords({ lat: hydrant.latitude, lng: hydrant.longitude });
-      setHydrantDialogOpen(true);
+      editHydrant(hydrant);
     }
-  }, [queryClient]);
+  }, [editHydrant, queryClient]);
 
   const mapEmergencies = useMemo<MapEmergency[]>(
     () =>
@@ -163,6 +181,16 @@ export default function OperativeMap() {
       type: h.type,
       description: h.description,
       isOwn: true,
+      number: h.hydrant_number,
+      status: isHydrantStatus(h.status) ? h.status : 'sin_informacion',
+      outlets: parseHydrantOutlets(h.outlets),
+      flowLpm: h.flow_lpm,
+      pressureBar: h.pressure_bar,
+      location: h.name,
+      lastInspection: h.last_inspection,
+      observations: h.observations,
+      pipeDiameterMm: null,
+      year: null,
     }));
     const nationalHydrants = (sharedHydrants ?? []).map((h) => ({
       id: h.id,
@@ -172,9 +200,26 @@ export default function OperativeMap() {
       type: h.modelo ?? null,
       description: h.anio ? `Año: ${h.anio}` + (h.diam_grifo ? ` | Diám. grifo: ${h.diam_grifo}mm` : '') + (h.diam_tub ? ` | Diám. tubo: ${h.diam_tub}mm` : '') : null,
       isOwn: false,
+      number: h.grifo_id != null ? String(h.grifo_id) : null,
+      status: 'sin_informacion' as const,
+      outlets: h.diam_grifo ? [{ id: `shared-${h.id}-1`, diameterMm: Number(h.diam_grifo) }] : [],
+      flowLpm: null,
+      pressureBar: null,
+      location: h.ubicacion ?? null,
+      lastInspection: null,
+      observations: null,
+      pipeDiameterMm: h.diam_tub != null ? Number(h.diam_tub) : null,
+      year: h.anio ?? null,
     }));
     return [...orgHydrants, ...nationalHydrants];
   }, [hydrants, sharedHydrants]);
+
+  const hydrantDiameters = useMemo(() => Array.from(new Set(mapHydrants.flatMap((hydrant) => hydrant.outlets.map((outlet) => outlet.diameterMm)))).sort((a, b) => a - b), [mapHydrants]);
+  const filteredHydrants = useMemo(() => mapHydrants.filter((hydrant) => {
+    if (hydrantStatusFilter !== 'all' && hydrant.status !== hydrantStatusFilter) return false;
+    if (hydrantDiameterFilter !== 'all' && !hydrant.outlets.some((outlet) => outlet.diameterMm === Number(hydrantDiameterFilter))) return false;
+    return true;
+  }), [mapHydrants, hydrantStatusFilter, hydrantDiameterFilter]);
 
   const mapVehicles = useMemo<MapVehicle[]>(
     () =>
@@ -199,17 +244,41 @@ export default function OperativeMap() {
 
   return (
     <div className="flex w-full flex-col h-full" style={{ width: '100%' }}>
-      <div className="flex items-center justify-between p-3 border-b border-border bg-card">
+      <div className="flex flex-col gap-3 border-b border-border bg-card p-3 xl:flex-row xl:items-center xl:justify-between">
         <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Map className="h-5 w-5 text-info" /> Mapa Operativo
         </h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Switch checked={showEmergencies} onCheckedChange={setShowEmergencies} id="show-emergencies" />
             <Label htmlFor="show-emergencies" className="text-xs flex items-center gap-1">
               <Flame className="h-3 w-3 text-emergency" /> Emergencias
             </Label>
           </div>
+
+          {showHydrants && (
+            <div className="flex items-center gap-2 border-l border-border pl-3">
+              <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+              <Select value={hydrantStatusFilter} onValueChange={(value) => setHydrantStatusFilter(value as HydrantStatus | 'all')}>
+                <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="operativo">Operativos</SelectItem>
+                  <SelectItem value="observaciones">Con observaciones</SelectItem>
+                  <SelectItem value="averiado">Averiados</SelectItem>
+                  <SelectItem value="sin_informacion">Sin información</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={hydrantDiameterFilter} onValueChange={setHydrantDiameterFilter}>
+                <SelectTrigger className="h-8 w-[145px] text-xs"><SelectValue placeholder="Diámetro" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los diámetros</SelectItem>
+                  {hydrantDiameters.map((diameter) => <SelectItem key={diameter} value={String(diameter)}>{diameter} mm</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <span className="text-xs tabular-nums text-muted-foreground">{filteredHydrants.length} visibles</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Switch checked={showHydrants} onCheckedChange={setShowHydrants} id="show-hydrants" />
             <Label htmlFor="show-hydrants" className="text-xs flex items-center gap-1">
@@ -252,7 +321,7 @@ export default function OperativeMap() {
       <div className="relative flex-1 min-h-0" style={{ isolation: 'isolate' }}>
         <LeafletMapCanvas
           emergencies={mapEmergencies}
-          hydrants={mapHydrants}
+          hydrants={filteredHydrants}
           stations={stations}
           vehicles={mapVehicles}
           showEmergencies={showEmergencies}
@@ -292,8 +361,20 @@ export default function OperativeMap() {
             Emergencia activa
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-info border border-white" />
-            Grifo
+            <div className="w-3 h-3 rounded bg-success border border-background" />
+            Operativo
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-warning border border-background" />
+            Con observaciones
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-destructive border border-background" />
+            Averiado / Fuera de servicio
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded bg-foreground border border-background" />
+            Sin información
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <div className="w-3 h-3 rounded bg-[#f59e0b] border border-white" />
@@ -321,6 +402,7 @@ export default function OperativeMap() {
         initialCoords={clickedCoords}
         editingHydrant={editingHydrant}
       />
+      <HydrantDetailSheet hydrant={selectedHydrant} open={hydrantDetailOpen} onOpenChange={setHydrantDetailOpen} onEdit={editHydrant} />
     </div>
   );
 }
