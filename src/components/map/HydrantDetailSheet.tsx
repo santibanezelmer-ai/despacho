@@ -1,4 +1,4 @@
-import { Droplets, Gauge, MapPin, Ruler, CalendarDays, FileText, Wrench } from 'lucide-react';
+import { Droplets, Gauge, Ruler, Wrench } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';

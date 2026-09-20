@@ -30,7 +30,7 @@ function useSharedHydrants(bounds: { north: number; south: number; east: number;
       if (!bounds) return [];
       const { data, error } = await supabase
         .from('shared_hydrants')
-        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
+        .select('id, grifo_id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
         .eq('active', true)
         .gte('latitude', bounds.south)
         .lte('latitude', bounds.north)
