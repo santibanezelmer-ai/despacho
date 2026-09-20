@@ -42,7 +42,21 @@ export default function OperativeMap() {
   const [clickMode, setClickMode] = useState(false);
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [editingHydrant, setEditingHydrant] = useState<{ id: string; name: string; lat: number; lng: number; type: string | null; description: string | null } | null>(null);
+  const [editingHydrant, setEditingHydrant] = useState<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    type: string | null;
+    description: string | null;
+    hydrantNumber: string | null;
+    status: HydrantStatus;
+    outlets: MapHydrant['outlets'];
+    flowLpm: number | null;
+    pressureBar: number | null;
+    lastInspection: string | null;
+    observations: string | null;
+  } | null>(null);
   const [locateCounter, setLocateCounter] = useState(0);
   const [locating, setLocating] = useState(false);
   const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number; accuracy: number | null; ts: number } | null>(null);
