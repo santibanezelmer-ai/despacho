@@ -7,6 +7,7 @@ import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useUpdateAddress, useUpdateLocation, useAssignVehicles, useToggleFlag } from '@/hooks/useEmergencyActions';
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
@@ -44,8 +45,8 @@ interface Props {
 }
 
 export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, onClose }: Props) {
+  const [activeTab, setActiveTab] = useState('location');
   const [editAddress, setEditAddress] = useState(emergency.address);
-  const [showMap, setShowMap] = useState(false);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(
     emergency.latitude && emergency.longitude ? { lat: emergency.latitude, lng: emergency.longitude } : null
   );
@@ -162,12 +163,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     }
   };
 
-  // Init mini map
+  // Init mini map only while the location tab is visible.
   useEffect(() => {
-    if (!showMap || !mapRef.current) return;
+    if (activeTab !== 'location' || !mapRef.current) return;
 
     const center = mapCoords ?? { lat: -33.45, lng: -70.65 };
-    const map = L.map(mapRef.current, { zoomControl: true }).setView([center.lat, center.lng], mapCoords ? 15 : 12);
+    const map = L.map(mapRef.current, {
+      zoomControl: true,
+      scrollWheelZoom: false,
+    }).setView([center.lat, center.lng], mapCoords ? 15 : 12);
     addBaseTileLayer(map);
     leafletMapRef.current = map;
 
@@ -203,15 +207,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
     return () => { map.remove(); leafletMapRef.current = null; markerRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showMap]);
+  }, [activeTab]);
 
   // Sincroniza el marcador cuando llegan coordenadas nuevas (enlace de ubicación)
   useEffect(() => {
-    if (!showMap || !mapCoords || !leafletMapRef.current) return;
+    if (activeTab !== 'location' || !mapCoords || !leafletMapRef.current) return;
     placeMarker(mapCoords.lat, mapCoords.lng);
     leafletMapRef.current.setView([mapCoords.lat, mapCoords.lng], 16);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showMap, mapCoords?.lat, mapCoords?.lng]);
+  }, [activeTab, mapCoords?.lat, mapCoords?.lng]);
 
 
   const handleGeolocate = () => {
@@ -248,7 +252,11 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const handleSaveLocation = () => {
     if (!mapCoords) return;
     updateLocation.mutate({ id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng });
-    setShowMap(false);
+  };
+
+  const handleCenterMarker = () => {
+    if (!mapCoords || !leafletMapRef.current) return;
+    leafletMapRef.current.setView([mapCoords.lat, mapCoords.lng], Math.max(leafletMapRef.current.getZoom(), 15));
   };
 
   const handleAssignVehicles = () => {
@@ -313,86 +321,110 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="console-panel w-[96vw] max-w-6xl max-h-[95vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-sm font-bold text-foreground">Acciones — {emergency.address}</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+      <div className="console-panel flex max-h-[95vh] w-[96vw] max-w-6xl flex-col overflow-hidden">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border p-4">
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-foreground">Acciones de emergencia</h2>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{emergency.address}</p>
+            <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-mono font-semibold uppercase">
+              <span className={mapCoords ? 'text-success' : 'text-warning'}>
+                {mapCoords ? 'Ubicación marcada' : 'Ubicación pendiente'}
+              </span>
+              <span className="text-muted-foreground">{assignedVehicleIds.length} móviles asignados</span>
+              <span className="text-muted-foreground">Estado: {emergency.status.replace('_', ' ')}</span>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar acciones" className="shrink-0">
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
-        <div className="p-4 space-y-5">
-          {/* 1. Edit Address */}
-          <section>
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" /> Editar Dirección
-            </label>
-            <div className="flex gap-2">
-              <Input value={editAddress} onChange={e => setEditAddress(e.target.value)} className="bg-muted/50 flex-1" />
-              <Button size="sm" onClick={handleSaveAddress} disabled={updateAddress.isPending || editAddress.trim() === emergency.address}>
-                {updateAddress.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              </Button>
-            </div>
-          </section>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0 overflow-x-auto border-b border-border px-4 py-2">
+            <TabsList className="grid w-full min-w-[620px] grid-cols-4">
+              <TabsTrigger value="location" className="gap-1.5"><Navigation className="h-3.5 w-3.5" /> Ubicación</TabsTrigger>
+              <TabsTrigger value="resources" className="gap-1.5"><Truck className="h-3.5 w-3.5" /> Móviles y personal</TabsTrigger>
+              <TabsTrigger value="report" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Preinforme</TabsTrigger>
+              <TabsTrigger value="operations" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Acciones operativas</TabsTrigger>
+            </TabsList>
+          </div>
 
-          {/* 1b. Teléfono del solicitante + solicitud de ubicación */}
-          {!isClosed && (
-            <section>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <Phone className="h-3.5 w-3.5" /> Teléfono del solicitante
-              </label>
-              <div className="mb-2 flex gap-2">
-                <Input
-                  value={callerPhone}
-                  onChange={e => setCallerPhone(e.target.value)}
-                  placeholder="+56 9 1234 5678"
-                  inputMode="tel"
-                  className="bg-muted/50 flex-1 font-mono"
-                />
-                <Button size="sm" onClick={handleSavePhone} disabled={savingPhone}>
-                  {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                </Button>
-              </div>
-              {callerPhone.replace(/\D/g, '').length >= 8 ? (
-                <LocationRequestPanel
-                  phone={callerPhone}
-                  requestId={locRequestId}
-                  onRequestCreated={setLocRequestId}
-                  fix={locFix}
-                  onFix={handleLocationFix}
-                  emergencyId={emergency.id}
-                />
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Ingrese y guarde un teléfono válido para solicitar la ubicación por enlace.
-                </p>
-              )}
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                Visible solo en la consola de despacho hasta finalizar la emergencia.
-              </p>
-            </section>
-          )}
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <TabsContent value="location" className="m-0">
+              <section className="overflow-hidden rounded-md border border-border bg-muted/10">
+                <div className="border-b border-border px-4 py-3">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <MapPin className="h-4 w-4 text-emergency" /> Ubicación de la emergencia
+                  </h3>
+                </div>
+                <div className="grid gap-0 lg:grid-cols-[minmax(280px,0.78fr)_minmax(420px,1.22fr)]">
+                  <div className="space-y-4 border-b border-border p-4 lg:border-b-0 lg:border-r">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Dirección</label>
+                      <div className="flex gap-2">
+                        <Input value={editAddress} onChange={e => setEditAddress(e.target.value)} className="min-w-0 flex-1 bg-muted/50" />
+                        <Button size="sm" onClick={handleSaveAddress} disabled={updateAddress.isPending || editAddress.trim() === emergency.address} aria-label="Guardar dirección">
+                          {updateAddress.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
 
-          {/* 1c. Coordenadas manuales */}
-          {!isClosed && (
-            <section>
-              <ManualCoordsInput
-                latitude={mapCoords?.lat ?? null}
-                longitude={mapCoords?.lng ?? null}
-                onSubmit={(lat, lng) => {
-                  setMapCoords({ lat, lng });
-                  updateLocation.mutate({ id: emergency.id, latitude: lat, longitude: lng });
-                }}
-              />
-            </section>
-          )}
+                    {!isClosed && (
+                      <div>
+                        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5" /> Teléfono del solicitante
+                        </label>
+                        <div className="mb-2 flex gap-2">
+                          <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 1234 5678" inputMode="tel" className="min-w-0 flex-1 bg-muted/50 font-mono" />
+                          <Button size="sm" onClick={handleSavePhone} disabled={savingPhone} aria-label="Guardar teléfono">
+                            {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {callerPhone.replace(/\D/g, '').length >= 8 ? (
+                          <LocationRequestPanel phone={callerPhone} requestId={locRequestId} onRequestCreated={setLocRequestId} fix={locFix} onFix={handleLocationFix} emergencyId={emergency.id} />
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Ingrese y guarde un teléfono válido para solicitar la ubicación por enlace.</p>
+                        )}
+                        <p className="mt-1 text-[10px] text-muted-foreground">Visible solo en la consola de despacho hasta finalizar la emergencia.</p>
+                      </div>
+                    )}
 
+                    {!isClosed && (
+                      <ManualCoordsInput
+                        latitude={mapCoords?.lat ?? null}
+                        longitude={mapCoords?.lng ?? null}
+                        onSubmit={(lat, lng) => {
+                          setMapCoords({ lat, lng });
+                          updateLocation.mutate({ id: emergency.id, latitude: lat, longitude: lng });
+                        }}
+                      />
+                    )}
+                  </div>
 
+                  <div className="flex min-w-0 flex-col p-4">
+                    <div ref={mapRef} className="h-[340px] w-full rounded-md border border-border sm:h-[380px] lg:h-[430px]" style={{ isolation: 'isolate' }} />
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={handleCenterMarker} disabled={!mapCoords}>
+                        <Crosshair className="mr-1 h-4 w-4" /> Centrar marcador
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleGeolocate} disabled={locating}>
+                        {locating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Navigation className="mr-1 h-4 w-4" />} Mi ubicación
+                      </Button>
+                      <Button size="sm" onClick={handleSaveLocation} disabled={!mapCoords || updateLocation.isPending} className="sm:ml-auto">
+                        {updateLocation.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Guardar ubicación
+                      </Button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground">
+                      <span>Haz clic para marcar o arrastra el marcador para ajustar. Usa +/− para acercar.</span>
+                      {mapCoords && <span className="font-mono">{mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}</span>}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </TabsContent>
 
-
-
-          {/* 2. Assign More Vehicles */}
-          <section>
+            <TabsContent value="resources" className="m-0 space-y-5">
+              <section>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Truck className="h-3.5 w-3.5" /> Asignar Móviles Adicionales
             </label>
@@ -425,66 +457,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 )}
               </>
             )}
-          </section>
+              </section>
 
-          {/* 2b. Assigned Vehicles (unassign) */}
-          <section>
-            <AssignedVehiclesManager emergencyId={emergency.id} />
-          </section>
+              <section><AssignedVehiclesManager emergencyId={emergency.id} /></section>
+              <section><VehiclePersonnelManager emergencyId={emergency.id} /></section>
+              <section><VehicleReturnManager emergencyId={emergency.id} emergencyStatus={emergency.status} /></section>
+            </TabsContent>
 
-
-          {/* 3. Map Location */}
-          <section>
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Navigation className="h-3.5 w-3.5" /> Ubicación en Mapa
-            </label>
-            {emergency.latitude && emergency.longitude && !showMap && (
-              <p className="text-xs text-muted-foreground mb-1">
-                📍 {emergency.latitude.toFixed(5)}, {emergency.longitude.toFixed(5)}
-              </p>
-            )}
-            {!showMap ? (
-              <Button variant="outline" size="sm" onClick={() => setShowMap(true)}>
-                <MapPin className="mr-1 h-4 w-4" />
-                {emergency.latitude ? 'Editar ubicación' : 'Marcar ubicación de la emergencia'}
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <div ref={mapRef} className="h-[75vh] min-h-[480px] w-full rounded-md border border-border" style={{ isolation: 'isolate' }} />
-                <p className="text-[10px] text-muted-foreground">Haz clic en el mapa o arrastra el marcador rojo para definir la ubicación. Si el solicitante comparte su ubicación por enlace, se marcará automáticamente.</p>
-
-                {mapCoords && (
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={handleGeolocate} disabled={locating}>
-                    {locating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Crosshair className="mr-1 h-4 w-4" />}
-                    Geolocalizarme
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowMap(false)}>Cancelar</Button>
-                  <Button size="sm" onClick={handleSaveLocation} disabled={!mapCoords || updateLocation.isPending}>
-                    {updateLocation.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
-                    Guardar Ubicación
-                  </Button>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* 4. Vehicle Personnel Manager */}
-          <section>
-            <VehiclePersonnelManager emergencyId={emergency.id} />
-          </section>
-
-          {/* 4b. Vehicle Return Manager */}
-          <section>
-            <VehicleReturnManager emergencyId={emergency.id} emergencyStatus={emergency.status} />
-          </section>
-
-          {/* 5. Pre-informe */}
-          <section>
+            <TabsContent value="report" className="m-0">
+              <section>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <FileText className="h-3.5 w-3.5" /> Preinforme de la Emergencia
             </label>
@@ -501,10 +482,11 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 Guardar preinforme
               </Button>
             </div>
-          </section>
+              </section>
+            </TabsContent>
 
-          {/* 6. Action Buttons Grid */}
-          <section>
+            <TabsContent value="operations" className="m-0">
+              <section>
             <label className="mb-2 text-xs font-medium text-muted-foreground">Acciones Operativas</label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -557,8 +539,10 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                 <span>6-16 — Falsa Alarma</span>
               </button>
             </div>
-          </section>
-        </div>
+              </section>
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
     </div>
   );
