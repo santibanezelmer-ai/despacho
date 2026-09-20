@@ -211,9 +211,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   // Sincroniza el marcador cuando llegan coordenadas nuevas (enlace de ubicación)
   useEffect(() => {
-    if (activeTab !== 'location' || !mapCoords || !leafletMapRef.current) return;
+    const map = leafletMapRef.current;
+    if (activeTab !== 'location' || !mapCoords || !map) return;
+    // El mapa puede haber sido destruido por el cambio de pestaña justo antes
+    if (!(map as any)._loaded || !(map as any)._container) return;
     placeMarker(mapCoords.lat, mapCoords.lng);
-    leafletMapRef.current.setView([mapCoords.lat, mapCoords.lng], 16);
+    map.setView([mapCoords.lat, mapCoords.lng], 16);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, mapCoords?.lat, mapCoords?.lng]);
 

@@ -169,8 +169,8 @@ function ShareModal({ onClose }: { onClose: () => void }) {
 export default function CentralScreen() {
   const { formatClock } = useTimeFormat();
   const { data: emergencies } = useActiveEmergencies();
-  const { data: vehicles } = useVehicles({ refetchInterval: 5000 });
-  const { data: volunteers } = useVolunteers({ refetchInterval: 5000 });
+  const { data: vehicles } = useVehicles({ refetchInterval: 10000 });
+  const { data: volunteers } = useVolunteers({ refetchInterval: 10000 });
   const [now, setNow] = useState(new Date());
   const [vehSearch, setVehSearch] = useState('');
   const [showShare, setShowShare] = useState(false);
