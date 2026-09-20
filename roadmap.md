@@ -8,3 +8,4 @@
 - [ ] Ampliar los datos propios de grifos con campos operacionales opcionales, sin inventar datos históricos.
 - [ ] Permitir múltiples bocas por grifo, cada una con su diámetro individual y presentación visual clara.
 - [ ] Validar visualmente el mapa de grifos y confirmar que despacho, emergencias y rutas siguen intactos.
+- [ ] Incorporar estados y ficha rápida de grifos en la segunda pantalla “Mapa” de Pantalla Central.

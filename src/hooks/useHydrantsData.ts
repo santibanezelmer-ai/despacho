@@ -28,7 +28,7 @@ export function useSharedHydrants(bounds: MapBounds | null) {
       if (!bounds) return [];
       const { data, error } = await supabase
         .from('shared_hydrants' as any)
-        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
+        .select('id, grifo_id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
         .eq('active', true)
         .gte('latitude', bounds.south)
         .lte('latitude', bounds.north)

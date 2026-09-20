@@ -754,33 +754,54 @@ export type Database = {
           active: boolean
           created_at: string
           description: string | null
+          flow_lpm: number | null
+          hydrant_number: string | null
           id: string
+          last_inspection: string | null
           latitude: number
           longitude: number
           name: string | null
+          observations: string | null
           organization_id: string
+          outlets: Json
+          pressure_bar: number | null
+          status: string
           type: string | null
         }
         Insert: {
           active?: boolean
           created_at?: string
           description?: string | null
+          flow_lpm?: number | null
+          hydrant_number?: string | null
           id?: string
+          last_inspection?: string | null
           latitude: number
           longitude: number
           name?: string | null
+          observations?: string | null
           organization_id: string
+          outlets?: Json
+          pressure_bar?: number | null
+          status?: string
           type?: string | null
         }
         Update: {
           active?: boolean
           created_at?: string
           description?: string | null
+          flow_lpm?: number | null
+          hydrant_number?: string | null
           id?: string
+          last_inspection?: string | null
           latitude?: number
           longitude?: number
           name?: string | null
+          observations?: string | null
           organization_id?: string
+          outlets?: Json
+          pressure_bar?: number | null
+          status?: string
           type?: string | null
         }
         Relationships: [

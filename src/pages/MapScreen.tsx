@@ -8,6 +8,8 @@ import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { useVehicleLastPositions, isPositionStale, formatPositionAge } from '@/hooks/useVehiclePositions';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { HYDRANT_STATUS, isHydrantStatus, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
 
 
 function useHydrants() {
@@ -28,7 +30,7 @@ function useSharedHydrants(bounds: { north: number; south: number; east: number;
       if (!bounds) return [];
       const { data, error } = await supabase
         .from('shared_hydrants')
-        .select('id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
+        .select('id, grifo_id, latitude, longitude, ubicacion, modelo, diam_grifo, diam_tub, anio')
         .eq('active', true)
         .gte('latitude', bounds.south)
         .lte('latitude', bounds.north)
@@ -60,16 +62,17 @@ function emergencyIcon(color: string) {
   });
 }
 
-function hydrantIcon(own: boolean) {
-  const bg = own ? '#3b82f6' : '#60a5fa';
-  const border = own ? '#1e3a5f' : '#2563eb';
+function hydrantIcon(status: HydrantStatus) {
+  const bg = HYDRANT_STATUS[status].color;
   return L.divIcon({
-    html: `<div style="width:12px;height:12px;border-radius:50%;background:${bg};border:2px solid ${border};box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>`,
+    html: `<div style="width:20px;height:20px;border-radius:5px;background:${bg};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M7 21v-8a5 5 0 0 1 10 0v8"/><path d="M5 21h14M9 8V5h6v3"/></svg></div>`,
     className: '',
-    iconSize: [12, 12],
-    iconAnchor: [6, 6],
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
   });
 }
+
+const escapeHtml = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 function vehicleIcon(code: string, stale: boolean, hasEmergency: boolean, heading: number | null) {
   const bg = stale ? '#6b7280' : hasEmergency ? '#dc2626' : '#22c55e';
@@ -96,6 +99,8 @@ export default function MapScreen() {
   const [bounds, setBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [now, setNow] = useState(new Date());
+  const [hydrantStatusFilter, setHydrantStatusFilter] = useState<HydrantStatus | 'all'>('all');
+  const [hydrantDiameterFilter, setHydrantDiameterFilter] = useState('all');
 
   const { data: emergencies, isLoading: loadingEmg } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
@@ -175,17 +180,25 @@ export default function MapScreen() {
     if (!map) return;
     const markers: L.Marker[] = [];
     const allHydrants = [
-      ...(hydrants ?? []).map(h => ({ lat: h.latitude, lng: h.longitude, name: h.name || 'Grifo', own: true })),
-      ...(sharedHydrants ?? []).map((h: any) => ({ lat: h.latitude, lng: h.longitude, name: h.ubicacion || 'Grifo', own: false })),
-    ];
+      ...(hydrants ?? []).map(h => ({ lat: h.latitude, lng: h.longitude, name: h.name || 'Grifo', number: h.hydrant_number, status: isHydrantStatus(h.status) ? h.status : 'sin_informacion' as HydrantStatus, outlets: parseHydrantOutlets(h.outlets), flow: h.flow_lpm, pressure: h.pressure_bar, location: h.name, inspection: h.last_inspection, observations: h.observations || h.description, type: h.type, own: true })),
+      ...(sharedHydrants ?? []).map((h: any) => ({ lat: h.latitude, lng: h.longitude, name: h.ubicacion || 'Grifo', number: h.grifo_id != null ? String(h.grifo_id) : null, status: 'sin_informacion' as HydrantStatus, outlets: h.diam_grifo ? [{ id: `shared-${h.id}`, diameterMm: Number(h.diam_grifo) }] : [], flow: null, pressure: null, location: h.ubicacion, inspection: null, observations: null, type: h.modelo, own: false })),
+    ].filter(h => hydrantStatusFilter === 'all' || h.status === hydrantStatusFilter)
+      .filter(h => hydrantDiameterFilter === 'all' || h.outlets.some(outlet => outlet.diameterMm === Number(hydrantDiameterFilter)));
     allHydrants.forEach(h => {
-      const m = L.marker([h.lat, h.lng], { icon: hydrantIcon(h.own) })
-        .bindPopup(`<div style="font-size:12px"><b>💧 ${h.name}</b></div>`)
+      const status = HYDRANT_STATUS[h.status];
+      const outlets = h.outlets.length > 0 ? h.outlets.map((outlet, index) => `<span style="display:inline-block;padding:3px 6px;margin:2px;background:#dbeafe;color:#1d4ed8;border-radius:4px;font-weight:700;">B${index + 1} · ${outlet.diameterMm} mm</span>`).join('') : 'Sin información';
+      const m = L.marker([h.lat, h.lng], { icon: hydrantIcon(h.status) })
+        .bindPopup(`<div style="font-size:12px;min-width:240px;line-height:1.45"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:14px">Grifo ${escapeHtml(h.number || h.name)}</b><span style="background:${status.color};color:white;padding:2px 6px;border-radius:4px;font-weight:700">${status.label}</span></div><div style="margin-top:7px;color:#666">BOCAS / SALIDAS</div><div>${outlets}</div><div style="margin-top:6px"><b>Tipo:</b> ${escapeHtml(h.type || 'Sin información')}</div><div><b>Caudal:</b> ${h.flow != null ? `${h.flow} L/min` : 'Sin información'}</div><div><b>Presión:</b> ${h.pressure != null ? `${h.pressure} bar` : 'Sin información'}</div><div><b>Ubicación:</b> ${escapeHtml(h.location || `${h.lat.toFixed(6)}, ${h.lng.toFixed(6)}`)}</div><div><b>Última inspección:</b> ${h.inspection || 'Sin información'}</div><div><b>Observaciones:</b> ${escapeHtml(h.observations || 'Sin información')}</div></div>`)
         .addTo(map);
       markers.push(m);
     });
     return () => { markers.forEach(m => m.remove()); };
-  }, [hydrants, sharedHydrants]);
+  }, [hydrants, sharedHydrants, hydrantStatusFilter, hydrantDiameterFilter]);
+
+  const hydrantDiameters = Array.from(new Set([
+    ...(hydrants ?? []).flatMap((h) => parseHydrantOutlets(h.outlets).map((outlet) => outlet.diameterMm)),
+    ...(sharedHydrants ?? []).flatMap((h: any) => h.diam_grifo ? [Number(h.diam_grifo)] : []),
+  ])).sort((a, b) => a - b);
 
   // Vehicles GPS layer (Operix Móvil)
   useEffect(() => {
@@ -262,6 +275,18 @@ export default function MapScreen() {
         </div>
       </div>
 
+      <div className="absolute right-4 top-4 z-[1000] flex items-center gap-2 rounded-md border border-border bg-card/95 p-2 shadow-lg">
+        <Droplets className="h-4 w-4 text-info" />
+        <Select value={hydrantStatusFilter} onValueChange={(value) => setHydrantStatusFilter(value as HydrantStatus | 'all')}>
+          <SelectTrigger className="h-8 w-[155px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="all">Todos los estados</SelectItem><SelectItem value="operativo">Operativos</SelectItem><SelectItem value="observaciones">Con observaciones</SelectItem><SelectItem value="averiado">Averiados</SelectItem><SelectItem value="sin_informacion">Sin información</SelectItem></SelectContent>
+        </Select>
+        <Select value={hydrantDiameterFilter} onValueChange={setHydrantDiameterFilter}>
+          <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="all">Todos los diámetros</SelectItem>{hydrantDiameters.map((diameter) => <SelectItem key={diameter} value={String(diameter)}>{diameter} mm</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+
       {/* Right-side buttons */}
       <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-2">
         <button
@@ -286,9 +311,10 @@ export default function MapScreen() {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Flame className="w-3 h-3 text-destructive" /> Emergencias
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Droplets className="w-3 h-3 text-[hsl(var(--info))]" /> Grifos
-        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-3 w-3 rounded-sm bg-success" /> Operativo</div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-3 w-3 rounded-sm bg-warning" /> Con observaciones</div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-3 w-3 rounded-sm bg-destructive" /> Averiado</div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-3 w-3 rounded-sm bg-foreground" /> Sin información</div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Truck className="w-3 h-3 text-success" /> Móviles GPS
         </div>
