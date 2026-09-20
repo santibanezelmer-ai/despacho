@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { addBaseTileLayer, OSM_TILE_URL } from '@/lib/mapTiles';
+import { HYDRANT_STATUS, type HydrantOutlet, type HydrantStatus } from '@/lib/hydrants';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -35,6 +36,16 @@ export type MapHydrant = {
   type: string | null;
   description: string | null;
   isOwn?: boolean;
+  number: string | null;
+  status: HydrantStatus;
+  outlets: HydrantOutlet[];
+  flowLpm: number | null;
+  pressureBar: number | null;
+  location: string | null;
+  lastInspection: string | null;
+  observations: string | null;
+  pipeDiameterMm: number | null;
+  year: number | null;
 };
 
 export type MapStation = {
@@ -73,7 +84,7 @@ type LeafletMapCanvasProps = {
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   clickMode?: boolean;
-  onHydrantAction?: (action: 'edit' | 'delete', hydrant: MapHydrant) => void;
+  onHydrantAction?: (action: 'edit' | 'delete' | 'details', hydrant: MapHydrant) => void;
 
   locateRequested?: number; // increment to trigger geolocation
   onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
@@ -99,14 +110,22 @@ const getEmergencyIcon = (color: string) => {
   return icon;
 };
 
-const hydrantIcon = L.divIcon({
-  className: '',
-  html: `<div style="background:#3b82f6;width:22px;height:22px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="6"/></svg>
-  </div>`,
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-});
+const hydrantIconCache = new Map<HydrantStatus, L.DivIcon>();
+const getHydrantIcon = (status: HydrantStatus) => {
+  const cached = hydrantIconCache.get(status);
+  if (cached) return cached;
+  const color = HYDRANT_STATUS[status].color;
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="background:${color};width:26px;height:26px;border-radius:6px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M7 21v-8a5 5 0 0 1 10 0v8"/><path d="M5 21h14M9 8V5h6v3M5 14h3M16 14h3"/></svg>
+    </div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  });
+  hydrantIconCache.set(status, icon);
+  return icon;
+};
 
 const escapeHtml = (value: string) =>
   value
@@ -131,10 +150,19 @@ const buildEmergencyPopup = (emergency: MapEmergency) => {
 };
 
 const buildHydrantPopup = (hydrant: MapHydrant) => {
+  const status = HYDRANT_STATUS[hydrant.status];
+  const outlets = hydrant.outlets.length > 0
+    ? hydrant.outlets.map((outlet, index) => `<span style="display:inline-flex;align-items:center;padding:4px 7px;border-radius:4px;background:hsl(var(--info) / .14);color:hsl(var(--info));font-weight:700;font-family:monospace;">B${index + 1} · ${outlet.diameterMm} mm</span>`).join('')
+    : '<span style="font-size:12px;color:hsl(var(--muted-foreground));">Sin información de bocas</span>';
   const rows = [
-    `<div style="font-weight:700;">${escapeHtml(hydrant.name || 'Grifo')}</div>`,
+    `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;"><div><div style="font-size:11px;color:hsl(var(--muted-foreground));">GRIFO</div><div style="font-weight:700;font-size:15px;">${escapeHtml(hydrant.number || hydrant.name || 'Sin número')}</div></div><span style="padding:3px 7px;border-radius:4px;background:${status.color};color:white;font-size:11px;font-weight:700;white-space:nowrap;">${status.label}</span></div>`,
     hydrant.type ? `<div style="font-size:12px;">Tipo: ${escapeHtml(hydrant.type)}</div>` : '',
-    hydrant.description ? `<div style="font-size:12px;">${escapeHtml(hydrant.description)}</div>` : '',
+    `<div style="margin-top:5px;"><div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:4px;">BOCAS / SALIDAS</div><div style="display:flex;gap:4px;flex-wrap:wrap;">${outlets}</div></div>`,
+    `<div style="font-size:12px;margin-top:3px;">Caudal: ${hydrant.flowLpm != null ? `${hydrant.flowLpm} L/min` : 'Sin información'} · Presión: ${hydrant.pressureBar != null ? `${hydrant.pressureBar} bar` : 'Sin información'}</div>`,
+    `<div style="font-size:12px;">Ubicación: ${escapeHtml(hydrant.location || `${hydrant.latitude.toFixed(6)}, ${hydrant.longitude.toFixed(6)}`)}</div>`,
+    `<div style="font-size:12px;">Última inspección: ${hydrant.lastInspection ? escapeHtml(hydrant.lastInspection) : 'Sin información'}</div>`,
+    hydrant.observations || hydrant.description ? `<div style="font-size:12px;color:hsl(var(--muted-foreground));">${escapeHtml(hydrant.observations || hydrant.description || '')}</div>` : '',
+    `<button data-hydrant-action="details" data-hydrant-id="${hydrant.id}" style="width:100%;margin-top:6px;font-size:12px;padding:6px 10px;background:hsl(var(--secondary));color:hsl(var(--secondary-foreground));border:1px solid hsl(var(--border));border-radius:4px;cursor:pointer;font-weight:600;">Ver ficha completa</button>`,
   ].filter(Boolean);
 
   if (hydrant.isOwn) {
@@ -144,7 +172,7 @@ const buildHydrantPopup = (hydrant: MapHydrant) => {
     </div>`);
   }
 
-  return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:4px;">${rows.join('')}</div>`;
+  return `<div style="font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:4px;min-width:250px;max-width:310px;">${rows.join('')}</div>`;
 };
 
 const stationIcon = L.divIcon({
@@ -280,7 +308,7 @@ export default function LeafletMapCanvas({
     const handlePopupClick = (e: MouseEvent) => {
       const btn = (e.target as HTMLElement).closest('[data-hydrant-action]') as HTMLElement | null;
       if (!btn) return;
-      const action = btn.dataset.hydrantAction as 'edit' | 'delete';
+       const action = btn.dataset.hydrantAction as 'edit' | 'delete' | 'details';
       const id = btn.dataset.hydrantId;
       if (!action || !id) return;
       const h = hydrantsRef.current.find(h => h.id === id);
@@ -371,7 +399,7 @@ export default function LeafletMapCanvas({
 
     if (showHydrants) {
       hydrants.forEach((hydrant) => {
-        L.marker([hydrant.latitude, hydrant.longitude], { icon: hydrantIcon })
+        L.marker([hydrant.latitude, hydrant.longitude], { icon: getHydrantIcon(hydrant.status) })
           .bindPopup(buildHydrantPopup(hydrant))
           .addTo(hydrantLayerRef.current!);
       });
