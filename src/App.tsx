@@ -69,6 +69,14 @@ const queryClient = new QueryClient({
   },
 });
 
+function PageFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-emergency" />
+    </div>
+  );
+}
+
 function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
   const orgCtx = useOrganizationOptional();
@@ -121,11 +129,19 @@ function AppRoutes() {
   }
 
   if (location.pathname === '/pantalla-central') {
-    return <CentralScreen />;
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <CentralScreen />
+      </Suspense>
+    );
   }
 
   if (location.pathname === '/pantalla-mapa') {
-    return <MapScreen />;
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <MapScreen />
+      </Suspense>
+    );
   }
 
   if (location.pathname.startsWith('/superadmin')) {
