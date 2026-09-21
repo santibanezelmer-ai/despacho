@@ -258,3 +258,5 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
     </>
   );
 }
+
+export default memo(ActiveEmergencyCard);
