@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineCache } from '@/hooks/useOfflineCache';
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { addToSyncQueue, putCached, getCachedById, getSyncQueue } from '@/services/offlineDb';
 import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
@@ -84,9 +85,13 @@ export function useActiveEmergencies() {
       }
     },
     enabled: !!orgId,
-    refetchInterval: isOnline ? 5000 : false,
+    // Realtime es el mecanismo principal; el polling queda como reconciliación.
+    refetchInterval: isOnline ? 20000 : false,
     retry: isOnline ? 3 : 0,
   });
+
+  useRealtimeInvalidate('emergencies', orgId, [['active-emergencies', orgId]]);
+  useRealtimeInvalidate('emergency_vehicles', orgId, [['active-emergencies', orgId]]);
 
   // Bridge to offline cache
   useOfflineCache(

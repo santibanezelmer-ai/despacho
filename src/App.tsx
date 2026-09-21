@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -16,22 +17,22 @@ import AcceptInvitation from "@/pages/AcceptInvitation";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
 import EmergencyHistory from "@/pages/EmergencyHistory";
-import Dashboard from "@/pages/Dashboard";
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
 import Volunteers from "@/pages/Volunteers";
 import Vehicles from "@/pages/Vehicles";
 import Companies from "@/pages/Companies";
 import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
-import AdminPanel from "@/pages/AdminPanel";
-import OperativeMap from "@/pages/OperativeMap";
-import EquipmentPage from "@/pages/Equipment";
-import CentralScreen from "@/pages/CentralScreen";
-import MapScreen from "@/pages/MapScreen";
-import AlertsPage from "@/pages/AlertsPage";
-import SimulationPage from "@/pages/SimulationPage";
-import TrainingPage from "@/pages/TrainingPage";
-import AuditPage from "@/pages/AuditPage";
-import ExportsPage from "@/pages/ExportsPage";
+const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
+const OperativeMap = lazy(() => import("@/pages/OperativeMap"));
+const EquipmentPage = lazy(() => import("@/pages/Equipment"));
+const CentralScreen = lazy(() => import("@/pages/CentralScreen"));
+const MapScreen = lazy(() => import("@/pages/MapScreen"));
+const AlertsPage = lazy(() => import("@/pages/AlertsPage"));
+const SimulationPage = lazy(() => import("@/pages/SimulationPage"));
+const TrainingPage = lazy(() => import("@/pages/TrainingPage"));
+const AuditPage = lazy(() => import("@/pages/AuditPage"));
+const ExportsPage = lazy(() => import("@/pages/ExportsPage"));
 import NotificationsPage from "@/pages/NotificationsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import SuperadminLayout from "@/pages/superadmin/SuperadminLayout";
@@ -45,7 +46,7 @@ import MobileLayout from "@/components/mobile/MobileLayout";
 import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
 import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
 import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
-import MobileMapPage from "@/pages/mobile/MobileMapPage";
+const MobileMapPage = lazy(() => import("@/pages/mobile/MobileMapPage"));
 import OnboardingPage from "@/pages/admin/OnboardingPage";
 import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import SharedLocationPage from "@/pages/SharedLocationPage";
@@ -67,6 +68,14 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function PageFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-emergency" />
+    </div>
+  );
+}
 
 function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
@@ -120,11 +129,19 @@ function AppRoutes() {
   }
 
   if (location.pathname === '/pantalla-central') {
-    return <CentralScreen />;
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <CentralScreen />
+      </Suspense>
+    );
   }
 
   if (location.pathname === '/pantalla-mapa') {
-    return <MapScreen />;
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <MapScreen />
+      </Suspense>
+    );
   }
 
   if (location.pathname.startsWith('/superadmin')) {
@@ -177,6 +194,7 @@ function AppRoutes() {
   if (location.pathname.startsWith('/mobile')) {
     return (
       <MobileLayout>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/mobile" element={<MobileFeedPage />} />
           <Route path="/mobile/feed" element={<MobileFeedPage />} />
@@ -185,6 +203,7 @@ function AppRoutes() {
           <Route path="/mobile/map" element={<MobileMapPage />} />
           <Route path="*" element={<Navigate to="/mobile/feed" replace />} />
         </Routes>
+        </Suspense>
       </MobileLayout>
     );
   }
@@ -201,6 +220,7 @@ function AppRoutes() {
 
   return (
     <AppLayout>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/" element={<DispatchConsole />} />
         <Route path="/emergencias" element={<ActiveEmergencies />} />
@@ -226,6 +246,7 @@ function AppRoutes() {
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </AppLayout>
   );
 }

@@ -3,8 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineCache } from '@/hooks/useOfflineCache';
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 
 type UseVolunteersOptions = { refetchInterval?: number };
+
+/** Respaldo de reconciliación: Realtime es el mecanismo principal. */
+const RECONCILE_INTERVAL_MS = 60000;
 
 export function useVolunteers(options: UseVolunteersOptions = {}) {
   const { orgId } = useOrganization();
@@ -19,9 +23,13 @@ export function useVolunteers(options: UseVolunteersOptions = {}) {
       return data;
     },
     enabled: !!orgId,
-    refetchInterval: isOnline ? options.refetchInterval : false,
+    refetchInterval: isOnline
+      ? Math.max(options.refetchInterval ?? RECONCILE_INTERVAL_MS, RECONCILE_INTERVAL_MS)
+      : false,
     retry: isOnline ? 3 : 0,
   });
+
+  useRealtimeInvalidate('volunteers', orgId, [['volunteers', orgId]]);
 
   useOfflineCache(
     ['volunteers', orgId],

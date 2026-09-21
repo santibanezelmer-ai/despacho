@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Volume2 } from 'lucide-react';
 import { useEmergencyKeys, type EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,7 +7,7 @@ interface Props {
   onSelectKey: (key: EmergencyKeyRow) => void;
 }
 
-export default function EmergencyKeyGrid({ onSelectKey }: Props) {
+function EmergencyKeyGrid({ onSelectKey }: Props) {
   const { data: keys, isLoading } = useEmergencyKeys();
 
   if (isLoading) {
@@ -48,3 +49,5 @@ export default function EmergencyKeyGrid({ onSelectKey }: Props) {
     </div>
   );
 }
+
+export default memo(EmergencyKeyGrid);

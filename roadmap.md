@@ -10,3 +10,7 @@
 - [x] Validar visualmente el mapa de grifos y confirmar que despacho, emergencias y rutas siguen intactos.
 - [x] Incorporar estados y ficha rápida de grifos en la segunda pantalla “Mapa” de Pantalla Central.
 - [ ] Ampliar y reorganizar la ventana del Mapa Operativo para evitar controles angostos.
+- [x] Aislar el reloj de la Consola de Despacho para evitar re-renders por segundo.
+- [x] Usar Realtime para emergencias, móviles y voluntarios con polling solo de reconciliación.
+- [x] Carga diferida de módulos pesados (mapas, pantalla central, dashboard, auditoría, exportaciones).
+- [x] Memoizar tarjetas y paneles de la consola para reducir re-renders.

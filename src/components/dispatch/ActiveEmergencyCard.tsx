@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
@@ -68,7 +68,7 @@ interface EmergencyCardProps {
 
 const STATUS_ORDER = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada', 'en_cuartel'];
 
-export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps) {
+function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps) {
   const timer = useTimer(emergency.created_at);
   const ek = emergency.emergency_keys;
   const status = statusConfig[emergency.status] ?? statusConfig.despacho;
@@ -258,3 +258,5 @@ export default function ActiveEmergencyCard({ emergency, onAdvanceStatus }: Emer
     </>
   );
 }
+
+export default memo(ActiveEmergencyCard);

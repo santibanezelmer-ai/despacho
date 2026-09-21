@@ -8,6 +8,13 @@
       "when": 1789926186467,
       "tag": "0000_add_hydrant_operational_details",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789996009337,
+      "tag": "0001_enable_realtime_operational_tables",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { type LucideIcon } from 'lucide-react';
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
   trend?: { value: string; positive: boolean };
 }
 
-export default function StatsCard({ title, value, subtitle, icon: Icon, color, trend }: Props) {
+function StatsCard({ title, value, subtitle, icon: Icon, color, trend }: Props) {
   return (
     <div className="console-panel p-4">
       <div className="flex items-start justify-between">
@@ -33,3 +34,5 @@ export default function StatsCard({ title, value, subtitle, icon: Icon, color, t
     </div>
   );
 }
+
+export default memo(StatsCard);
