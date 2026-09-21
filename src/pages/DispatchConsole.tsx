@@ -65,7 +65,7 @@ export default function DispatchConsole() {
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
     }
-  };
+  }, [queryClient]);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -75,15 +75,11 @@ export default function DispatchConsole() {
             <Siren className="h-5 w-5 text-emergency" />
             Consola de Despacho
           </h1>
-          <p className="mt-0.5 text-xs text-muted-foreground font-mono">
-            {now.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+          <SystemDate />
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right mr-2">
-            <span className="text-xl font-mono font-bold text-foreground">
-              {formatClock(now)}
-            </span>
+            <SystemClock />
           </div>
           <Button
             variant="outline"
