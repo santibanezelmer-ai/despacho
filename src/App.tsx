@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -51,7 +52,6 @@ import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import SharedLocationPage from "@/pages/SharedLocationPage";
 import TermsPage from "@/pages/legal/TermsPage";
 import { Loader2 } from "lucide-react";
-import { Suspense, lazy } from "react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import SecurityGuard from "@/components/security/SecurityGuard";
