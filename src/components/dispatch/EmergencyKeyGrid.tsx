@@ -50,3 +50,5 @@ function EmergencyKeyGrid({ onSelectKey }: Props) {
     </div>
   );
 }
+
+export default memo(EmergencyKeyGrid);
