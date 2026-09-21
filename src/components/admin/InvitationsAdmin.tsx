@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Mail, Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
+import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
 import { z } from 'zod';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 
@@ -119,14 +119,6 @@ export default function InvitationsAdmin() {
     toast.success('Link copiado');
   };
 
-  const sendByEmail = (inv: any) => {
-    const url = `${window.location.origin}/invite/${inv.token}`;
-    const subject = encodeURIComponent(`Invitación a ${currentOrg?.organization?.name ?? 'la organización'}`);
-    const body = encodeURIComponent(
-      `Has sido invitado a unirte a ${currentOrg?.organization?.name ?? 'la organización'} como ${ROLE_LABELS[inv.role as OrgRole]}.\n\nAcepta tu invitación aquí:\n${url}\n\nEste link expira el ${new Date(inv.expires_at).toLocaleDateString()}.`
-    );
-    window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
-  };
 
   if (!isOrgAdmin) return null;
 
