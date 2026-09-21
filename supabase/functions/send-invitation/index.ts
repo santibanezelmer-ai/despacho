@@ -1,5 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3.23.8';
+import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Administrador',
+  operador: 'Operador',
+  oficial: 'Oficial',
+  visor: 'Voluntario (PWA)',
+  voluntario: 'Voluntario (PWA)',
+};
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

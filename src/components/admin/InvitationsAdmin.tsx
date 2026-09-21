@@ -238,9 +238,7 @@ export default function InvitationsAdmin() {
                         <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copyLink(inv.token)} title="Copiar link">
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => sendByEmail(inv)} title="Enviar por email (cliente)">
-                          <Mail className="h-3.5 w-3.5" />
-                        </Button>
+
                         <Button
                           size="sm" variant="ghost"
                           className="h-7 px-2 text-amber-500 hover:text-amber-500"
