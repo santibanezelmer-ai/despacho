@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useTimeFormat } from '@/hooks/useTimeFormat';
+import { useCallback, useMemo } from 'react';
+import SystemClock, { SystemDate } from '@/components/dispatch/SystemClock';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import DispatchNotesPanel from '@/components/dispatch/DispatchNotesPanel';
