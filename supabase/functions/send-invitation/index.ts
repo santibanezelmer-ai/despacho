@@ -120,33 +120,51 @@ Deno.serve(async (req) => {
       'https://operixdispatch.com';
     const redirectTo = `${origin.replace(/\/$/, '')}/invite/${invitation.token}`;
 
-    // Send a magic-link / invite email through Supabase Auth (uses the Lovable
-    // auth-email-hook + branded template). Works for both new and existing users.
-    const { error: otpErr } = await admin.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: redirectTo,
-        data: { invitation_token: invitation.token, invited_role: role },
-      },
-    });
+    // Organization name for the email body
+    const { data: org } = await admin
+      .from('organizations')
+      .select('name')
+      .eq('id', organization_id)
+      .maybeSingle();
 
-    if (otpErr) {
-      console.error('signInWithOtp failed', otpErr);
-      // Fall back: return invitation so the admin can copy the link manually
+    try {
+      const result = await sendTemplateEmail('organization-invitation', email, {
+        templateData: {
+          organizationName: org?.name ?? 'Operix Dispatch',
+          roleLabel: ROLE_LABELS[role] ?? role,
+          inviteUrl: redirectTo,
+          expiresAt: new Date(newExpiresAt).toLocaleDateString('es-CL'),
+        },
+        idempotencyKey: `org-invite-${invitation.id}-${invitation.resend_count ?? 0}`,
+      });
+
+      if (!result.sent) {
+        return json({
+          success: true,
+          email_sent: false,
+          invitation,
+          invite_url: redirectTo,
+          warning: 'Este correo está dado de baja o bloqueado — comparte el link manualmente',
+        }, 200);
+      }
+
+      return json({ success: true, email_sent: true, invitation, invite_url: redirectTo }, 200);
+    } catch (mailErr) {
+      console.error('sendTemplateEmail failed', mailErr);
       return json(
         {
           success: true,
           email_sent: false,
           invitation,
           invite_url: redirectTo,
-          warning: 'La invitación se creó pero no se pudo enviar el email: ' + otpErr.message,
+          warning:
+            'La invitación se creó pero no se pudo enviar el email: ' +
+            (mailErr instanceof Error ? mailErr.message : 'error desconocido'),
         },
         200,
       );
     }
 
-    return json({ success: true, email_sent: true, invitation, invite_url: redirectTo }, 200);
   } catch (e) {
     console.error('send-invitation error', e);
     return json({ error: e instanceof Error ? e.message : 'Error interno' }, 500);
