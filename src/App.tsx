@@ -194,6 +194,7 @@ function AppRoutes() {
   if (location.pathname.startsWith('/mobile')) {
     return (
       <MobileLayout>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/mobile" element={<MobileFeedPage />} />
           <Route path="/mobile/feed" element={<MobileFeedPage />} />
@@ -202,6 +203,7 @@ function AppRoutes() {
           <Route path="/mobile/map" element={<MobileMapPage />} />
           <Route path="*" element={<Navigate to="/mobile/feed" replace />} />
         </Routes>
+        </Suspense>
       </MobileLayout>
     );
   }
@@ -218,6 +220,7 @@ function AppRoutes() {
 
   return (
     <AppLayout>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/" element={<DispatchConsole />} />
         <Route path="/emergencias" element={<ActiveEmergencies />} />
@@ -243,6 +246,7 @@ function AppRoutes() {
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </AppLayout>
   );
 }
