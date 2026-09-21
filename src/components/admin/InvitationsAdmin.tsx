@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Mail, Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
+import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
 import { z } from 'zod';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 
@@ -119,14 +119,6 @@ export default function InvitationsAdmin() {
     toast.success('Link copiado');
   };
 
-  const sendByEmail = (inv: any) => {
-    const url = `${window.location.origin}/invite/${inv.token}`;
-    const subject = encodeURIComponent(`Invitación a ${currentOrg?.organization?.name ?? 'la organización'}`);
-    const body = encodeURIComponent(
-      `Has sido invitado a unirte a ${currentOrg?.organization?.name ?? 'la organización'} como ${ROLE_LABELS[inv.role as OrgRole]}.\n\nAcepta tu invitación aquí:\n${url}\n\nEste link expira el ${new Date(inv.expires_at).toLocaleDateString()}.`
-    );
-    window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
-  };
 
   if (!isOrgAdmin) return null;
 
@@ -238,9 +230,7 @@ export default function InvitationsAdmin() {
                         <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copyLink(inv.token)} title="Copiar link">
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => sendByEmail(inv)} title="Enviar por email (cliente)">
-                          <Mail className="h-3.5 w-3.5" />
-                        </Button>
+
                         <Button
                           size="sm" variant="ghost"
                           className="h-7 px-2 text-amber-500 hover:text-amber-500"
