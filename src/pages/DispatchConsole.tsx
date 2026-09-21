@@ -17,32 +17,30 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useDispatchForm } from '@/contexts/DispatchFormContext';
 
 export default function DispatchConsole() {
-  const { formatClock } = useTimeFormat();
   const { openDispatch } = useDispatchForm();
-  const [now, setNow] = useState(new Date());
   const { data: emergencies } = useActiveEmergencies();
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
   const queryClient = useQueryClient();
   const playSystemSound = usePlaySystemSound();
 
-  const availableVehicles = (vehicles ?? []).filter(v => v.status === 'disponible').length;
-  const totalVehicles = (vehicles ?? []).length;
-  const activeVolunteers = (volunteers ?? []).filter(v => v.status === 'activo').length;
+  const { availableVehicles, totalVehicles } = useMemo(() => ({
+    availableVehicles: (vehicles ?? []).filter(v => v.status === 'disponible').length,
+    totalVehicles: (vehicles ?? []).length,
+  }), [vehicles]);
+  const activeVolunteers = useMemo(
+    () => (volunteers ?? []).filter(v => v.status === 'activo').length,
+    [volunteers],
+  );
   const activeCount = (emergencies ?? []).length;
 
-  const handleSelectKey = (key: EmergencyKeyRow) => {
+  const handleSelectKey = useCallback((key: EmergencyKeyRow) => {
     // Solo seleccionar clave, NO reproducir tono aquí
     openDispatch(key);
     toast.info(`Clave seleccionada: ${key.code} - ${key.name}`, { duration: 3000 });
-  };
+  }, [openDispatch]);
 
-  const handleAdvanceStatus = async (emergencyId: string, newStatus: string) => {
+  const handleAdvanceStatus = useCallback(async (emergencyId: string, newStatus: string) => {
     // en_cuartel is auto-managed by VehicleReturnManager
     if (newStatus === 'en_cuartel') return;
 
