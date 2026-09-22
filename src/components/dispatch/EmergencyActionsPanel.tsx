@@ -20,7 +20,6 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
-import VolunteerStatusPanel from './VolunteerStatusPanel';
 
 
 
