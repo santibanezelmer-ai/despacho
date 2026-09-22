@@ -531,9 +531,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <section><VehicleReturnManager emergencyId={emergency.id} emergencyStatus={emergency.status} /></section>
             </TabsContent>
 
-            <TabsContent value="personnel" className="m-0">
-              <section><VolunteerStatusPanel /></section>
-            </TabsContent>
 
             <TabsContent value="report" className="m-0">
               <section>
