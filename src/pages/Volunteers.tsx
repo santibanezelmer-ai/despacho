@@ -78,11 +78,42 @@ export default function Volunteers() {
     setBusyId(null);
   };
 
+  const audit = async (v: any, patch: Record<string, unknown>) => {
+    if (!orgId) return;
+    await (supabase as any).rpc('insert_audit_log', {
+      _organization_id: orgId,
+      _action: 'volunteer_status_update',
+      _table_name: 'volunteers',
+      _record_id: v.id,
+      _old_data: { status: v.status, available: v.available },
+      _new_data: { ...{ status: v.status, available: v.available }, ...patch },
+    });
+  };
+
   const toggleAvailability = async (v: any) => {
     setBusyId(v.id);
     const { error } = await (supabase as any).from('volunteers').update({ available: !v.available }).eq('id', v.id);
     if (error) toast.error(error.message);
-    else { toast.success(v.available ? 'Marcado como No disponible' : 'Marcado como Disponible'); qc.invalidateQueries({ queryKey: ['volunteers'] }); }
+    else {
+      await audit(v, { available: !v.available });
+      toast.success(v.available ? 'Marcado como No disponible' : 'Marcado como Disponible');
+      qc.invalidateQueries({ queryKey: ['volunteers'] });
+    }
+    setBusyId(null);
+  };
+
+  const STATUS_CYCLE = ['activo', 'inactivo', 'licencia'] as const;
+
+  const cycleStatus = async (v: any) => {
+    const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(v.status) + 1) % STATUS_CYCLE.length];
+    setBusyId(v.id);
+    const { error } = await (supabase as any).from('volunteers').update({ status: next }).eq('id', v.id);
+    if (error) toast.error(error.message);
+    else {
+      await audit(v, { status: next });
+      toast.success(`Estado actualizado a ${next}`);
+      qc.invalidateQueries({ queryKey: ['volunteers'] });
+    }
     setBusyId(null);
   };
 
