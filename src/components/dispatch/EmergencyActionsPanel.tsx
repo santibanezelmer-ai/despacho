@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone, Users } from 'lucide-react';
+import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
