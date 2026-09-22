@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
+import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
 import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
 import {
   AlertDialog,
@@ -78,6 +79,7 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
     ? STATUS_ORDER[currentIdx + 1]
     : null;
   const [showActions, setShowActions] = useState(false);
+  const [showFinalize, setShowFinalize] = useState(false);
   const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
   const unassign = useUnassignVehicle();
 
@@ -206,7 +208,13 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
             {/* Advance status */}
             {nextStatus && onAdvanceStatus && (
               <button
-                onClick={() => onAdvanceStatus(emergency.id, nextStatus)}
+                onClick={() => {
+                  if (nextStatus === 'finalizada') {
+                    setShowFinalize(true);
+                    return;
+                  }
+                  onAdvanceStatus(emergency.id, nextStatus);
+                }}
                 className="flex-1 rounded-md border border-border py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
               >
                 → {statusConfig[nextStatus]?.label}
@@ -221,6 +229,19 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
           emergency={emergency}
           assignedVehicleIds={emergency.vehicleIds}
           onClose={() => setShowActions(false)}
+        />
+      )}
+
+      {showFinalize && (
+        <FinalizeEmergencyDialog
+          emergencyId={emergency.id}
+          emergencyStatus={emergency.status}
+          folio={emergency.folio}
+          onClose={() => setShowFinalize(false)}
+          onConfirm={() => {
+            setShowFinalize(false);
+            onAdvanceStatus?.(emergency.id, 'finalizada');
+          }}
         />
       )}
 

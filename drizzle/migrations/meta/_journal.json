@@ -22,6 +22,13 @@
       "when": 1790114517941,
       "tag": "0002_vehicles_code_unique_per_org",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790114804969,
+      "tag": "0003_emergency_location_source",
+      "breakpoints": true
     }
   ]
 }

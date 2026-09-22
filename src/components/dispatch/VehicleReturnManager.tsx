@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,32 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Home, Truck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
+import { useEmergencyReturnVehicles } from '@/hooks/useEmergencyReturnVehicles';
 
 interface Props {
   emergencyId: string;
   emergencyStatus: string;
+  /** Mostrar aunque la emergencia no esté controlada/finalizada (validación previa al cierre). */
+  forceVisible?: boolean;
+  /** Oculta el botón de cierre propio (el cierre lo maneja el diálogo de finalización). */
+  hideCloseButton?: boolean;
 }
 
-export default function VehicleReturnManager({ emergencyId, emergencyStatus }: Props) {
+export default function VehicleReturnManager({ emergencyId, emergencyStatus, forceVisible, hideCloseButton }: Props) {
   const { formatTime } = useTimeFormat();
   const { orgId } = useOrganization();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [odometerInputs, setOdometerInputs] = useState<Record<string, string>>({});
 
-  const { data: vehicles, isLoading } = useQuery({
-    queryKey: ['emergency-vehicles-return', emergencyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('emergency_vehicles')
-        .select('id, vehicle_id, odometer_start, odometer_end, released_at, vehicles(code, type, companies(name))')
-        .eq('emergency_id', emergencyId);
-      if (error) throw error;
-      return data as any[];
-    },
-    enabled: !!emergencyId,
-    refetchInterval: 5000,
-  });
+  const { data: vehicles, isLoading } = useEmergencyReturnVehicles(emergencyId);
 
   const returnMutation = useMutation({
     mutationFn: async ({ evId, vehicleId, odometerEnd }: { evId: string; vehicleId: string; odometerEnd: number | null }) => {
@@ -93,11 +86,19 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const handleReturn = (evId: string, vehicleId: string) => {
-    const raw = odometerInputs[evId];
-    const odometerEnd = raw ? parseInt(raw, 10) : null;
-    if (raw && (isNaN(odometerEnd!) || odometerEnd! < 0)) {
+  const handleReturn = (evId: string, vehicleId: string, odometerStart: number | null) => {
+    const raw = (odometerInputs[evId] ?? '').trim();
+    if (!raw) {
+      toast.error('Ingrese el kilometraje de llegada');
+      return;
+    }
+    const odometerEnd = Number(raw);
+    if (!Number.isFinite(odometerEnd) || !Number.isInteger(odometerEnd) || odometerEnd < 0) {
       toast.error('Kilometraje inválido');
+      return;
+    }
+    if (odometerStart != null && odometerEnd < odometerStart) {
+      toast.error(`El kilometraje no puede ser menor al de salida (${odometerStart})`);
       return;
     }
     returnMutation.mutate({ evId, vehicleId, odometerEnd });
@@ -110,10 +111,11 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
   const pending = allVehicles.filter((v: any) => !v.released_at);
 
   // Show when emergency is controlada, finalizada or en_cuartel
-  if (!['controlada', 'finalizada', 'en_cuartel'].includes(emergencyStatus)) return null;
+  if (!forceVisible && !['controlada', 'finalizada', 'en_cuartel'].includes(emergencyStatus)) return null;
 
   // Auto-close if finalizada with 0 vehicles or all already returned
-  const canAutoClose = emergencyStatus === 'finalizada' && (allVehicles.length === 0 || pending.length === 0);
+  const canAutoClose =
+    !hideCloseButton && emergencyStatus === 'finalizada' && (allVehicles.length === 0 || pending.length === 0);
 
   const handleCloseEmergency = async () => {
     await supabase.from('emergencies').update({
@@ -187,7 +189,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus }: P
                   <Button
                     size="sm"
                     className="h-7 text-xs"
-                    onClick={() => handleReturn(ev.id, ev.vehicle_id)}
+                    onClick={() => handleReturn(ev.id, ev.vehicle_id, ev.odometer_start ?? null)}
                     disabled={returnMutation.isPending}
                   >
                     {returnMutation.isPending ? (
