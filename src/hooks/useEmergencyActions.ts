@@ -46,11 +46,51 @@ export function useUpdateAddress() {
 export function useUpdateLocation() {
   const invalidate = useInvalidate();
   const log = useLog();
+  const { user } = useAuth();
+  const { orgId } = useOrganization();
   return useMutation({
     mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: number; longitude: number }) => {
-      const { error } = await supabase.from('emergencies').update({ latitude, longitude }).eq('id', id);
+      // Guarda el estado anterior para bitácora/auditoría
+      const { data: before } = await supabase
+        .from('emergencies')
+        .select('latitude, longitude, location_source')
+        .eq('id', id)
+        .maybeSingle();
+
+      const { error } = await supabase
+        .from('emergencies')
+        .update({
+          latitude,
+          longitude,
+          location_source: 'operador',
+          location_source_updated_at: new Date().toISOString(),
+          location_source_updated_by: user?.id ?? null,
+        })
+        .eq('id', id);
       if (error) throw error;
-      await log(id, `Ubicación asignada: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+
+      await log(
+        id,
+        `Ubicación corregida por operador: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}` +
+          (before?.latitude != null && before?.longitude != null
+            ? ` (anterior ${Number(before.latitude).toFixed(5)}, ${Number(before.longitude).toFixed(5)} — origen ${before.location_source ?? 'sin definir'})`
+            : ''),
+      );
+
+      if (orgId) {
+        await supabase.rpc('insert_audit_log', {
+          _organization_id: orgId,
+          _action: 'emergency_location_manual_update',
+          _table_name: 'emergencies',
+          _record_id: id,
+          _old_data: {
+            latitude: before?.latitude ?? null,
+            longitude: before?.longitude ?? null,
+            location_source: before?.location_source ?? null,
+          } as any,
+          _new_data: { latitude, longitude, location_source: 'operador' } as any,
+        });
+      }
     },
     onSuccess: () => { invalidate(); toast.success('Ubicación guardada'); },
     onError: () => toast.error('Error al guardar ubicación'),

@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
+import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
 import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
 import {
   AlertDialog,

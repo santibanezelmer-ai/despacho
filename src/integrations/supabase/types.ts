@@ -332,6 +332,11 @@ export type Database = {
           id: string
           in_quarters_at: string | null
           latitude: number | null
+          location_shared_latitude: number | null
+          location_shared_longitude: number | null
+          location_source: string | null
+          location_source_updated_at: string | null
+          location_source_updated_by: string | null
           longitude: number | null
           observations: string | null
           organization_id: string
@@ -362,6 +367,11 @@ export type Database = {
           id?: string
           in_quarters_at?: string | null
           latitude?: number | null
+          location_shared_latitude?: number | null
+          location_shared_longitude?: number | null
+          location_source?: string | null
+          location_source_updated_at?: string | null
+          location_source_updated_by?: string | null
           longitude?: number | null
           observations?: string | null
           organization_id: string
@@ -392,6 +402,11 @@ export type Database = {
           id?: string
           in_quarters_at?: string | null
           latitude?: number | null
+          location_shared_latitude?: number | null
+          location_shared_longitude?: number | null
+          location_source?: string | null
+          location_source_updated_at?: string | null
+          location_source_updated_by?: string | null
           longitude?: number | null
           observations?: string | null
           organization_id?: string

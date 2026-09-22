@@ -176,7 +176,8 @@ Deno.serve(async (req) => {
       })
       .eq('id', request.id);
 
-    // No sobrescribe una ubicación precisa con una lectura muy imprecisa.
+    // No sobrescribe una ubicación precisa con una lectura muy imprecisa,
+    // ni una ubicación que el operador ya corrigió manualmente.
     if (request.emergency_id) {
       const previousAccuracy = num(request.accuracy);
       const worseThanExisting =
@@ -186,12 +187,30 @@ Deno.serve(async (req) => {
         accuracy > previousAccuracy * 3 &&
         accuracy > 500;
 
-      if (!worseThanExisting) {
-        await supabase
-          .from('emergencies')
-          .update({ latitude, longitude })
-          .eq('id', request.emergency_id);
+      const { data: emergency } = await supabase
+        .from('emergencies')
+        .select('location_source')
+        .eq('id', request.emergency_id)
+        .maybeSingle();
+
+      const lockedByOperator = emergency?.location_source === 'operador';
+
+      // La lectura compartida siempre se conserva como referencia.
+      const patch: Record<string, unknown> = {
+        location_shared_latitude: latitude,
+        location_shared_longitude: longitude,
+      };
+
+      if (!worseThanExisting && !lockedByOperator) {
+        patch.latitude = latitude;
+        patch.longitude = longitude;
+        patch.location_source = 'compartida';
       }
+
+      await supabase
+        .from('emergencies')
+        .update(patch)
+        .eq('id', request.emergency_id);
     }
 
     return json({ ok: true, address: resolvedAddress, accuracy });

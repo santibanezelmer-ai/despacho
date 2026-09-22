@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone } from 'lucide-react';
+import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
+import VolunteerStatusPanel from './VolunteerStatusPanel';
 
 
 
@@ -57,8 +58,31 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [savingPhone, setSavingPhone] = useState(false);
   const [locRequestId, setLocRequestId] = useState<string | null>(null);
   const [locFix, setLocFix] = useState<LocationFix | null>(null);
+  const [locationSource, setLocationSource] = useState<string | null>(null);
+  const [sharedCoords, setSharedCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const isClosed = emergency.status === 'finalizada';
+  const operatorLocked = locationSource === 'operador';
+
+  // Origen de la ubicación vigente (compartida vs. corregida por el operador)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('emergencies')
+        .select('location_source, location_shared_latitude, location_shared_longitude')
+        .eq('id', emergency.id)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      setLocationSource(data.location_source ?? null);
+      setSharedCoords(
+        data.location_shared_latitude != null && data.location_shared_longitude != null
+          ? { lat: data.location_shared_latitude, lng: data.location_shared_longitude }
+          : null,
+      );
+    })();
+    return () => { cancelled = true; };
+  }, [emergency.id]);
 
   // Teléfono del solicitante: visible sólo en la consola y sólo mientras la emergencia esté activa
   useEffect(() => {
@@ -108,10 +132,16 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   const handleLocationFix = useCallback((fix: LocationFix) => {
     setLocFix(fix);
+    setSharedCoords({ lat: fix.latitude, lng: fix.longitude });
+    if (operatorLocked) {
+      toast.info('Ubicación compartida recibida — se conserva la corregida por el operador');
+      return;
+    }
     setMapCoords({ lat: fix.latitude, lng: fix.longitude });
+    setLocationSource('compartida');
     toast.success('Ubicación recibida y asignada al mapa');
     queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-  }, [queryClient]);
+  }, [queryClient, operatorLocked]);
 
   const handleSavePhone = async () => {
     const cleaned = callerPhone.trim();
@@ -170,7 +200,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     const center = mapCoords ?? { lat: -33.45, lng: -70.65 };
     const map = L.map(mapRef.current, {
       zoomControl: true,
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
     }).setView([center.lat, center.lng], mapCoords ? 15 : 12);
     addBaseTileLayer(map);
     leafletMapRef.current = map;
@@ -254,7 +284,10 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   const handleSaveLocation = () => {
     if (!mapCoords) return;
-    updateLocation.mutate({ id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng });
+    updateLocation.mutate(
+      { id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng },
+      { onSuccess: () => setLocationSource('operador') },
+    );
   };
 
   const handleCenterMarker = () => {
@@ -333,6 +366,11 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <span className={mapCoords ? 'text-success' : 'text-warning'}>
                 {mapCoords ? 'Ubicación marcada' : 'Ubicación pendiente'}
               </span>
+              {locationSource && (
+                <span className={operatorLocked ? 'text-info' : 'text-success'}>
+                  {operatorLocked ? 'Ubicación modificada por operador' : 'Ubicación compartida'}
+                </span>
+              )}
               <span className="text-muted-foreground">{assignedVehicleIds.length} móviles asignados</span>
               <span className="text-muted-foreground">Estado: {emergency.status.replace('_', ' ')}</span>
             </div>
@@ -344,9 +382,10 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
           <div className="shrink-0 overflow-x-auto border-b border-border px-4 py-2">
-            <TabsList className="grid w-full min-w-[620px] grid-cols-4">
+            <TabsList className="grid w-full min-w-[760px] grid-cols-5">
               <TabsTrigger value="location" className="gap-1.5"><Navigation className="h-3.5 w-3.5" /> Ubicación</TabsTrigger>
               <TabsTrigger value="resources" className="gap-1.5"><Truck className="h-3.5 w-3.5" /> Móviles y personal</TabsTrigger>
+              <TabsTrigger value="personnel" className="gap-1.5"><Users className="h-3.5 w-3.5" /> Personal</TabsTrigger>
               <TabsTrigger value="report" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Preinforme</TabsTrigger>
               <TabsTrigger value="operations" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Acciones operativas</TabsTrigger>
             </TabsList>
@@ -365,7 +404,15 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Dirección</label>
                       <div className="flex gap-2">
-                        <Input value={editAddress} onChange={e => setEditAddress(e.target.value)} className="min-w-0 flex-1 bg-muted/50" />
+                        <Input
+                          value={editAddress}
+                          onChange={e => setEditAddress(e.target.value)}
+                          className="min-w-0 flex-1 bg-muted/50"
+                          spellCheck
+                          lang="es-CL"
+                          autoCorrect="off"
+                          autoCapitalize="sentences"
+                        />
                         <Button size="sm" onClick={handleSaveAddress} disabled={updateAddress.isPending || editAddress.trim() === emergency.address} aria-label="Guardar dirección">
                           {updateAddress.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         </Button>
@@ -398,7 +445,10 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         longitude={mapCoords?.lng ?? null}
                         onSubmit={(lat, lng) => {
                           setMapCoords({ lat, lng });
-                          updateLocation.mutate({ id: emergency.id, latitude: lat, longitude: lng });
+                          updateLocation.mutate(
+                            { id: emergency.id, latitude: lat, longitude: lng },
+                            { onSuccess: () => setLocationSource('operador') },
+                          );
                         }}
                       />
                     )}
@@ -418,8 +468,24 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                       </Button>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground">
-                      <span>Haz clic para marcar o arrastra el marcador para ajustar. Usa +/− para acercar.</span>
+                      <span>Haz clic para marcar o arrastra el marcador para ajustar. La rueda del mouse sobre el mapa acerca o aleja.</span>
                       {mapCoords && <span className="font-mono">{mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}</span>}
+                    </div>
+                    <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
+                      <p>
+                        Origen de la ubicación:{' '}
+                        <span className={operatorLocked ? 'font-semibold text-info' : 'font-semibold text-success'}>
+                          {operatorLocked ? 'Modificada por operador' : locationSource === 'compartida' ? 'Compartida' : 'Sin definir'}
+                        </span>
+                      </p>
+                      {sharedCoords && (
+                        <p className="font-mono">
+                          Ubicación compartida recibida: {sharedCoords.lat.toFixed(5)}, {sharedCoords.lng.toFixed(5)}
+                        </p>
+                      )}
+                      {operatorLocked && (
+                        <p>Las ubicaciones que lleguen por el enlace ya no reemplazan esta corrección.</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -467,6 +533,10 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <section><VehicleReturnManager emergencyId={emergency.id} emergencyStatus={emergency.status} /></section>
             </TabsContent>
 
+            <TabsContent value="personnel" className="m-0">
+              <section><VolunteerStatusPanel /></section>
+            </TabsContent>
+
             <TabsContent value="report" className="m-0">
               <section>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -478,6 +548,9 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               placeholder="Redacta un preinforme con los datos preliminares de la emergencia..."
               rows={4}
               className="bg-muted/50"
+              spellCheck
+              lang="es-CL"
+              autoCorrect="off"
             />
             <div className="flex justify-end mt-2">
               <Button size="sm" onClick={handleSavePreReport} disabled={savingPre || preReport === (emergency.pre_report ?? '')}>

@@ -363,19 +363,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" /> Dirección *
               </label>
-              <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Ej: Av. Libertador B. O'Higgins 1234" className="bg-muted/50" required />
+              <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Ej: Av. Libertador B. O'Higgins 1234" className="bg-muted/50" required spellCheck lang="es-CL" autoCorrect="off" />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" /> Referencia
               </label>
-              <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="Ej: Frente al mall" className="bg-muted/50" />
+              <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="Ej: Frente al mall" className="bg-muted/50" spellCheck lang="es-CL" autoCorrect="off" />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <User className="h-3.5 w-3.5" /> Solicitante
               </label>
-              <Input value={callerName} onChange={e => setCallerName(e.target.value)} placeholder="Nombre del solicitante" className="bg-muted/50" />
+              <Input value={callerName} onChange={e => setCallerName(e.target.value)} placeholder="Nombre del solicitante" className="bg-muted/50" spellCheck={false} autoCorrect="off" />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -410,7 +410,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <MessageSquare className="h-3.5 w-3.5" /> Observaciones
             </label>
-            <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" />
+            <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" spellCheck lang="es-CL" autoCorrect="off" />
           </div>
 
           {/* Vehicle selection */}
