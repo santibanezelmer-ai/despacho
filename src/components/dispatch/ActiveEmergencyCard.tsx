@@ -232,6 +232,19 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
         />
       )}
 
+      {showFinalize && (
+        <FinalizeEmergencyDialog
+          emergencyId={emergency.id}
+          emergencyStatus={emergency.status}
+          folio={emergency.folio}
+          onClose={() => setShowFinalize(false)}
+          onConfirm={() => {
+            setShowFinalize(false);
+            onAdvanceStatus?.(emergency.id, 'finalizada');
+          }}
+        />
+      )}
+
       <AlertDialog open={!!unassignTarget} onOpenChange={open => { if (!open) setUnassignTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
