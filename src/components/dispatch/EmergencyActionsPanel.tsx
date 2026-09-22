@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone, Users } from 'lucide-react';
+import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,6 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
-import VolunteerStatusPanel from './VolunteerStatusPanel';
 
 
 
@@ -382,10 +381,9 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
           <div className="shrink-0 overflow-x-auto border-b border-border px-4 py-2">
-            <TabsList className="grid w-full min-w-[760px] grid-cols-5">
+            <TabsList className="grid w-full min-w-[620px] grid-cols-4">
               <TabsTrigger value="location" className="gap-1.5"><Navigation className="h-3.5 w-3.5" /> Ubicación</TabsTrigger>
               <TabsTrigger value="resources" className="gap-1.5"><Truck className="h-3.5 w-3.5" /> Móviles y personal</TabsTrigger>
-              <TabsTrigger value="personnel" className="gap-1.5"><Users className="h-3.5 w-3.5" /> Personal</TabsTrigger>
               <TabsTrigger value="report" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Preinforme</TabsTrigger>
               <TabsTrigger value="operations" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Acciones operativas</TabsTrigger>
             </TabsList>
@@ -533,9 +531,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <section><VehicleReturnManager emergencyId={emergency.id} emergencyStatus={emergency.status} /></section>
             </TabsContent>
 
-            <TabsContent value="personnel" className="m-0">
-              <section><VolunteerStatusPanel /></section>
-            </TabsContent>
 
             <TabsContent value="report" className="m-0">
               <section>
