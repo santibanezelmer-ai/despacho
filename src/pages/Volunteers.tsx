@@ -181,9 +181,21 @@ export default function Volunteers() {
                     <td className="px-4 py-3 text-xs text-muted-foreground">{v.email ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{v.companies?.name ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`status-badge ${v.status === 'activo' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+                      <button
+                        type="button"
+                        disabled={!canWrite || busyId === v.id}
+                        onClick={() => cycleStatus(v)}
+                        title={canWrite ? 'Cambiar estado (activo → inactivo → licencia)' : undefined}
+                        className={`status-badge ${
+                          v.status === 'activo'
+                            ? 'bg-success/20 text-success'
+                            : v.status === 'licencia'
+                              ? 'bg-warning/20 text-warning'
+                              : 'bg-muted text-muted-foreground'
+                        } ${canWrite ? 'cursor-pointer' : 'cursor-default'}`}
+                      >
                         {v.status}
-                      </span>
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <button
