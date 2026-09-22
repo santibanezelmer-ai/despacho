@@ -19,8 +19,9 @@ export default function Volunteers() {
   const [profileVolunteer, setProfileVolunteer] = useState<any>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const { data: volunteers, isLoading } = useVolunteers();
-  const { canWrite } = useAuth();
-  const { orgId, isOrgAdmin, scopedCompanyId, isCompanyAdmin } = useOrganization();
+  const { canWrite: canWriteApp } = useAuth();
+  const { orgId, isOrgAdmin, scopedCompanyId, isCompanyAdmin, canWrite: canWriteOrg } = useOrganization();
+  const canWrite = canWriteOrg || canWriteApp;
   const qc = useQueryClient();
 
   const scoped = (volunteers ?? []).filter((v: any) =>
