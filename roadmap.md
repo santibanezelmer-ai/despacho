@@ -2,7 +2,6 @@
 
 - [ ] Reorganizar Acciones en pestañas sin ocultar información crítica.
 - [ ] Integrar controles de ubicación y mapa en dos columnas de escritorio y una en móvil.
-- [ ] Dar prioridad al scroll de la ventana y conservar zoom +/− y marcador.
 - [ ] Validar el recorrido operativo completo indicado por la usuaria.
 - [x] Mejorar el módulo de Grifos con estados visuales, ficha rápida, ficha completa y filtros.
 - [x] Ampliar los datos propios de grifos con campos operacionales opcionales, sin inventar datos históricos.
@@ -14,3 +13,8 @@
 - [x] Usar Realtime para emergencias, móviles y voluntarios con polling solo de reconciliación.
 - [x] Carga diferida de módulos pesados (mapas, pantalla central, dashboard, auditoría, exportaciones).
 - [x] Memoizar tarjetas y paneles de la consola para reducir re-renders.
+- [x] Permitir corregir manualmente una ubicación compartida y bloquear sobrescrituras automáticas.
+- [x] Panel de Personal en la consola para cambiar estado y disponibilidad con auditoría.
+- [x] Validar móviles pendientes (KM obligatorio) antes de finalizar una emergencia.
+- [x] Corrector ortográfico nativo (es-CL) en los campos de texto del despacho.
+- [x] Zoom con la rueda del mouse sobre el mapa de la ventana de despacho.
