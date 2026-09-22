@@ -23,9 +23,20 @@ const SystemClock = memo(function SystemClock({ className }: { className?: strin
 
 export default SystemClock;
 
-/** Fecha larga: cambia una vez al día, se calcula al montar. */
+/** Fecha larga: se revisa cada minuto para que cambie al pasar medianoche. */
 export const SystemDate = memo(function SystemDate({ className }: { className?: string }) {
-  const [today] = useState(() => new Date());
+  const [today, setToday] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setToday(prev => {
+        const next = new Date();
+        return next.toDateString() === prev.toDateString() ? prev : next;
+      });
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <p className={className ?? 'mt-0.5 text-xs text-muted-foreground font-mono'}>
       {today.toLocaleDateString('es-CL', {

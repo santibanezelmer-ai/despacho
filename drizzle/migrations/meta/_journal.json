@@ -15,6 +15,13 @@
       "when": 1789996009337,
       "tag": "0001_enable_realtime_operational_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790114517941,
+      "tag": "0002_vehicles_code_unique_per_org",
+      "breakpoints": true
     }
   ]
 }
