@@ -213,6 +213,10 @@ export default function CentralScreen() {
     window.open('/pantalla-mapa', '_blank', 'width=1200,height=800,toolbar=no,menubar=no');
   }, []);
 
+  const openEmergenciesPopout = useCallback(() => {
+    window.open('/pantalla-emergencias', '_blank', 'width=1400,height=900,toolbar=no,menubar=no');
+  }, []);
+
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-background p-3 md:p-4">
       {/* Header */}
@@ -222,6 +226,15 @@ export default function CentralScreen() {
           <h1 className="text-3xl font-bold text-foreground">Operix</h1>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={openEmergenciesPopout}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-warning transition-colors"
+            title="Abrir emergencias activas en una ventana independiente"
+          >
+            <Radio className="h-4 w-4 text-warning" />
+            <span className="hidden md:inline">Emergencias Activas</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
           <button
             onClick={openMapPopout}
             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-info transition-colors"
