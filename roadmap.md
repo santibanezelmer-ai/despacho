@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Separar Consola, Emergencias Activas y Comunicados / Notas en vistas independientes de Operaciones.
+- [ ] Convertir Pantalla Central en un dashboard de TV sin Emergencias Activas ni scroll vertical.
+- [ ] Validar navegación, acciones operativas y ajuste completo en una pantalla de TV.
 - [ ] Reorganizar Acciones en pestañas sin ocultar información crítica.
 - [ ] Integrar controles de ubicación y mapa en dos columnas de escritorio y una en móvil.
 - [ ] Validar el recorrido operativo completo indicado por la usuaria.
