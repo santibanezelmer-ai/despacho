@@ -84,6 +84,50 @@ export default function InvitationsAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const { data: volunteers } = useVolunteers();
+  const bulkTargets = (volunteers ?? []).filter(
+    (v: any) => !!v.email && !v.user_id
+  );
+
+  const sendBulk = async () => {
+    const targets = bulkTargets;
+    if (!targets.length) {
+      toast.error('No hay voluntarios con email registrado pendientes de invitar');
+      return;
+    }
+    if (!confirm(`¿Enviar invitación a ${targets.length} voluntario(s) con email registrado?`)) return;
+
+    setBulkRunning(true);
+    setBulkProgress({ done: 0, total: targets.length });
+    let ok = 0;
+    let failed = 0;
+
+    for (const v of targets) {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-invitation', {
+          body: {
+            organization_id: orgId,
+            email: String(v.email).toLowerCase().trim(),
+            role: 'voluntario',
+            expires_in_days: expiresDays,
+            resend: true,
+          },
+        });
+        if (error || data?.error) failed++;
+        else ok++;
+      } catch {
+        failed++;
+      }
+      setBulkProgress(p => ({ ...p, done: p.done + 1 }));
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    setBulkRunning(false);
+    queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
+    if (ok) toast.success(`${ok} invitación(es) enviada(s)${failed ? ` · ${failed} con problemas` : ''}`);
+    else toast.error('No se pudo enviar ninguna invitación');
+  };
+
   const revokeInvitation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any)
