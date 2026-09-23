@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
+import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban, Users, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
+import { useVolunteers } from '@/hooks/useVolunteers';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
@@ -35,6 +36,8 @@ export default function InvitationsAdmin() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrgRole>('voluntario');
   const [expiresDays, setExpiresDays] = useState<number>(7);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
 
   const { data: invitations, isLoading } = useQuery({
     queryKey: ['org-invitations', orgId],
@@ -82,6 +85,50 @@ export default function InvitationsAdmin() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const { data: volunteers } = useVolunteers();
+  const bulkTargets = (volunteers ?? []).filter(
+    (v: any) => !!v.email && !v.user_id
+  );
+
+  const sendBulk = async () => {
+    const targets = bulkTargets;
+    if (!targets.length) {
+      toast.error('No hay voluntarios con email registrado pendientes de invitar');
+      return;
+    }
+    if (!confirm(`¿Enviar invitación a ${targets.length} voluntario(s) con email registrado?`)) return;
+
+    setBulkRunning(true);
+    setBulkProgress({ done: 0, total: targets.length });
+    let ok = 0;
+    let failed = 0;
+
+    for (const v of targets) {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-invitation', {
+          body: {
+            organization_id: orgId,
+            email: String(v.email).toLowerCase().trim(),
+            role: 'voluntario',
+            expires_in_days: expiresDays,
+            resend: true,
+          },
+        });
+        if (error || data?.error) failed++;
+        else ok++;
+      } catch {
+        failed++;
+      }
+      setBulkProgress(p => ({ ...p, done: p.done + 1 }));
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    setBulkRunning(false);
+    queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
+    if (ok) toast.success(`${ok} invitación(es) enviada(s)${failed ? ` · ${failed} con problemas` : ''}`);
+    else toast.error('No se pudo enviar ninguna invitación');
+  };
 
   const revokeInvitation = useMutation({
     mutationFn: async (id: string) => {
@@ -182,6 +229,21 @@ export default function InvitationsAdmin() {
         >
           <Send className="h-4 w-4 mr-2" />
           Invitar
+        </Button>
+      </div>
+
+      <div className="console-panel p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-foreground">Invitación masiva a voluntarios</p>
+          <p className="text-xs text-muted-foreground">
+            {bulkRunning
+              ? `Enviando ${bulkProgress.done} de ${bulkProgress.total}...`
+              : `${bulkTargets.length} voluntario(s) con email registrado sin cuenta vinculada`}
+          </p>
+        </div>
+        <Button variant="outline" onClick={sendBulk} disabled={bulkRunning || !bulkTargets.length}>
+          {bulkRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+          Invitar a todos
         </Button>
       </div>
 
