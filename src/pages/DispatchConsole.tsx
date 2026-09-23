@@ -2,26 +2,19 @@ import { useCallback, useMemo } from 'react';
 import SystemClock, { SystemDate } from '@/components/dispatch/SystemClock';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
-import DispatchNotesPanel from '@/components/dispatch/DispatchNotesPanel';
-import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
 import StatsCard from '@/components/dashboard/StatsCard';
-import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useDispatchForm } from '@/contexts/DispatchFormContext';
 
 export default function DispatchConsole() {
   const { openDispatch } = useDispatchForm();
-  const { data: emergencies } = useActiveEmergencies();
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
-  const queryClient = useQueryClient();
   const playSystemSound = usePlaySystemSound();
 
   const { availableVehicles, totalVehicles } = useMemo(() => ({
@@ -32,40 +25,11 @@ export default function DispatchConsole() {
     () => (volunteers ?? []).filter(v => v.status === 'activo').length,
     [volunteers],
   );
-  const activeCount = (emergencies ?? []).length;
-
   const handleSelectKey = useCallback((key: EmergencyKeyRow) => {
     // Solo seleccionar clave, NO reproducir tono aquí
     openDispatch(key);
     toast.info(`Clave seleccionada: ${key.code} - ${key.name}`, { duration: 3000 });
   }, [openDispatch]);
-
-  const handleAdvanceStatus = useCallback(async (emergencyId: string, newStatus: string) => {
-    // en_cuartel is auto-managed by VehicleReturnManager
-    if (newStatus === 'en_cuartel') return;
-
-    const timestampField: Record<string, string> = {
-      en_ruta: 'en_route_at',
-      en_trabajo: 'working_at',
-      controlada: 'controlled_at',
-      finalizada: 'finished_at',
-    };
-
-    const update: Record<string, any> = { status: newStatus };
-    const field = timestampField[newStatus];
-    if (field) update[field] = new Date().toISOString();
-
-    // Do NOT auto-release vehicles on finalizada — VehicleReturnManager handles individual returns with km tracking
-
-    const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
-    if (error) {
-      toast.error('Error al actualizar estado');
-    } else {
-      toast.success(`Estado actualizado a ${newStatus.replace('_', ' ')}`);
-      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-    }
-  }, [queryClient]);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -108,8 +72,7 @@ export default function DispatchConsole() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard title="Emergencias Activas" value={activeCount} icon={Siren} color="hsl(0, 85%, 55%)" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${totalVehicles} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
         <StatsCard title="Voluntarios Activos" value={activeVolunteers} icon={Users} color="hsl(35, 95%, 55%)" />
         <StatsCard title="Tiempo Resp. Prom." value="—" subtitle="últimas 24h" icon={Clock} color="hsl(210, 85%, 55%)" />
@@ -122,22 +85,6 @@ export default function DispatchConsole() {
         </h2>
         <EmergencyKeyGrid onSelectKey={handleSelectKey} />
       </div>
-
-      <DispatchNotesPanel />
-
-      {activeCount > 0 && (
-        <div>
-          <h2 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-warning pulse-live" />
-            Emergencias Activas ({activeCount})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {(emergencies ?? []).map(e => (
-              <ActiveEmergencyCard key={e.id} emergency={e} onAdvanceStatus={handleAdvanceStatus} />
-            ))}
-          </div>
-        </div>
-      )}
 
     </div>
   );
