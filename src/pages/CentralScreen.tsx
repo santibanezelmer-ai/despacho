@@ -64,7 +64,7 @@ function useActiveAssignments(emergencyIds: string[]) {
 function ShareModal({ onClose }: { onClose: () => void }) {
   const currentUrl = window.location.origin + '/pantalla-central';
   const mapUrl = window.location.origin + '/pantalla-mapa';
-  const emergenciesUrl = window.location.origin + '/emergencias';
+  const emergenciesUrl = window.location.origin + '/pantalla-emergencias';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>

@@ -125,7 +125,7 @@ function AppRoutes() {
   }
 
   // Authenticated user on native/mobile hitting a non-mobile route → redirect to mobile feed
-  if (isNativeMobile && !location.pathname.startsWith('/mobile') && location.pathname !== '/pantalla-central' && !location.pathname.startsWith('/superadmin')) {
+  if (isNativeMobile && !location.pathname.startsWith('/mobile') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
     return <Navigate to="/mobile/feed" replace />;
   }
 
@@ -141,6 +141,16 @@ function AppRoutes() {
     return (
       <Suspense fallback={<PageFallback />}>
         <MapScreen />
+      </Suspense>
+    );
+  }
+
+  if (location.pathname === '/pantalla-emergencias') {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <main className="min-h-screen bg-background">
+          <ActiveEmergencies />
+        </main>
       </Suspense>
     );
   }
