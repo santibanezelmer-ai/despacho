@@ -3,7 +3,6 @@ import SystemClock, { SystemDate } from '@/components/dispatch/SystemClock';
 import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import StatsCard from '@/components/dashboard/StatsCard';
-import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import { useDispatchForm } from '@/contexts/DispatchFormContext';
 
 export default function DispatchConsole() {
   const { openDispatch } = useDispatchForm();
-  const { data: emergencies } = useActiveEmergencies();
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
   const playSystemSound = usePlaySystemSound();
@@ -27,8 +25,6 @@ export default function DispatchConsole() {
     () => (volunteers ?? []).filter(v => v.status === 'activo').length,
     [volunteers],
   );
-  const activeCount = (emergencies ?? []).length;
-
   const handleSelectKey = useCallback((key: EmergencyKeyRow) => {
     // Solo seleccionar clave, NO reproducir tono aquí
     openDispatch(key);
@@ -76,8 +72,7 @@ export default function DispatchConsole() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard title="Emergencias Activas" value={activeCount} icon={Siren} color="hsl(0, 85%, 55%)" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${totalVehicles} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
         <StatsCard title="Voluntarios Activos" value={activeVolunteers} icon={Users} color="hsl(35, 95%, 55%)" />
         <StatsCard title="Tiempo Resp. Prom." value="—" subtitle="últimas 24h" icon={Clock} color="hsl(210, 85%, 55%)" />

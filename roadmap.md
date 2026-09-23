@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Separar Consola, Emergencias Activas y Comunicados / Notas en vistas independientes de Operaciones, reutilizando sus componentes actuales.
-- [ ] Convertir Pantalla Central en un dashboard de TV sin ningún elemento visual de Emergencias Activas ni scroll de página.
+- [x] Separar Consola, Emergencias Activas y Comunicados / Notas en vistas independientes de Operaciones, reutilizando sus componentes actuales.
+- [x] Convertir Pantalla Central en un dashboard de TV sin ningún elemento visual de Emergencias Activas ni scroll de página.
 - [ ] Validar navegación, orden del menú, acciones operativas, consola del navegador, compilación y ajuste completo según viewport.
 - [ ] Reorganizar Acciones en pestañas sin ocultar información crítica.
 - [ ] Integrar controles de ubicación y mapa en dos columnas de escritorio y una en móvil.
