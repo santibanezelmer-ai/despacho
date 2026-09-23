@@ -232,6 +232,21 @@ export default function InvitationsAdmin() {
         </Button>
       </div>
 
+      <div className="console-panel p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-foreground">Invitación masiva a voluntarios</p>
+          <p className="text-xs text-muted-foreground">
+            {bulkRunning
+              ? `Enviando ${bulkProgress.done} de ${bulkProgress.total}...`
+              : `${bulkTargets.length} voluntario(s) con email registrado sin cuenta vinculada`}
+          </p>
+        </div>
+        <Button variant="outline" onClick={sendBulk} disabled={bulkRunning || !bulkTargets.length}>
+          {bulkRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+          Invitar a todos
+        </Button>
+      </div>
+
       <div className="console-panel-elevated overflow-hidden">
         <Table>
           <TableHeader>
