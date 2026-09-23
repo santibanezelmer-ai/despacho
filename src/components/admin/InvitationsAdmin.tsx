@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban } from 'lucide-react';
+import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban, Users, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
+import { useVolunteers } from '@/hooks/useVolunteers';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
