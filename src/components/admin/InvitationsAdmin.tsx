@@ -36,6 +36,8 @@ export default function InvitationsAdmin() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrgRole>('voluntario');
   const [expiresDays, setExpiresDays] = useState<number>(7);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
 
   const { data: invitations, isLoading } = useQuery({
     queryKey: ['org-invitations', orgId],
