@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
-import { Truck, Users, Shield, Search, Map, QrCode, ExternalLink, X } from 'lucide-react';
+import { Truck, Users, Shield, Search, Map, QrCode, ExternalLink, X, Radio } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 
@@ -64,10 +64,11 @@ function useActiveAssignments(emergencyIds: string[]) {
 function ShareModal({ onClose }: { onClose: () => void }) {
   const currentUrl = window.location.origin + '/pantalla-central';
   const mapUrl = window.location.origin + '/pantalla-mapa';
+  const emergenciesUrl = window.location.origin + '/pantalla-emergencias';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 max-h-[90dvh] overflow-y-auto space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">Compartir Pantallas</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -92,6 +93,15 @@ function ShareModal({ onClose }: { onClose: () => void }) {
             <div className="flex items-center gap-2">
               <input readOnly value={mapUrl} className="flex-1 bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-foreground" />
               <button onClick={() => { navigator.clipboard.writeText(mapUrl); }} className="shrink-0 px-3 py-1.5 rounded bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">Copiar</button>
+            </div>
+          </div>
+
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2"><Radio className="h-4 w-4 text-warning" /> Emergencias Activas</p>
+            <div className="flex justify-center"><QRCodeSVG value={emergenciesUrl} size={140} bgColor="transparent" fgColor="hsl(var(--foreground))" /></div>
+            <div className="flex items-center gap-2">
+              <input readOnly value={emergenciesUrl} className="flex-1 min-w-0 bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-foreground" />
+              <button onClick={() => { navigator.clipboard.writeText(emergenciesUrl); }} className="shrink-0 px-3 py-1.5 rounded bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">Copiar</button>
             </div>
           </div>
         </div>
