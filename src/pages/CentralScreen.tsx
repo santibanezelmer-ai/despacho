@@ -4,16 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
-import { Radio, MapPin, Truck, Users, Clock, Shield, Activity, Search, Map, QrCode, ExternalLink, X } from 'lucide-react';
+import { Truck, Users, Shield, Search, Map, QrCode, ExternalLink, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  despacho: { label: 'DESPACHO', color: 'hsl(270, 60%, 55%)' },
-  en_ruta: { label: 'EN RUTA', color: 'hsl(35, 95%, 55%)' },
-  en_trabajo: { label: 'EN TRABAJO', color: 'hsl(0, 85%, 55%)' },
-  controlada: { label: 'CONTROLADA', color: 'hsl(210, 85%, 55%)' },
-};
 
 const statusPillClass: Record<string, string> = {
   en_emergencia: 'border-emergency/40 bg-emergency/15 text-emergency',
@@ -47,65 +40,6 @@ const vehicleStatusLabel: Record<string, string> = {
   mantencion: 'MANTENCIÓN',
   fuera_servicio: 'FUERA SERV.',
 };
-
-function useTimer(startTime: string) {
-  const [elapsed, setElapsed] = useState('');
-  useEffect(() => {
-    const update = () => {
-      const diff = Date.now() - new Date(startTime).getTime();
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setElapsed(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-    };
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [startTime]);
-  return elapsed;
-}
-
-function TVEmergencyCard({ emergency }: { emergency: any }) {
-  const timer = useTimer(emergency.created_at);
-  const status = statusConfig[emergency.status] ?? statusConfig.despacho;
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-bold text-foreground">
-            {emergency.emergency_keys?.code ?? '—'} · {emergency.emergency_keys?.name ?? 'Emergencia'}
-          </h3>
-          <p className="text-xs font-mono text-muted-foreground">{emergency.folio}</p>
-        </div>
-        <span
-          className="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide"
-          style={{ backgroundColor: `${status.color}25`, color: status.color }}
-        >
-          {status.label}
-        </span>
-      </div>
-      <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-        <MapPin className="h-4 w-4 shrink-0" />
-        <span className="truncate">{emergency.address}</span>
-      </div>
-      <div className="mt-3 flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Truck className="h-4 w-4 text-info" />
-          <span>{emergency.vehicleCodes.length} móviles</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Users className="h-4 w-4 text-warning" />
-          <span>{emergency.personnelCount} personal</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-emergency">
-          <Clock className="h-4 w-4" />
-          <span className="font-mono font-bold">{timer}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function useActiveAssignments(emergencyIds: string[]) {
   return useQuery({
@@ -270,9 +204,9 @@ export default function CentralScreen() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-background p-3 md:p-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-3 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
           <img src="/favicon.png" alt="Operix" className="h-9 w-9 rounded-lg object-cover" />
           <h1 className="text-3xl font-bold text-foreground">Operix</h1>
@@ -295,12 +229,6 @@ export default function CentralScreen() {
             <QrCode className="h-4 w-4 text-primary" />
             <span className="hidden md:inline">Compartir</span>
           </button>
-          {active.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Radio className="h-5 w-5 text-emergency pulse-live" />
-              <span className="text-lg font-bold text-emergency">{active.length} ACTIVA{active.length !== 1 ? 'S' : ''}</span>
-            </div>
-          )}
           <div className="text-right">
             <div className="text-2xl font-mono font-bold text-foreground">
               {formatClock(now)}
@@ -313,29 +241,22 @@ export default function CentralScreen() {
       </div>
 
       {/* Resource summary bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
-          <Activity className="h-6 w-6 text-emergency" />
-          <div>
-            <p className="text-2xl font-mono font-bold text-foreground">{active.length}</p>
-            <p className="text-xs text-muted-foreground">Emergencias</p>
-          </div>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+      <div className="mb-3 grid shrink-0 grid-cols-3 gap-2">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
           <Truck className="h-6 w-6 text-success" />
           <div>
             <p className="text-2xl font-mono font-bold text-foreground">{availableVehicles}<span className="text-sm text-muted-foreground">/{totalVehicles}</span></p>
             <p className="text-xs text-muted-foreground">Móviles disponibles</p>
           </div>
         </div>
-        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
           <Truck className="h-6 w-6 text-warning" />
           <div>
             <p className="text-2xl font-mono font-bold text-foreground">{vehiclesInEmergency}</p>
             <p className="text-xs text-muted-foreground">Móviles en emergencia</p>
           </div>
         </div>
-        <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
           <Users className="h-6 w-6 text-info" />
           <div>
             <p className="text-2xl font-mono font-bold text-foreground">{volunteerRows.length}<span className="text-sm text-muted-foreground">/{totalVolunteers}</span></p>
@@ -344,23 +265,9 @@ export default function CentralScreen() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-4 mb-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Emergencias activas</h2>
-        {active.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {active.map(e => <TVEmergencyCard key={e.id} emergency={e} />)}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <Shield className="h-12 w-12 text-success mb-3 opacity-60" />
-            <p className="text-2xl font-bold text-success/70">Sin emergencias activas</p>
-            <p className="text-base text-muted-foreground mt-1">Sistema operativo — En espera</p>
-          </div>
-        )}
-      </div>
-
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,0.9fr)_minmax(0,1.4fr)] gap-3 lg:grid-cols-[minmax(320px,0.8fr)_minmax(0,2.2fr)] lg:grid-rows-1">
       {/* Disponibilidad del personal de mando (solo lectura) */}
-      <div className="rounded-lg border border-border bg-card mb-4">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
         <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Shield className="h-4 w-4 text-warning" /> Disponibilidad del personal de mando
@@ -370,7 +277,7 @@ export default function CentralScreen() {
           </span>
         </div>
         {authorityRows.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-border/30">
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-px overflow-y-auto bg-border/30 2xl:grid-cols-2">
             {authorityRows.map(a => (
               <div key={a.id} className="flex items-center justify-between gap-3 bg-card px-4 py-2.5">
                 <div className="min-w-0">
@@ -402,7 +309,7 @@ export default function CentralScreen() {
 
 
       {/* Móviles - ancho completo, agrupados por compañía */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
         <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0 flex items-center gap-2">
             <Truck className="h-4 w-4 text-success" /> Móviles
@@ -421,7 +328,7 @@ export default function CentralScreen() {
             <span className="text-xs font-mono text-muted-foreground shrink-0">{filteredVehicles.length}</span>
           </div>
         </div>
-        <div className="max-h-[46vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {vehiclesByCompany.length > 0 ? (
             vehiclesByCompany.map(([company, vehs]) => (
               <div key={company}>
@@ -472,6 +379,7 @@ export default function CentralScreen() {
             </p>
           )}
         </div>
+      </div>
       </div>
 
       {showShare && <ShareModal onClose={() => setShowShare(false)} />}

@@ -16,6 +16,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import AcceptInvitation from "@/pages/AcceptInvitation";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
+import DispatchNotes from "@/pages/DispatchNotes";
 import EmergencyHistory from "@/pages/EmergencyHistory";
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 import Volunteers from "@/pages/Volunteers";
@@ -224,6 +225,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<DispatchConsole />} />
         <Route path="/emergencias" element={<ActiveEmergencies />} />
+        <Route path="/comunicados" element={<DispatchNotes />} />
         <Route path="/historial" element={<EmergencyHistory />} />
         <Route path="/mapa" element={<OperativeMap />} />
         <Route path="/voluntarios" element={<Volunteers />} />

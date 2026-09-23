@@ -10,7 +10,7 @@ import DemoExpiredOverlay from '@/components/demo/DemoExpiredOverlay';
 import DispatchForm from '@/components/dispatch/DispatchForm';
 import { DispatchFormProvider, useDispatchForm } from '@/contexts/DispatchFormContext';
 import {
-  Siren, Radio, MapPin, Users, Truck, ClipboardList,
+  Siren, Radio, MapPin, Users, Truck, ClipboardList, StickyNote,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
   Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff, LifeBuoy
 } from 'lucide-react';
@@ -20,6 +20,7 @@ import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
   { path: '/emergencias', label: 'Emergencias Activas', icon: Radio, section: 'Operaciones' },
+  { path: '/comunicados', label: 'Comunicados / Notas', icon: StickyNote, section: 'Operaciones' },
   { path: '/historial', label: 'Historial', icon: Archive, section: 'Operaciones' },
   { path: '/mapa', label: 'Mapa Operativo', icon: MapPin, section: 'Operaciones' },
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
