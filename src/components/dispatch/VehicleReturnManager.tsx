@@ -17,9 +17,11 @@ interface Props {
   forceVisible?: boolean;
   /** Oculta el botón de cierre propio (el cierre lo maneja el diálogo de finalización). */
   hideCloseButton?: boolean;
+  /** No pasar la emergencia a en_cuartel al liberar el último móvil (lo hace el diálogo de finalización). */
+  deferQuarters?: boolean;
 }
 
-export default function VehicleReturnManager({ emergencyId, emergencyStatus, forceVisible, hideCloseButton }: Props) {
+export default function VehicleReturnManager({ emergencyId, emergencyStatus, forceVisible, hideCloseButton, deferQuarters }: Props) {
   const { formatTime } = useTimeFormat();
   const { orgId } = useOrganization();
   const { user } = useAuth();
@@ -62,7 +64,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus, for
         .is('released_at', null);
 
       // If this was the last one (remaining includes current before update propagates, so check <=1)
-      if (!remaining || remaining.length === 0) {
+      if (!deferQuarters && (!remaining || remaining.length === 0)) {
         // All vehicles returned — update emergency to en_cuartel
         await supabase.from('emergencies').update({
           status: 'en_cuartel' as any,
