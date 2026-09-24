@@ -41,10 +41,13 @@ export default function EmergencyHistory() {
         e.emergency_keys?.name?.toLowerCase().includes(s);
       if (!match) return false;
     }
-    if (dateFrom || dateTo) {
+    // Si solo hay una fecha, se busca ese día exacto
+    const from = dateFrom || dateTo;
+    const to = dateTo || dateFrom;
+    if (from || to) {
       const d = new Date(e.finished_at || e.created_at);
-      if (dateFrom && d < new Date(`${dateFrom}T00:00:00`)) return false;
-      if (dateTo && d > new Date(`${dateTo}T23:59:59`)) return false;
+      if (from && d < new Date(`${from}T00:00:00`)) return false;
+      if (to && d > new Date(`${to}T23:59:59.999`)) return false;
     }
     return true;
   });
