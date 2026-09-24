@@ -89,6 +89,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
             emergencyStatus={emergencyStatus}
             forceVisible
             hideCloseButton
+            deferQuarters
           />
         </div>
 
