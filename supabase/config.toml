@@ -13,3 +13,5 @@ project_id = "ratbcyvzdlokcqyxdvvg"
     verify_jwt = false
   [functions.backend-health-check]
     verify_jwt = false
+  [functions.support-ai-assist]
+    verify_jwt = false
