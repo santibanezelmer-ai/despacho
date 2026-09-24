@@ -9,6 +9,12 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
+const REGIONES = [
+  'Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo',
+  'Valparaíso', 'Metropolitana', "O'Higgins", 'Maule', 'Ñuble', 'Biobío',
+  'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes',
+];
+
 export default function RegisterOrganization() {
   const { signUp } = useAuth();
   const [step, setStep] = useState<'form' | 'success'>('form');
@@ -20,8 +26,8 @@ export default function RegisterOrganization() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password || !form.orgName) {
-      toast.error('Completa los campos obligatorios');
+    if (!form.name || !form.email || !form.password || !form.orgName.trim() || !form.region || !form.commune.trim()) {
+      toast.error('Completa los campos obligatorios: nombre del cuerpo de bomberos, región y comuna');
       return;
     }
     setLoading(true);
@@ -131,12 +137,15 @@ export default function RegisterOrganization() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Comuna</label>
-                <Input value={form.commune} onChange={e => setForm(f => ({ ...f, commune: e.target.value }))} className="bg-muted/50" />
+                <label className="mb-1 block text-xs text-muted-foreground">Región *</label>
+                <select value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} required className="h-10 w-full rounded-md border border-input bg-muted/50 px-3 text-sm text-foreground">
+                  <option value="">Seleccionar...</option>
+                  {REGIONES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Región</label>
-                <Input value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} className="bg-muted/50" />
+                <label className="mb-1 block text-xs text-muted-foreground">Comuna *</label>
+                <Input value={form.commune} onChange={e => setForm(f => ({ ...f, commune: e.target.value }))} required className="bg-muted/50" />
               </div>
             </div>
             <div>
