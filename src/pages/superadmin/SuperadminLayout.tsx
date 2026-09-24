@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAllSupportTickets } from '@/hooks/useSupportTickets';
 import { Shield, BarChart3, Building2, FileText, LogOut, ChevronLeft, Siren, LifeBuoy } from 'lucide-react';
 
 const navItems = [
@@ -12,6 +13,8 @@ const navItems = [
 export default function SuperadminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { data: tickets } = useAllSupportTickets();
+  const openTickets = (tickets ?? []).filter(t => t.status === 'abierto' || t.status === 'en_proceso').length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -39,6 +42,9 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
               >
                 <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-info' : ''}`} />
                 <span className="truncate">{item.label}</span>
+                {item.path === '/superadmin/soporte' && openTickets > 0 && (
+                  <span className="ml-auto rounded-full bg-emergency px-1.5 py-0.5 text-[10px] font-bold leading-none text-emergency-foreground">{openTickets}</span>
+                )}
               </Link>
             );
           })}

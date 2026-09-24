@@ -84,10 +84,10 @@ export function useAllSupportTickets() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('support_tickets')
-        .select('*, organizations(name, slug)')
+        .select('*, organizations(name, slug, is_demo, demo_expires_at, region, commune, institution_email, phone, created_at)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as (SupportTicket & { organizations: { name: string; slug: string } | null })[];
+      return (data ?? []) as (SupportTicket & { organizations: { name: string; slug: string; is_demo?: boolean; demo_expires_at?: string | null; region?: string | null; commune?: string | null; institution_email?: string | null; phone?: string | null; created_at?: string } | null })[];
     },
   });
 }
