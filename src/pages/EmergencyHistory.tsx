@@ -2,14 +2,19 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { Archive, Search } from 'lucide-react';
+import { Archive, Search, Calendar, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import EmergencyPdfDownload from '@/components/dispatch/EmergencyPdfDownload';
+import EditEmergencyDialog from '@/components/dispatch/EditEmergencyDialog';
 
 export default function EmergencyHistory() {
   const { orgId } = useOrganization();
   const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [editing, setEditing] = useState<any | null>(null);
 
   const { data: emergencies, isLoading } = useQuery({
     queryKey: ['emergency-history', orgId],
@@ -20,19 +25,29 @@ export default function EmergencyHistory() {
         .eq('organization_id', orgId)
         .in('status', ['finalizada', 'en_cuartel'])
         .order('finished_at', { ascending: false })
-        .limit(200);
+        .limit(500);
       if (error) throw error;
       return data as any[];
     },
     enabled: !!orgId,
   });
 
-  const filtered = (emergencies ?? []).filter(e =>
-    !search ||
-    e.folio?.toLowerCase().includes(search.toLowerCase()) ||
-    e.address?.toLowerCase().includes(search.toLowerCase()) ||
-    e.emergency_keys?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = (emergencies ?? []).filter(e => {
+    if (search) {
+      const s = search.toLowerCase();
+      const match =
+        e.folio?.toLowerCase().includes(s) ||
+        e.address?.toLowerCase().includes(s) ||
+        e.emergency_keys?.name?.toLowerCase().includes(s);
+      if (!match) return false;
+    }
+    if (dateFrom || dateTo) {
+      const d = new Date(e.finished_at || e.created_at);
+      if (dateFrom && d < new Date(`${dateFrom}T00:00:00`)) return false;
+      if (dateTo && d > new Date(`${dateTo}T23:59:59`)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -43,14 +58,39 @@ export default function EmergencyHistory() {
         </h1>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por folio, dirección o clave..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-9 bg-muted/50"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por folio, dirección o clave..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 bg-muted/50"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            className="w-auto bg-muted/50"
+            title="Desde"
+          />
+          <span className="text-xs text-muted-foreground">a</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            className="w-auto bg-muted/50"
+            title="Hasta"
+          />
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>
+              Limpiar
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -96,7 +136,17 @@ export default function EmergencyHistory() {
                       {e.finished_at ? new Date(e.finished_at).toLocaleString('es-CL') : '—'}
                     </td>
                     <td className="py-2 px-3 text-right">
-                      <EmergencyPdfDownload emergencyId={e.id} folio={e.folio} />
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Editar ficha"
+                          onClick={() => setEditing(e)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <EmergencyPdfDownload emergencyId={e.id} folio={e.folio} />
+                      </div>
                     </td>
                   </tr>
                 );
@@ -104,6 +154,14 @@ export default function EmergencyHistory() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {editing && (
+        <EditEmergencyDialog
+          emergency={editing}
+          open={!!editing}
+          onClose={() => setEditing(null)}
+        />
       )}
     </div>
   );
