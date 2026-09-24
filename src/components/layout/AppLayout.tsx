@@ -54,9 +54,24 @@ function GlobalDispatchForm() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      const stored = localStorage.getItem('operix.sidebar.collapsed');
+      if (stored !== null) return stored === '1';
+    } catch { /* ignore */ }
+    // Por defecto minimizado en la Consola de Despacho para maximizar el área útil
+    return window.location.pathname === '/';
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('operix.sidebar.collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const { user, signOut, isSuperadmin } = useAuth();
   const { currentOrg, orgRole, memberships, setCurrentOrgId, isCompanyAdmin } = useOrganization();
   const accessCtx = { orgRole, isCompanyAdmin, isSuperadmin };
@@ -203,10 +218,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-1">
           {!isMobile && (
             <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="flex-1 flex items-center justify-center py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={toggleCollapsed}
+              title={collapsed ? 'Expandir menú' : 'Minimizar menú'}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              {!collapsed && <span className="text-[11px]">Minimizar</span>}
             </button>
           )}
           <button
