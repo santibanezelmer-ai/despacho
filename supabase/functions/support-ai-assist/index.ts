@@ -27,7 +27,7 @@ Redacta en español de Chile una respuesta breve (máx. 150 palabras), cordial y
 /** Llamada directa a Google Gemini con la API key propia del proyecto. */
 async function callGemini(key: string, input: string) {
   const res = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
