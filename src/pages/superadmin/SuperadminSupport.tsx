@@ -10,6 +10,7 @@ import {
   STATUS_LABEL, PRIORITY_LABEL, type SupportStatus,
 } from '@/hooks/useSupportTickets';
 import TicketThread from '@/components/support/TicketThread';
+import SupportAiAssistant from '@/components/support/SupportAiAssistant';
 
 const statusStyle: Record<SupportStatus, string> = {
   abierto: 'bg-warning/15 text-warning border-warning/30',
@@ -78,6 +79,8 @@ export default function SuperadminSupport() {
         </Select>
         </div>
       </div>
+
+      <SupportAiAssistant />
 
       {isLoading && <Skeleton className="h-24 w-full" />}
 
@@ -150,6 +153,7 @@ export default function SuperadminSupport() {
                 })()}
                 <p className="whitespace-pre-wrap text-sm text-foreground">{t.description}</p>
                 {t.route && <p className="text-[11px] font-mono text-muted-foreground">Ruta reportada: {t.route}</p>}
+                <SupportAiAssistant compact initialContent={`Asunto: ${t.subject}\nCategoría: ${t.category}\n\n${t.description}`} context={{ organizacion: t.organizations?.name, demo: t.organizations?.is_demo, region: t.organizations?.region, comuna: t.organizations?.commune, prioridad_actual: t.priority, ruta: t.route }} />
                 <TicketThread ticket={t} />
               </div>
             )}

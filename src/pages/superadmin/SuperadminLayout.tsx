@@ -1,12 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAllSupportTickets } from '@/hooks/useSupportTickets';
-import { Shield, BarChart3, Building2, FileText, LogOut, ChevronLeft, Siren, LifeBuoy } from 'lucide-react';
+import { Shield, BarChart3, Building2, FileText, LogOut, ChevronLeft, Siren, LifeBuoy, Activity } from 'lucide-react';
 
 const navItems = [
   { path: '/superadmin', label: 'Dashboard', icon: BarChart3 },
   { path: '/superadmin/organizaciones', label: 'Organizaciones', icon: Building2 },
   { path: '/superadmin/solicitudes', label: 'Solicitudes', icon: FileText },
+  { path: '/superadmin/salud', label: 'Salud', icon: Activity },
   { path: '/superadmin/soporte', label: 'Soporte', icon: LifeBuoy },
 ];
 
