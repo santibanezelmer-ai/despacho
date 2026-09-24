@@ -12,16 +12,16 @@ function EmergencyKeyGrid({ onSelectKey }: Props) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-lg" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-lg" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {(keys ?? []).map((key) => (
         <button
           key={key.id}
@@ -34,14 +34,14 @@ function EmergencyKeyGrid({ onSelectKey }: Props) {
         >
           <div className="flex items-start justify-between gap-2">
             <span
-              className="inline-block rounded px-2 py-1 font-mono font-bold text-xs uppercase tracking-tight"
+              className="inline-block rounded-md px-3 py-1.5 font-mono font-bold text-xl uppercase tracking-tight"
               style={{ backgroundColor: key.color, color: '#fff', maxWidth: '100%' }}
             >
               {key.code}
             </span>
-            <Volume2 className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Volume2 className="h-5 w-5 text-muted-foreground shrink-0" />
           </div>
-          <p className="mt-2 text-sm font-semibold text-foreground leading-tight">
+          <p className="mt-2.5 text-base font-semibold text-foreground leading-snug">
             {key.name}
           </p>
         </button>
