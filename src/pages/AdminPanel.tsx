@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Shield, Trash2, Users } from 'lucide-react';
+import { Shield, Trash2, Users, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import SystemSoundsAdmin from '@/components/admin/SystemSoundsAdmin';
 import RanksAdmin from '@/components/admin/RanksAdmin';
 import DemoSettingsAdmin from '@/components/admin/DemoSettingsAdmin';
@@ -50,6 +52,7 @@ export default function AdminPanel() {
   const { orgId, isOrgAdmin, currentOrg } = useOrganization();
   const queryClient = useQueryClient();
   const { data: companies } = useCompanies();
+  const [search, setSearch] = useState('');
 
   // Fetch members of the CURRENT organization only
   const { data: members, isLoading } = useQuery({
@@ -123,6 +126,12 @@ export default function AdminPanel() {
   const totalUsers = members?.length ?? 0;
   const adminCount = members?.filter((m: any) => m.role === 'admin').length ?? 0;
   const activeCount = members?.filter((m: any) => m.status === 'active').length ?? 0;
+  const q = search.trim().toLowerCase();
+  const filteredMembers = (members ?? []).filter((m: any) =>
+    !q ||
+    (m.profile?.display_name ?? '').toLowerCase().includes(q) ||
+    (m.profile?.email ?? '').toLowerCase().includes(q)
+  );
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -168,9 +177,30 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="console-panel-elevated overflow-hidden">
+      <Tabs defaultValue="miembros" className="space-y-4">
+        <TabsList className="flex h-auto flex-wrap justify-start gap-1">
+          <TabsTrigger value="miembros" className="text-xs">Miembros</TabsTrigger>
+          <TabsTrigger value="institucion" className="text-xs">Institución</TabsTrigger>
+          <TabsTrigger value="invitaciones" className="text-xs">Invitaciones</TabsTrigger>
+          <TabsTrigger value="rangos" className="text-xs">Rangos</TabsTrigger>
+          <TabsTrigger value="dispositivos" className="text-xs">Dispositivos</TabsTrigger>
+          <TabsTrigger value="sonidos" className="text-xs">Sonidos</TabsTrigger>
+          <TabsTrigger value="demo" className="text-xs">Demo</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="miembros" className="space-y-3">
+      <div className="relative max-w-sm">
+        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por nombre o email..."
+          className="h-9 pl-8 text-sm"
+        />
+      </div>
+      <div className="console-panel-elevated max-h-[60vh] overflow-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="border-border/50">
               <TableHead className="text-xs">Usuario</TableHead>
               <TableHead className="text-xs">Email</TableHead>
@@ -186,14 +216,14 @@ export default function AdminPanel() {
                   Cargando miembros...
                 </TableCell>
               </TableRow>
-            ) : !members?.length ? (
+            ) : !filteredMembers.length ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-8">
-                  Aún no hay miembros. Invita usuarios desde la sección inferior.
+                  {search ? 'Sin resultados' : 'Aún no hay miembros. Invita usuarios desde la pestaña Invitaciones.'}
                 </TableCell>
               </TableRow>
             ) : (
-              members.map((m: any) => {
+              filteredMembers.map((m: any) => {
                 const isSelf = m.user_id === user?.id;
                 const uiRole = toUiRole(m.role, m.company_id);
                 return (
@@ -294,35 +324,21 @@ export default function AdminPanel() {
         <Shield className="inline h-3 w-3 mr-1" />
         Los cambios de rol se aplican inmediatamente. Remover a un miembro solo afecta a esta organización.
       </p>
+        </TabsContent>
 
-      <div className="border-t border-border pt-6">
-        <OrganizationBrandingCard />
-      </div>
+        <TabsContent value="institucion" className="space-y-6">
+          <OrganizationBrandingCard />
+          <div className="border-t border-border pt-6">
+            <CompanyAdminsManager />
+          </div>
+        </TabsContent>
 
-      <div className="border-t border-border pt-6">
-        <CompanyAdminsManager />
-      </div>
-
-      <div className="border-t border-border pt-6">
-        <InvitationsAdmin />
-      </div>
-
-      <div className="border-t border-border pt-6">
-        <RanksAdmin />
-      </div>
-
-      <div className="border-t border-border pt-6">
-        <VehicleDevicesAdmin />
-      </div>
-
-      <div className="border-t border-border pt-6">
-        <SystemSoundsAdmin />
-      </div>
-
-
-      <div className="border-t border-border pt-6">
-        <DemoSettingsAdmin />
-      </div>
+        <TabsContent value="invitaciones"><InvitationsAdmin /></TabsContent>
+        <TabsContent value="rangos"><RanksAdmin /></TabsContent>
+        <TabsContent value="dispositivos"><VehicleDevicesAdmin /></TabsContent>
+        <TabsContent value="sonidos"><SystemSoundsAdmin /></TabsContent>
+        <TabsContent value="demo"><DemoSettingsAdmin /></TabsContent>
+      </Tabs>
     </div>
   );
 }
