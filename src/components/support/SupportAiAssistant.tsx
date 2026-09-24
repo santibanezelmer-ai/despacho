@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
-type Result = { priority: 'baja' | 'media' | 'alta' | 'critica'; category: string; justification: string; suggested_reply: string };
+type Result = { priority: 'baja' | 'media' | 'alta' | 'critica'; category: string; justification: string; suggested_reply: string; engine?: string };
 
 const prioStyle: Record<Result['priority'], string> = {
   baja: 'border-border text-muted-foreground',
@@ -57,6 +57,7 @@ export default function SupportAiAssistant({
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <Badge variant="outline" className={prioStyle[result.priority]}>Prioridad {result.priority}</Badge>
             <Badge variant="outline">{result.category}</Badge>
+            {result.engine === 'gemini' && <Badge variant="outline" className="border-info/40 text-info">Gemini</Badge>}
             <span className="text-muted-foreground">{result.justification}</span>
           </div>
           <p className="whitespace-pre-wrap rounded-md border border-border bg-background p-2 text-sm text-foreground">{result.suggested_reply}</p>
