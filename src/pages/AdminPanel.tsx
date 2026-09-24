@@ -179,13 +179,13 @@ export default function AdminPanel() {
 
       <Tabs defaultValue="miembros" className="space-y-4">
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
-          <TabsTrigger value="miembros" className="text-xs">Miembros</TabsTrigger>
-          <TabsTrigger value="institucion" className="text-xs">Institución</TabsTrigger>
-          <TabsTrigger value="invitaciones" className="text-xs">Invitaciones</TabsTrigger>
-          <TabsTrigger value="rangos" className="text-xs">Rangos</TabsTrigger>
-          <TabsTrigger value="dispositivos" className="text-xs">Dispositivos</TabsTrigger>
-          <TabsTrigger value="sonidos" className="text-xs">Sonidos</TabsTrigger>
-          <TabsTrigger value="demo" className="text-xs">Demo</TabsTrigger>
+          <TabsTrigger value="miembros" className="text-sm md:text-base">Miembros</TabsTrigger>
+          <TabsTrigger value="institucion" className="text-sm md:text-base">Institución</TabsTrigger>
+          <TabsTrigger value="invitaciones" className="text-sm md:text-base">Invitaciones</TabsTrigger>
+          <TabsTrigger value="rangos" className="text-sm md:text-base">Rangos</TabsTrigger>
+          <TabsTrigger value="dispositivos" className="text-sm md:text-base">Dispositivos</TabsTrigger>
+          <TabsTrigger value="sonidos" className="text-sm md:text-base">Sonidos</TabsTrigger>
+          <TabsTrigger value="demo" className="text-sm md:text-base">Demo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="miembros" className="space-y-3">
