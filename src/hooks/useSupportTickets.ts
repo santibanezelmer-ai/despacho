@@ -80,7 +80,7 @@ export function useOrgSupportTickets() {
 export function useAllSupportTickets() {
   return useQuery({
     queryKey: ['support-tickets-all'],
-    refetchInterval: 30000,
+    refetchInterval: 15000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('support_tickets')

@@ -1,4 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAllSupportTickets } from '@/hooks/useSupportTickets';
 import { Shield, BarChart3, Building2, FileText, LogOut, ChevronLeft, Siren, LifeBuoy, Activity } from 'lucide-react';
@@ -16,6 +18,47 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
   const { user, signOut } = useAuth();
   const { data: tickets } = useAllSupportTickets();
   const openTickets = (tickets ?? []).filter(t => t.status === 'abierto' || t.status === 'en_proceso').length;
+  const navigate = useNavigate();
+  const seen = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
+  }, []);
+
+  useEffect(() => {
+    if (!tickets) return;
+    if (!seen.current) { seen.current = new Set(tickets.map(t => t.id)); return; }
+    const fresh = tickets.filter(t => !seen.current!.has(t.id));
+    fresh.forEach(t => {
+      seen.current!.add(t.id);
+      const org = t.organizations?.name ?? 'Organización';
+      toast.warning(`Nuevo ticket de soporte: ${t.subject}`, {
+        description: `${org} · Prioridad ${t.priority}`,
+        duration: 15000,
+        action: { label: 'Ver', onClick: () => navigate('/superadmin/soporte') },
+      });
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        const n = new Notification('Nuevo ticket de soporte', { body: `${org}: ${t.subject}` });
+        n.onclick = () => { window.focus(); navigate('/superadmin/soporte'); };
+      }
+    });
+    if (fresh.length) {
+      try {
+        const ctx = new AudioContext();
+        [0, 0.25].forEach(d => {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.frequency.value = 880; g.gain.value = 0.15;
+          o.connect(g); g.connect(ctx.destination);
+          o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + 0.15);
+        });
+      } catch { /* audio no disponible */ }
+    }
+  }, [tickets, navigate]);
+
+  useEffect(() => {
+    const base = 'Superadmin — Operix';
+    document.title = openTickets ? `(${openTickets}) ${base}` : base;
+  }, [openTickets]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
