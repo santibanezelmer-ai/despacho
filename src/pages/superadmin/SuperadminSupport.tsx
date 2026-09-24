@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { LifeBuoy, ChevronDown, ChevronUp } from 'lucide-react';
+import { LifeBuoy, ChevronDown, ChevronUp, Search, Mail, MapPin, Sparkles } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,10 +23,17 @@ export default function SuperadminSupport() {
   const updateStatus = useUpdateTicketStatus();
   const [filter, setFilter] = useState<'todos' | SupportStatus>('todos');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const filtered = useMemo(
-    () => (tickets ?? []).filter(t => filter === 'todos' || t.status === filter),
-    [tickets, filter],
+    () => {
+      const q = search.trim().toLowerCase();
+      return (tickets ?? []).filter(t => (filter === 'todos' || t.status === filter) && (!q ||
+        t.subject.toLowerCase().includes(q) ||
+        (t.organizations?.name ?? '').toLowerCase().includes(q) ||
+        (t.contact_email ?? '').toLowerCase().includes(q)));
+    },
+    [tickets, filter, search],
   );
 
   const counts = useMemo(() => {
@@ -54,6 +62,11 @@ export default function SuperadminSupport() {
             Solicitudes enviadas por las organizaciones del SaaS.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Organización, asunto o correo..." className="h-9 w-64 pl-8 text-xs" />
+        </div>
         <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
           <SelectTrigger className="w-44 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -63,6 +76,7 @@ export default function SuperadminSupport() {
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       {isLoading && <Skeleton className="h-24 w-full" />}
@@ -108,6 +122,32 @@ export default function SuperadminSupport() {
 
             {expanded === t.id && (
               <div className="space-y-3 border-t border-border p-3">
+                {t.organizations && (() => {
+                  const o = t.organizations;
+                  const exp = o.demo_expires_at ? new Date(o.demo_expires_at) : null;
+                  const days = exp ? Math.ceil((exp.getTime() - Date.now()) / 86_400_000) : null;
+                  return (
+                    <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 p-2 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">{o.name}</span>
+                      {o.is_demo ? (
+                        <Badge variant="outline" className={days !== null && days < 0 ? 'border-destructive/40 text-destructive' : 'border-warning/40 text-warning'}>
+                          <Sparkles className="mr-1 h-3 w-3" />
+                          {days === null ? 'Demo' : days < 0 ? 'Demo vencida' : `Demo · ${days} día(s)`}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-success/40 text-success">Cuenta oficial</Badge>
+                      )}
+                      {(o.region || o.commune) && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{[o.commune, o.region].filter(Boolean).join(', ')}</span>}
+                      {o.created_at && <span>Activación: {new Date(o.created_at).toLocaleDateString('es-CL')}</span>}
+                      {o.phone && <span>Tel: {o.phone}</span>}
+                      {t.contact_email && (
+                        <a href={`mailto:${t.contact_email}?subject=${encodeURIComponent('Re: ' + t.subject)}`} className="ml-auto flex items-center gap-1 text-info hover:underline">
+                          <Mail className="h-3 w-3" /> Responder por correo
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
                 <p className="whitespace-pre-wrap text-sm text-foreground">{t.description}</p>
                 {t.route && <p className="text-[11px] font-mono text-muted-foreground">Ruta reportada: {t.route}</p>}
                 <TicketThread ticket={t} />

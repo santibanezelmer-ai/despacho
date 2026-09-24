@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Search, CheckCircle, XCircle, Pause, Play, Plus, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Building2, Search, CheckCircle, XCircle, Pause, Play, Plus, Users, ChevronDown, ChevronUp, Sparkles, Award } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -80,7 +80,7 @@ function MembersRow({ orgId }: { orgId: string }) {
   if (isLoading) {
     return (
       <tr>
-        <td colSpan={7} className="px-8 py-3 bg-muted/20">
+        <td colSpan={10} className="px-8 py-3 bg-muted/20">
           <Skeleton className="h-4 w-48" />
         </td>
       </tr>
@@ -90,7 +90,7 @@ function MembersRow({ orgId }: { orgId: string }) {
   if (!members?.length) {
     return (
       <tr>
-        <td colSpan={7} className="px-8 py-3 bg-muted/20 text-xs text-muted-foreground italic">
+        <td colSpan={10} className="px-8 py-3 bg-muted/20 text-xs text-muted-foreground italic">
           Sin miembros asignados
         </td>
       </tr>
@@ -99,7 +99,7 @@ function MembersRow({ orgId }: { orgId: string }) {
 
   return (
     <tr>
-      <td colSpan={7} className="p-0">
+      <td colSpan={10} className="p-0">
         <div className="bg-muted/20 border-b border-border/50 px-8 py-3">
           <div className="flex items-center gap-2 mb-2 text-xs font-medium text-muted-foreground">
             <Users className="h-3.5 w-3.5" /> Miembros ({members.length})
@@ -158,9 +158,45 @@ export default function SuperadminOrganizations() {
           counts.set(m.organization_id, (counts.get(m.organization_id) ?? 0) + 1);
         }
       });
-      return orgsList.map(o => ({ ...o, member_count: counts.get(o.id) ?? 0 }));
+      const demoIds = orgsList.filter(o => o.is_demo).map(o => o.id);
+      const emgCounts = new Map<string, number>();
+      if (demoIds.length) {
+        const { data: emgs } = await supabase.from('emergencies').select('organization_id').in('organization_id', demoIds);
+        (emgs ?? []).forEach((e: any) => emgCounts.set(e.organization_id, (emgCounts.get(e.organization_id) ?? 0) + 1));
+      }
+      return orgsList.map(o => ({ ...o, member_count: counts.get(o.id) ?? 0, emergency_count: emgCounts.get(o.id) ?? 0 }));
     },
   });
+
+  const { data: demoLimits } = useQuery({
+    queryKey: ['demo-limits'],
+    queryFn: async () => ((await (supabase as any).rpc('get_demo_limits')).data ?? null) as { max_emergencies: number } | null,
+  });
+  const maxEmg = demoLimits?.max_emergencies ?? 20;
+
+  const extendDemo = async (o: any, days: number) => {
+    const base = o.demo_expires_at && new Date(o.demo_expires_at).getTime() > Date.now() ? new Date(o.demo_expires_at) : new Date();
+    const next = new Date(base.getTime() + days * 86_400_000).toISOString();
+    const { error } = await (supabase as any).from('organizations').update({ demo_expires_at: next }).eq('id', o.id);
+    if (error) toast.error(error.message);
+    else { toast.success(`Demo extendida ${days} días`); qc.invalidateQueries({ queryKey: ['superadmin-orgs'] }); }
+  };
+
+  const graduate = async (o: any) => {
+    if (!confirm(`¿Convertir "${o.name}" en cuenta oficial sin límites de demo?`)) return;
+    const { error } = await (supabase as any).from('organizations').update({ is_demo: false, demo_expires_at: null, status: 'active' }).eq('id', o.id);
+    if (error) toast.error(error.message);
+    else { toast.success('Organización convertida a cuenta oficial'); qc.invalidateQueries({ queryKey: ['superadmin-orgs'] }); }
+  };
+
+  const demoInfo = (o: any) => {
+    if (!o.is_demo) return { kind: 'oficial' as const, days: null as number | null };
+    const exp = o.demo_expires_at ? new Date(o.demo_expires_at) : null;
+    const days = exp ? Math.ceil((exp.getTime() - Date.now()) / 86_400_000) : null;
+    return { kind: days !== null && days < 0 ? 'vencida' as const : 'activa' as const, days };
+  };
+
+  const [typeFilter, setTypeFilter] = useState<'todas' | 'demo_activa' | 'demo_vencer' | 'oficial'>('todas');
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await (supabase as any).from('organizations').update({ status }).eq('id', id);
@@ -221,7 +257,13 @@ export default function SuperadminOrganizations() {
     qc.invalidateQueries({ queryKey: ['superadmin-orgs'] });
   };
 
-  const filtered = (orgs ?? []).filter((o: any) =>
+  const filtered = (orgs ?? []).filter((o: any) => {
+    const d = demoInfo(o);
+    if (typeFilter === 'oficial') return d.kind === 'oficial';
+    if (typeFilter === 'demo_activa') return d.kind === 'activa';
+    if (typeFilter === 'demo_vencer') return d.kind === 'vencida' || (d.kind === 'activa' && (d.days ?? 99) <= 3);
+    return true;
+  }).filter((o: any) =>
     o.name.toLowerCase().includes(search.toLowerCase()) ||
     (o.commune ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (o.region ?? '').toLowerCase().includes(search.toLowerCase())
@@ -291,9 +333,20 @@ export default function SuperadminOrganizations() {
         </Dialog>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-muted/50" />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-muted/50" />
+        </div>
+        <Select value={typeFilter} onValueChange={v => setTypeFilter(v as any)}>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas</SelectItem>
+            <SelectItem value="demo_activa">Solo demos activas</SelectItem>
+            <SelectItem value="demo_vencer">Demos por vencer / vencidas</SelectItem>
+            <SelectItem value="oficial">Cuentas oficiales</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="console-panel overflow-hidden">
@@ -305,6 +358,8 @@ export default function SuperadminOrganizations() {
               <th className="px-4 py-3 text-left font-medium">Slug</th>
               <th className="px-4 py-3 text-left font-medium">Comuna</th>
               <th className="px-4 py-3 text-left font-medium">Región</th>
+              <th className="px-4 py-3 text-left font-medium">Tipo</th>
+              <th className="px-4 py-3 text-left font-medium">Activación</th>
               <th className="px-4 py-3 text-left font-medium">Usuarios</th>
               <th className="px-4 py-3 text-left font-medium">Estado</th>
               <th className="px-4 py-3 text-right font-medium">Acciones</th>
@@ -313,7 +368,7 @@ export default function SuperadminOrganizations() {
           <tbody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <tr key={i}><td colSpan={8} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                <tr key={i}><td colSpan={10} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
               ))
             ) : (
               filtered.flatMap((o: any) => {
@@ -329,6 +384,24 @@ export default function SuperadminOrganizations() {
                     <td className="px-4 py-3 text-muted-foreground">{o.commune ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{o.region ?? '—'}</td>
                     <td className="px-4 py-3">
+                      {(() => {
+                        const d = demoInfo(o);
+                        if (d.kind === 'oficial') return <Badge variant="outline" className="border-success/40 text-success">Oficial</Badge>;
+                        return (
+                          <div className="space-y-0.5">
+                            <Badge variant="outline" className={d.kind === 'vencida' ? 'border-destructive/40 text-destructive' : 'border-warning/40 text-warning'}>
+                              <Sparkles className="mr-1 h-3 w-3" />{d.kind === 'vencida' ? 'Demo vencida' : `Demo · ${d.days ?? '—'} d`}
+                            </Badge>
+                            <p className="text-[10px] font-mono text-muted-foreground">{o.emergency_count}/{maxEmg} emergencias</p>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(o.created_at).toLocaleDateString('es-CL')}
+                      {o.is_demo && o.demo_expires_at && <p className="text-[10px]">Vence {new Date(o.demo_expires_at).toLocaleDateString('es-CL')}</p>}
+                    </td>
+                    <td className="px-4 py-3">
                       <Badge variant="outline" className="gap-1">
                         <Users className="h-3 w-3" /> {o.member_count ?? 0}
                       </Badge>
@@ -336,7 +409,15 @@ export default function SuperadminOrganizations() {
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold ${st.color}`}>{st.label}</span>
                     </td>
-                    <td className="px-4 py-3 text-right space-x-1" onClick={e => e.stopPropagation()}>
+                    <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                      {o.is_demo && [7, 15, 30].map(d => (
+                        <Button key={d} size="sm" variant="ghost" className="h-7 px-1.5 text-[11px] text-warning" onClick={() => extendDemo(o, d)} title={`Extender demo ${d} días`}>+{d}d</Button>
+                      ))}
+                      {o.is_demo && (
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-success" onClick={() => graduate(o)} title="Convertir en cuenta oficial">
+                          <Award className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       {o.status !== 'active' && (
                         <Button size="sm" variant="ghost" className="h-7 px-2 text-success" onClick={() => updateStatus(o.id, 'active')} title="Activar">
                           <CheckCircle className="h-3.5 w-3.5" />
