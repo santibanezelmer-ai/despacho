@@ -41,6 +41,7 @@ import SuperadminDashboard from "@/pages/superadmin/SuperadminDashboard";
 import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations";
 import SuperadminRequests from "@/pages/superadmin/SuperadminRequests";
 import SuperadminSupport from "@/pages/superadmin/SuperadminSupport";
+import SuperadminHealth from "@/pages/superadmin/SuperadminHealth";
 import SupportPage from "@/pages/SupportPage";
 import NotFound from "./pages/NotFound";
 import MobileLayout from "@/components/mobile/MobileLayout";
@@ -164,6 +165,7 @@ function AppRoutes() {
           <Route path="/superadmin/organizaciones" element={<SuperadminOrganizations />} />
           <Route path="/superadmin/solicitudes" element={<SuperadminRequests />} />
           <Route path="/superadmin/soporte" element={<SuperadminSupport />} />
+          <Route path="/superadmin/salud" element={<SuperadminHealth />} />
           <Route path="*" element={<Navigate to="/superadmin" replace />} />
         </Routes>
       </SuperadminLayout>
