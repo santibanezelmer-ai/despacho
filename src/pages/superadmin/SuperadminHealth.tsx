@@ -21,44 +21,50 @@ export default function SuperadminHealth() {
     refetchInterval: 60_000,
     queryFn: async () => {
       const since7 = new Date(Date.now() - 7 * DAY).toISOString();
+      const since24h = new Date(Date.now() - DAY).toISOString();
       const sb = supabase as any;
-      const [orgs, members, emgs, errs, devices, vehicles, tickets, limits] = await Promise.all([
+      const [orgs, limits] = await Promise.all([
         sb.from('organizations').select('id, name, status, is_demo, demo_expires_at, created_at').order('name'),
-        sb.from('organization_members').select('organization_id, status'),
-        sb.from('emergencies').select('organization_id, created_at, status'),
-        sb.from('audit_log').select('organization_id, action, created_at, new_data').like('action', 'client_error%').gte('created_at', since7).order('created_at', { ascending: false }).limit(1000),
-        sb.from('device_tokens').select('organization_id, user_id, last_seen_at'),
-        sb.from('vehicles').select('organization_id'),
-        sb.from('support_tickets').select('organization_id, status').in('status', ['abierto', 'en_proceso']),
         sb.rpc('get_demo_limits'),
       ]);
       const max = limits.data?.max_emergencies ?? 20;
-      const rows = (orgs.data ?? []).map((o: any) => {
-        const e = (emgs.data ?? []).filter((x: any) => x.organization_id === o.id);
-        const er = (errs.data ?? []).filter((x: any) => x.organization_id === o.id);
-        const dv = (devices.data ?? []).filter((x: any) => x.organization_id === o.id);
-        const lastEmg = Math.max(0, ...e.map((x: any) => +new Date(x.created_at)));
+      const head = { count: 'exact' as const, head: true as const };
+      const rows = await Promise.all((orgs.data ?? []).map(async (o: any) => {
+        const [emgCount, lastEmg, stuckCount, memberCount, vehicleCount, devices, errCount, errSample, ticketCount] = await Promise.all([
+          sb.from('emergencies').select('id', head).eq('organization_id', o.id),
+          sb.from('emergencies').select('created_at').eq('organization_id', o.id).order('created_at', { ascending: false }).limit(1),
+          sb.from('emergencies').select('id', head).eq('organization_id', o.id).not('status', 'in', '("finalizada","en_cuartel")').lt('created_at', since24h),
+          sb.from('organization_members').select('id', head).eq('organization_id', o.id).eq('status', 'active'),
+          sb.from('vehicles').select('id', head).eq('organization_id', o.id),
+          sb.from('device_tokens').select('user_id, last_seen_at').eq('organization_id', o.id),
+          sb.from('audit_log').select('id', head).eq('organization_id', o.id).like('action', 'client_error%').gte('created_at', since7),
+          sb.from('audit_log').select('action, created_at, new_data').eq('organization_id', o.id).like('action', 'client_error%').gte('created_at', since7).order('created_at', { ascending: false }).limit(3),
+          sb.from('support_tickets').select('id', head).eq('organization_id', o.id).in('status', ['abierto', 'en_proceso']),
+        ]);
+        const e = { length: emgCount.count ?? 0 };
+        const er = errSample.data ?? [];
+        const dv = devices.data ?? [];
+        const lastEmgT = lastEmg.data?.[0]?.created_at ? +new Date(lastEmg.data[0].created_at) : 0;
         const lastDev = Math.max(0, ...dv.map((x: any) => +new Date(x.last_seen_at)));
-        const lastActivity = Math.max(lastEmg, lastDev) || null;
+        const lastActivity = Math.max(lastEmgT, lastDev) || null;
         const activeUsers = new Set(dv.filter((x: any) => +new Date(x.last_seen_at) > Date.now() - 7 * DAY).map((x: any) => x.user_id)).size;
-        const memberCount = (members.data ?? []).filter((m: any) => m.organization_id === o.id && m.status === 'active').length;
-        const vehicleCount = (vehicles.data ?? []).filter((v: any) => v.organization_id === o.id).length;
-        const openTickets = (tickets.data ?? []).filter((t: any) => t.organization_id === o.id).length;
-        const stuck = e.filter((x: any) => !['finalizada', 'en_cuartel'].includes(x.status) && +new Date(x.created_at) < Date.now() - DAY).length;
+        const openTickets = ticketCount.count ?? 0;
+        const stuck = stuckCount.count ?? 0;
         const alerts: { level: 'danger' | 'warn'; text: string }[] = [];
         if (o.status === 'suspended') alerts.push({ level: 'danger', text: 'Organización suspendida' });
         if (o.is_demo && o.demo_expires_at && +new Date(o.demo_expires_at) < Date.now()) alerts.push({ level: 'danger', text: 'Demo vencida' });
         else if (o.is_demo && o.demo_expires_at && +new Date(o.demo_expires_at) < Date.now() + 3 * DAY) alerts.push({ level: 'warn', text: 'Demo vence en ≤3 días' });
         if (o.is_demo && e.length >= max) alerts.push({ level: 'danger', text: 'Límite de emergencias demo alcanzado' });
-        if (er.length >= 5) alerts.push({ level: 'danger', text: `${er.length} errores en 7 días` });
-        else if (er.length > 0) alerts.push({ level: 'warn', text: `${er.length} error(es) en 7 días` });
+        const errTotal = errCount.count ?? 0;
+        if (errTotal >= 5) alerts.push({ level: 'danger', text: `${errTotal} errores en 7 días` });
+        else if (errTotal > 0) alerts.push({ level: 'warn', text: `${errTotal} error(es) en 7 días` });
         if (stuck) alerts.push({ level: 'warn', text: `${stuck} emergencia(s) abiertas hace más de 24 h` });
         if (!lastActivity || lastActivity < Date.now() - 7 * DAY) alerts.push({ level: 'warn', text: 'Sin actividad en 7 días' });
-        if (vehicleCount === 0) alerts.push({ level: 'warn', text: 'Sin móviles registrados' });
+        if ((vehicleCount.count ?? 0) === 0) alerts.push({ level: 'warn', text: 'Sin móviles registrados' });
         if (dv.length === 0) alerts.push({ level: 'warn', text: 'Sin dispositivos con notificaciones' });
         if (openTickets) alerts.push({ level: 'warn', text: `${openTickets} ticket(s) abiertos` });
-        return { ...o, emergencies: e.length, max, errors: er.slice(0, 3), errorCount: er.length, lastActivity, activeUsers, memberCount, vehicleCount, alerts };
-      });
+        return { ...o, emergencies: e.length, max, errors: er, errorCount: errCount.count ?? 0, lastActivity, activeUsers, memberCount: memberCount.count ?? 0, vehicleCount: vehicleCount.count ?? 0, alerts };
+      }));
       const score = (r: any) => r.alerts.filter((a: any) => a.level === 'danger').length * 10 + r.alerts.length;
       return rows.sort((a: any, b: any) => score(b) - score(a));
     },
