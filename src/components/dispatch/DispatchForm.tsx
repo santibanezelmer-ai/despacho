@@ -13,6 +13,7 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { sendPushToOrganization } from '@/services/pushService';
 import { resolveToneUrl } from '@/lib/toneUrl';
+import { useScreenTheme } from '@/hooks/useScreenTheme';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 
@@ -108,6 +109,7 @@ interface Props {
 }
 
 export default function DispatchForm({ emergencyKey, onClose }: Props) {
+  const { theme } = useScreenTheme('operix.despacho.theme');
   const { user } = useAuth();
   const { orgId } = useOrganization();
   const queryClient = useQueryClient();
@@ -321,7 +323,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div data-theme={theme} className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="console-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
         {/* Header */}
         <div
