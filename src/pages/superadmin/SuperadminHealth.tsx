@@ -62,8 +62,8 @@ export default function SuperadminHealth() {
         if (vehicleCount === 0) alerts.push({ level: 'warn', text: 'Sin móviles registrados' });
         if (dv.length === 0) alerts.push({ level: 'warn', text: 'Sin dispositivos con notificaciones' });
         if (openTickets) alerts.push({ level: 'warn', text: `${openTickets} ticket(s) abiertos` });
-        return { ...o, emergencies: e.length, max, errors: er.slice(0, 3), errorCount: er.length, lastActivity, activeUsers, memberCount, vehicleCount, alerts };
-      });
+        return { ...o, emergencies: e.length, max, errors: er, errorCount: errCount.count ?? 0, lastActivity, activeUsers, memberCount: memberCount.count ?? 0, vehicleCount: vehicleCount.count ?? 0, alerts };
+      }));
       const score = (r: any) => r.alerts.filter((a: any) => a.level === 'danger').length * 10 + r.alerts.length;
       return rows.sort((a: any, b: any) => score(b) - score(a));
     },
