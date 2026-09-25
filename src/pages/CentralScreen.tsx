@@ -233,7 +233,7 @@ export default function CentralScreen() {
   }, []);
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-background p-3 md:p-4">
+    <div data-theme={theme} className="flex h-[100dvh] flex-col overflow-hidden bg-background p-3 md:p-4">
       {/* Header */}
       <div className="mb-3 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
@@ -242,6 +242,15 @@ export default function CentralScreen() {
         </div>
         <div className="flex items-center gap-4">
           <button
+            onClick={toggleTheme}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+            title={theme === 'dark' ? 'Cambiar a fondo blanco' : 'Cambiar a fondo negro'}
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4 text-warning" /> : <Moon className="h-4 w-4 text-info" />}
+            <span className="hidden md:inline">{theme === 'dark' ? 'Fondo blanco' : 'Fondo negro'}</span>
+          </button>
+          <button
+
             onClick={openEmergenciesPopout}
             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-warning transition-colors"
             title="Abrir emergencias activas en una ventana independiente"
