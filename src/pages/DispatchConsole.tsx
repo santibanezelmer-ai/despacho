@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import SystemClock, { SystemDate } from '@/components/dispatch/SystemClock';
-import { Siren, AlertTriangle, Volume2, Truck, Users, Clock } from 'lucide-react';
+import { Siren, AlertTriangle, Volume2, Truck, Users, Clock, Sun, Moon } from 'lucide-react';
 import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import StatsCard from '@/components/dashboard/StatsCard';
 import { useVehicles } from '@/hooks/useVehicles';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useDispatchForm } from '@/contexts/DispatchFormContext';
+import { useScreenTheme } from '@/hooks/useScreenTheme';
 
 export default function DispatchConsole() {
   const { openDispatch } = useDispatchForm();
