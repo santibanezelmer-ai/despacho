@@ -55,8 +55,9 @@ export default function SuperadminHealth() {
         if (o.is_demo && o.demo_expires_at && +new Date(o.demo_expires_at) < Date.now()) alerts.push({ level: 'danger', text: 'Demo vencida' });
         else if (o.is_demo && o.demo_expires_at && +new Date(o.demo_expires_at) < Date.now() + 3 * DAY) alerts.push({ level: 'warn', text: 'Demo vence en ≤3 días' });
         if (o.is_demo && e.length >= max) alerts.push({ level: 'danger', text: 'Límite de emergencias demo alcanzado' });
-        if (er.length >= 5) alerts.push({ level: 'danger', text: `${er.length} errores en 7 días` });
-        else if (er.length > 0) alerts.push({ level: 'warn', text: `${er.length} error(es) en 7 días` });
+        const errTotal = errCount.count ?? 0;
+        if (errTotal >= 5) alerts.push({ level: 'danger', text: `${errTotal} errores en 7 días` });
+        else if (errTotal > 0) alerts.push({ level: 'warn', text: `${errTotal} error(es) en 7 días` });
         if (stuck) alerts.push({ level: 'warn', text: `${stuck} emergencia(s) abiertas hace más de 24 h` });
         if (!lastActivity || lastActivity < Date.now() - 7 * DAY) alerts.push({ level: 'warn', text: 'Sin actividad en 7 días' });
         if (vehicleCount === 0) alerts.push({ level: 'warn', text: 'Sin móviles registrados' });
