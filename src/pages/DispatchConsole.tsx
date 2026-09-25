@@ -44,6 +44,9 @@ export default function DispatchConsole() {
           <SystemDate />
         </div>
         <div className="flex items-center gap-3">
+          <div className="text-right mr-2">
+            <SystemClock />
+          </div>
           <button
             onClick={toggleTheme}
             className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
