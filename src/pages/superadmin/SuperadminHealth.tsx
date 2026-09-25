@@ -60,7 +60,7 @@ export default function SuperadminHealth() {
         else if (errTotal > 0) alerts.push({ level: 'warn', text: `${errTotal} error(es) en 7 días` });
         if (stuck) alerts.push({ level: 'warn', text: `${stuck} emergencia(s) abiertas hace más de 24 h` });
         if (!lastActivity || lastActivity < Date.now() - 7 * DAY) alerts.push({ level: 'warn', text: 'Sin actividad en 7 días' });
-        if (vehicleCount === 0) alerts.push({ level: 'warn', text: 'Sin móviles registrados' });
+        if ((vehicleCount.count ?? 0) === 0) alerts.push({ level: 'warn', text: 'Sin móviles registrados' });
         if (dv.length === 0) alerts.push({ level: 'warn', text: 'Sin dispositivos con notificaciones' });
         if (openTickets) alerts.push({ level: 'warn', text: `${openTickets} ticket(s) abiertos` });
         return { ...o, emergencies: e.length, max, errors: er, errorCount: errCount.count ?? 0, lastActivity, activeUsers, memberCount: memberCount.count ?? 0, vehicleCount: vehicleCount.count ?? 0, alerts };
