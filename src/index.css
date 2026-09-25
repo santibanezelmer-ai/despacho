@@ -99,6 +99,47 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* =========================
+ * Pantalla Central — tema claro de alta visibilidad (fondo blanco)
+ * Se activa con data-theme="light" en el contenedor de la vista.
+ * ========================= */
+[data-theme='light'] {
+  --background: 0 0% 100%;
+  --foreground: 222 30% 12%;
+  --card: 210 20% 99%;
+  --card-foreground: 222 30% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 30% 12%;
+  --primary: 0 80% 46%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 25% 94%;
+  --secondary-foreground: 222 30% 18%;
+  --muted: 210 25% 95%;
+  --muted-foreground: 215 16% 38%;
+  --accent: 35 92% 45%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 80% 46%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 22% 84%;
+  --input: 214 22% 84%;
+  --ring: 0 80% 46%;
+  --emergency: 0 80% 46%;
+  --emergency-foreground: 0 0% 100%;
+  --warning: 32 92% 40%;
+  --warning-foreground: 0 0% 100%;
+  --success: 145 62% 32%;
+  --success-foreground: 0 0% 100%;
+  --info: 210 80% 42%;
+  --info-foreground: 0 0% 100%;
+  --console-border: 214 22% 82%;
+  --console-panel: 210 20% 98%;
+  --gradient-panel: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 97%));
+  --shadow-sm: 0 1px 2px hsl(220 20% 40% / 0.12);
+  --shadow-md: 0 4px 12px -2px hsl(220 20% 40% / 0.16);
+  --shadow-lg: 0 12px 32px -8px hsl(220 20% 40% / 0.2);
+}
+
+
 @layer base {
   :root {
     --background: 220 20% 7%;
