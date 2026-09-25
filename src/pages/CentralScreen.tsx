@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
-import { Truck, Users, Shield, Search, Map, QrCode, ExternalLink, X, Radio } from 'lucide-react';
+import { Truck, Users, Shield, Search, Map, QrCode, ExternalLink, X, Radio, Sun, Moon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 
@@ -118,6 +118,21 @@ export default function CentralScreen() {
   const [now, setNow] = useState(new Date());
   const [vehSearch, setVehSearch] = useState('');
   const [showShare, setShowShare] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return localStorage.getItem('operix.central.theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      try { localStorage.setItem('operix.central.theme', next); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
