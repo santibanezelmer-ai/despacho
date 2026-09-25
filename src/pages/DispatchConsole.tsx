@@ -17,6 +17,7 @@ export default function DispatchConsole() {
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
   const playSystemSound = usePlaySystemSound();
+  const { theme, toggleTheme } = useScreenTheme('operix.despacho.theme');
 
   const { availableVehicles, totalVehicles } = useMemo(() => ({
     availableVehicles: (vehicles ?? []).filter(v => v.status === 'disponible').length,
@@ -33,7 +34,7 @@ export default function DispatchConsole() {
   }, [openDispatch]);
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <div data-theme={theme} className="min-h-full bg-background p-4 lg:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -42,10 +43,15 @@ export default function DispatchConsole() {
           </h1>
           <SystemDate />
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right mr-2">
-            <SystemClock />
-          </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+            title={theme === 'dark' ? 'Cambiar a fondo blanco' : 'Cambiar a fondo negro'}
+          >
+            {theme === 'dark' ? <Sun className="h-3.5 w-3.5 text-warning" /> : <Moon className="h-3.5 w-3.5 text-info" />}
+            <span className="hidden md:inline">{theme === 'dark' ? 'Fondo blanco' : 'Fondo negro'}</span>
+          </button>
           <Button
             variant="outline"
             size="sm"
