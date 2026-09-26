@@ -241,6 +241,9 @@
 .theme-screen[data-theme='light'] .border-border\/60 {
   border-color: hsl(var(--border));
 }
+.dispatch-shell[data-theme='light'] aside .border-border {
+  border-color: hsl(var(--sidebar-border));
+}
 
 
 @layer base {
