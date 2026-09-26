@@ -154,7 +154,7 @@
   border-color: hsl(var(--sidebar-border));
 }
 
-.dispatch-shell[data-theme='light'] aside nav a:not(.bg-gradient-to-r),
+.dispatch-shell[data-theme='light'] aside nav a:not(.text-emergency):not(.text-info),
 .dispatch-shell[data-theme='light'] aside nav button {
   color: hsl(var(--sidebar-foreground));
 }
