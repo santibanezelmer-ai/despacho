@@ -184,6 +184,31 @@
   color: hsl(var(--foreground));
 }
 
+/* Tailwind's generated HSL utilities carry the original dark palette;
+   resolve these semantic roles against the nearest light theme instead. */
+.theme-screen[data-theme='light'],
+.theme-screen[data-theme='light'] .text-foreground {
+  color: hsl(var(--foreground));
+}
+.theme-screen[data-theme='light'] .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+.theme-screen[data-theme='light'] .bg-card {
+  background-color: hsl(var(--card));
+}
+.theme-screen[data-theme='light'] .bg-muted {
+  background-color: hsl(var(--muted));
+}
+.theme-screen[data-theme='light'] .bg-background {
+  background-color: hsl(var(--background));
+}
+.theme-screen[data-theme='light'] .bg-sidebar {
+  background-color: hsl(var(--sidebar-background));
+}
+.theme-screen[data-theme='light'] .text-sidebar-foreground {
+  color: hsl(var(--sidebar-foreground));
+}
+
 
 @layer base {
   :root {
