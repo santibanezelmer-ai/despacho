@@ -236,6 +236,11 @@
 .theme-screen[data-theme='light'] .text-info {
   color: hsl(var(--info));
 }
+.theme-screen[data-theme='light'] .border-border,
+.theme-screen[data-theme='light'] .border-border\/40,
+.theme-screen[data-theme='light'] .border-border\/60 {
+  border-color: hsl(var(--border));
+}
 
 
 @layer base {
