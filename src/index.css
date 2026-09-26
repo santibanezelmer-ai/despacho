@@ -120,8 +120,8 @@
   --accent-foreground: 0 0% 100%;
   --destructive: 0 80% 46%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 22% 84%;
-  --input: 214 22% 84%;
+  --border: 214 25% 75%;
+  --input: 214 25% 75%;
   --ring: 0 80% 46%;
   --emergency: 0 80% 46%;
   --emergency-foreground: 0 0% 100%;
@@ -131,12 +131,118 @@
   --success-foreground: 0 0% 100%;
   --info: 210 80% 42%;
   --info-foreground: 0 0% 100%;
-  --console-border: 214 22% 82%;
+  --console-border: 214 25% 75%;
   --console-panel: 210 20% 98%;
   --gradient-panel: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 97%));
   --shadow-sm: 0 1px 2px hsl(220 20% 40% / 0.12);
   --shadow-md: 0 4px 12px -2px hsl(220 20% 40% / 0.16);
   --shadow-lg: 0 12px 32px -8px hsl(220 20% 40% / 0.2);
+}
+
+/* El panel lateral comparte el tema de la consola solo en la ruta de despacho. */
+.dispatch-shell[data-theme='light'] {
+  --sidebar-background: 210 22% 96%;
+  --sidebar-foreground: 218 22% 27%;
+  --sidebar-accent: 210 25% 88%;
+  --sidebar-accent-foreground: 222 30% 12%;
+  --sidebar-border: 214 25% 75%;
+}
+
+.dispatch-shell[data-theme='light'] > aside,
+.dispatch-shell[data-theme='light'] > div > aside {
+  background-color: hsl(var(--sidebar-background));
+  border-color: hsl(var(--sidebar-border));
+}
+
+.dispatch-shell[data-theme='light'] aside nav a:not(.text-emergency):not(.text-info),
+.dispatch-shell[data-theme='light'] aside nav button {
+  color: hsl(var(--sidebar-foreground));
+}
+
+.dispatch-shell[data-theme='light'] aside nav a:hover,
+.dispatch-shell[data-theme='light'] aside nav button:hover {
+  background-color: hsl(var(--sidebar-accent));
+  color: hsl(var(--sidebar-accent-foreground));
+}
+
+.dispatch-shell[data-theme='light'] .console-panel,
+.dispatch-shell[data-theme='light'] .stat-tile {
+  border-color: hsl(var(--console-border));
+}
+
+.dispatch-shell[data-theme='light'] .border-border,
+.dispatch-shell[data-theme='light'] .border-border\/60,
+.dispatch-shell[data-theme='light'] .border-border\/40 {
+  border-color: hsl(var(--border));
+}
+
+.dispatch-shell[data-theme='light'] aside .border-border {
+  border-color: hsl(var(--sidebar-border));
+}
+
+.dispatch-shell[data-theme='light'] .emergency-key {
+  color: hsl(var(--foreground));
+}
+
+/* Tailwind's generated HSL utilities carry the original dark palette;
+   resolve these semantic roles against the nearest light theme instead. */
+.theme-screen[data-theme='light'],
+.theme-screen[data-theme='light'] .text-foreground {
+  color: hsl(var(--foreground));
+}
+.theme-screen[data-theme='light'] .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+.theme-screen[data-theme='light'] .bg-card {
+  background-color: hsl(var(--card));
+}
+.theme-screen[data-theme='light'] .console-panel,
+.theme-screen[data-theme='light'] .console-panel-elevated,
+.theme-screen[data-theme='light'] .stat-tile {
+  background: var(--gradient-panel);
+  border-color: hsl(var(--border));
+}
+.theme-screen[data-theme='light'] .bg-muted {
+  background-color: hsl(var(--muted));
+}
+.theme-screen[data-theme='light'] .bg-background {
+  background-color: hsl(var(--background));
+}
+.theme-screen[data-theme='light'] .bg-background\/50,
+.theme-screen[data-theme='light'] .bg-background\/80 {
+  background-color: hsl(var(--background) / 0.8);
+}
+.theme-screen[data-theme='light'] .bg-muted\/30,
+.theme-screen[data-theme='light'] .bg-muted\/40,
+.theme-screen[data-theme='light'] .bg-muted\/50,
+.theme-screen[data-theme='light'] .bg-muted\/80 {
+  background-color: hsl(var(--muted) / 0.8);
+}
+.theme-screen[data-theme='light'] .bg-sidebar {
+  background-color: hsl(var(--sidebar-background));
+}
+.theme-screen[data-theme='light'] .text-sidebar-foreground {
+  color: hsl(var(--sidebar-foreground));
+}
+.theme-screen[data-theme='light'] .text-emergency {
+  color: hsl(var(--emergency));
+}
+.theme-screen[data-theme='light'] .text-success {
+  color: hsl(var(--success));
+}
+.theme-screen[data-theme='light'] .text-warning {
+  color: hsl(var(--warning));
+}
+.theme-screen[data-theme='light'] .text-info {
+  color: hsl(var(--info));
+}
+.theme-screen[data-theme='light'] .border-border,
+.theme-screen[data-theme='light'] .border-border\/40,
+.theme-screen[data-theme='light'] .border-border\/60 {
+  border-color: hsl(var(--border));
+}
+.dispatch-shell[data-theme='light'] aside .border-border {
+  border-color: hsl(var(--sidebar-border));
 }
 
 
