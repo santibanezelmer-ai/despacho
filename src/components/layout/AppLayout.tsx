@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
+import { useScreenTheme } from '@/hooks/useScreenTheme';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
@@ -64,6 +65,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { theme: dispatchTheme } = useScreenTheme('operix.despacho.theme');
+  const isDispatchConsole = location.pathname === '/';
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -240,7 +243,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <DispatchFormProvider>
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div data-theme={isDispatchConsole ? dispatchTheme : undefined} className={`flex h-screen overflow-hidden bg-background ${isDispatchConsole ? 'theme-screen dispatch-shell' : ''}`}>
       {/* Desktop sidebar */}
       <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
         {sidebarContent(false)}

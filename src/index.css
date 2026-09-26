@@ -120,8 +120,8 @@
   --accent-foreground: 0 0% 100%;
   --destructive: 0 80% 46%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 22% 84%;
-  --input: 214 22% 84%;
+  --border: 214 25% 75%;
+  --input: 214 25% 75%;
   --ring: 0 80% 46%;
   --emergency: 0 80% 46%;
   --emergency-foreground: 0 0% 100%;
@@ -131,12 +131,31 @@
   --success-foreground: 0 0% 100%;
   --info: 210 80% 42%;
   --info-foreground: 0 0% 100%;
-  --console-border: 214 22% 82%;
+  --console-border: 214 25% 75%;
   --console-panel: 210 20% 98%;
   --gradient-panel: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 97%));
   --shadow-sm: 0 1px 2px hsl(220 20% 40% / 0.12);
   --shadow-md: 0 4px 12px -2px hsl(220 20% 40% / 0.16);
   --shadow-lg: 0 12px 32px -8px hsl(220 20% 40% / 0.2);
+}
+
+/* El panel lateral comparte el tema de la consola solo en la ruta de despacho. */
+.dispatch-shell[data-theme='light'] {
+  --sidebar-background: 210 22% 96%;
+  --sidebar-foreground: 218 22% 27%;
+  --sidebar-accent: 210 25% 88%;
+  --sidebar-accent-foreground: 222 30% 12%;
+  --sidebar-border: 214 25% 75%;
+}
+
+.dispatch-shell[data-theme='light'] > aside,
+.dispatch-shell[data-theme='light'] > div > aside {
+  border-color: hsl(var(--sidebar-border));
+}
+
+.dispatch-shell[data-theme='light'] .console-panel,
+.dispatch-shell[data-theme='light'] .stat-tile {
+  border-color: hsl(var(--console-border));
 }
 
 

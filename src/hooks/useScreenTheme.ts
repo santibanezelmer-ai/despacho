@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+const themeEvent = 'operix:screen-theme';
 
 /**
  * Tema claro/oscuro por pantalla, guardado en localStorage.
@@ -13,10 +15,27 @@ export function useScreenTheme(storageKey: string) {
     }
   });
 
+  useEffect(() => {
+    const syncTheme = (event: Event) => {
+      if (event instanceof StorageEvent && event.key !== storageKey) return;
+      if (event instanceof CustomEvent && event.detail !== storageKey) return;
+      try { setTheme(localStorage.getItem(storageKey) === 'light' ? 'light' : 'dark'); } catch { /* ignore */ }
+    };
+    window.addEventListener('storage', syncTheme);
+    window.addEventListener(themeEvent, syncTheme);
+    return () => {
+      window.removeEventListener('storage', syncTheme);
+      window.removeEventListener(themeEvent, syncTheme);
+    };
+  }, [storageKey]);
+
   const toggleTheme = useCallback(() => {
     setTheme(prev => {
       const next = prev === 'light' ? 'dark' : 'light';
-      try { localStorage.setItem(storageKey, next); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(storageKey, next);
+        window.dispatchEvent(new CustomEvent(themeEvent, { detail: storageKey }));
+      } catch { /* ignore */ }
       return next;
     });
   }, [storageKey]);
