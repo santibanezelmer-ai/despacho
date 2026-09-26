@@ -174,6 +174,16 @@
   border-color: hsl(var(--sidebar-border));
 }
 
+.dispatch-shell[data-theme='light'] .border-border,
+.dispatch-shell[data-theme='light'] .border-border\/60,
+.dispatch-shell[data-theme='light'] .border-border\/40 {
+  border-color: hsl(var(--border));
+}
+
+.dispatch-shell[data-theme='light'] .emergency-key {
+  color: hsl(var(--foreground));
+}
+
 
 @layer base {
   :root {
