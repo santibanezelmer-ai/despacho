@@ -323,7 +323,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   };
 
   return (
-    <div data-theme={theme} className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div data-theme={theme} className="theme-screen fixed inset-0 z-50 flex items-center justify-center bg-background/80 text-foreground backdrop-blur-sm">
       <div className="console-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
         {/* Header */}
         <div
