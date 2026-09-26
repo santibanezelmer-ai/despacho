@@ -150,12 +150,28 @@
 
 .dispatch-shell[data-theme='light'] > aside,
 .dispatch-shell[data-theme='light'] > div > aside {
+  background-color: hsl(var(--sidebar-background));
   border-color: hsl(var(--sidebar-border));
+}
+
+.dispatch-shell[data-theme='light'] aside nav a:not(.bg-gradient-to-r),
+.dispatch-shell[data-theme='light'] aside nav button {
+  color: hsl(var(--sidebar-foreground));
+}
+
+.dispatch-shell[data-theme='light'] aside nav a:hover,
+.dispatch-shell[data-theme='light'] aside nav button:hover {
+  background-color: hsl(var(--sidebar-accent));
+  color: hsl(var(--sidebar-accent-foreground));
 }
 
 .dispatch-shell[data-theme='light'] .console-panel,
 .dispatch-shell[data-theme='light'] .stat-tile {
   border-color: hsl(var(--console-border));
+}
+
+.dispatch-shell[data-theme='light'] aside .border-border {
+  border-color: hsl(var(--sidebar-border));
 }
 
 

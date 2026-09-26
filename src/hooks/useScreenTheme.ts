@@ -30,15 +30,13 @@ export function useScreenTheme(storageKey: string) {
   }, [storageKey]);
 
   const toggleTheme = useCallback(() => {
-    setTheme(prev => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      try {
-        localStorage.setItem(storageKey, next);
-        window.dispatchEvent(new CustomEvent(themeEvent, { detail: storageKey }));
-      } catch { /* ignore */ }
-      return next;
-    });
-  }, [storageKey]);
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    try {
+      localStorage.setItem(storageKey, next);
+      window.dispatchEvent(new CustomEvent(themeEvent, { detail: storageKey }));
+    } catch { /* ignore */ }
+  }, [storageKey, theme]);
 
   return { theme, toggleTheme };
 }
