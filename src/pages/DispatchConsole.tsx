@@ -34,7 +34,7 @@ export default function DispatchConsole() {
   }, [openDispatch]);
 
   return (
-    <div data-theme={theme} className="min-h-full bg-background p-4 lg:p-6 space-y-6">
+    <div data-theme={theme} className="theme-screen min-h-full bg-background text-foreground p-4 lg:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">

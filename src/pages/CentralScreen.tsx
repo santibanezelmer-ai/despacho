@@ -67,7 +67,7 @@ function ShareModal({ onClose }: { onClose: () => void }) {
   const emergenciesUrl = window.location.origin + '/pantalla-emergencias';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 max-h-[90dvh] overflow-y-auto space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">Compartir Pantallas</h3>
@@ -233,7 +233,7 @@ export default function CentralScreen() {
   }, []);
 
   return (
-    <div data-theme={theme} className="flex h-[100dvh] flex-col overflow-hidden bg-background p-3 md:p-4">
+    <div data-theme={theme} className="theme-screen flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground p-3 md:p-4">
       {/* Header */}
       <div className="mb-3 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">

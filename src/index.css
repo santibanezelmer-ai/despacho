@@ -350,3 +350,14 @@
 .operix-dark-tiles .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95) saturate(0.7);
 }
+
+/* Controles de las pantallas con tema independiente: neutralizar estilos oscuros
+   de controles globales sin afectar al resto del sistema. */
+.theme-screen[data-theme='light'] button.bg-card {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+.theme-screen[data-theme='light'] button.bg-background\/50 {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
