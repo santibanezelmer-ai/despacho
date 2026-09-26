@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLogoUrl, toDataUrl } from '@/lib/logoStorage';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -25,7 +24,6 @@ const fmtDate = (iso?: string | null) =>
 
 export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
   const [loading, setLoading] = useState(false);
-  const { currentOrg } = useOrganization();
 
   const handleDownload = async () => {
     setLoading(true);
@@ -115,12 +113,20 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         y += rowH;
       };
 
+      // Identificación visible en todas las fichas, incluso si no hay móviles asignados.
+      const emergencyName = ek?.name?.trim() || 'Sin nombre registrado';
+      const nameLines = doc.splitTextToSize(emergencyName, contentW - 42);
+      drawDataRow(['NOMBRE DE LA\nEMERGENCIA', emergencyName], [38, contentW - 38], Math.max(12, nameLines.length * 4.5 + 4));
+      drawDataRow(['ID DE LA\nEMERGENCIA', emg.id], [38, contentW - 38], 12);
+      y += 5;
+
       const vehicles = evData ?? [];
       const personnel = epData ?? [];
 
       // ---- Vehicle blocks ----
       const blocks = vehicles.length > 0 ? vehicles : [null];
       for (const ev of blocks) {
+        if (y > pageH - 46) { doc.addPage(); y = 20; }
         const v = (ev as any)?.vehicles;
         const evId = (ev as any)?.id;
 

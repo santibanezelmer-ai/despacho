@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Loader2, Users, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import VehicleReturnManager from './VehicleReturnManager';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
@@ -37,12 +38,12 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
   const loading = isLoading || crewLoading;
   const canFinalize = !loading && pending.length === 0 && missingCrew.length === 0;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-      <div className="console-panel flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 p-4 backdrop-blur-sm" role="presentation">
+      <div role="dialog" aria-modal="true" aria-labelledby="finalize-emergency-title" className="console-panel flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden bg-card">
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border p-4">
           <div>
-            <h3 className="text-sm font-bold text-foreground">Finalizar emergencia {folio}</h3>
+            <h3 id="finalize-emergency-title" className="text-sm font-bold text-foreground">Finalizar emergencia {folio}</h3>
             {loading ? (
               <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Revisando móviles y tripulación…
@@ -63,9 +64,9 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
               </p>
             )}
           </div>
-          <button onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Cerrar">
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Cerrar">
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
@@ -111,6 +112,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
