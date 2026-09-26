@@ -196,6 +196,12 @@
 .theme-screen[data-theme='light'] .bg-card {
   background-color: hsl(var(--card));
 }
+.theme-screen[data-theme='light'] .console-panel,
+.theme-screen[data-theme='light'] .console-panel-elevated,
+.theme-screen[data-theme='light'] .stat-tile {
+  background: var(--gradient-panel);
+  border-color: hsl(var(--border));
+}
 .theme-screen[data-theme='light'] .bg-muted {
   background-color: hsl(var(--muted));
 }
