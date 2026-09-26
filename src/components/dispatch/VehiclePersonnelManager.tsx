@@ -206,7 +206,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
                         <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
+                    <PopoverContent className="z-[110] w-64 p-0" align="start">
                       <Command
                         filter={(value, search) => {
                           const normalized = search.toLowerCase().trim();
@@ -253,7 +253,7 @@ export default function VehiclePersonnelManager({ emergencyId }: Props) {
                     <SelectTrigger className="h-7 w-36 text-xs bg-muted/50">
                       <SelectValue placeholder="Rol..." />
                     </SelectTrigger>
-                    <SelectContent>
+                     <SelectContent className="z-[110]">
                       {ROLES.map(r => (
                         <SelectItem key={r.value} value={r.value} className="text-xs">{r.label}</SelectItem>
                       ))}
