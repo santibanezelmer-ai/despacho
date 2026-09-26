@@ -208,11 +208,33 @@
 .theme-screen[data-theme='light'] .bg-background {
   background-color: hsl(var(--background));
 }
+.theme-screen[data-theme='light'] .bg-background\/50,
+.theme-screen[data-theme='light'] .bg-background\/80 {
+  background-color: hsl(var(--background) / 0.8);
+}
+.theme-screen[data-theme='light'] .bg-muted\/30,
+.theme-screen[data-theme='light'] .bg-muted\/40,
+.theme-screen[data-theme='light'] .bg-muted\/50,
+.theme-screen[data-theme='light'] .bg-muted\/80 {
+  background-color: hsl(var(--muted) / 0.8);
+}
 .theme-screen[data-theme='light'] .bg-sidebar {
   background-color: hsl(var(--sidebar-background));
 }
 .theme-screen[data-theme='light'] .text-sidebar-foreground {
   color: hsl(var(--sidebar-foreground));
+}
+.theme-screen[data-theme='light'] .text-emergency {
+  color: hsl(var(--emergency));
+}
+.theme-screen[data-theme='light'] .text-success {
+  color: hsl(var(--success));
+}
+.theme-screen[data-theme='light'] .text-warning {
+  color: hsl(var(--warning));
+}
+.theme-screen[data-theme='light'] .text-info {
+  color: hsl(var(--info));
 }
 
 
