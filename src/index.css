@@ -139,25 +139,6 @@
   --shadow-lg: 0 12px 32px -8px hsl(220 20% 40% / 0.2);
 }
 
-/* Los fondos semitransparentes de Tailwind no se generan para los colores HSL
-   sin canal alfa. Reglas acotadas a estas pantallas para mantener legibilidad. */
-.theme-screen[data-theme='light'] .bg-card,
-.theme-screen[data-theme='light'] button.bg-card {
-  background-color: hsl(var(--card));
-}
-.theme-screen[data-theme='light'] button.bg-card,
-.theme-screen[data-theme='light'] button.border-border {
-  color: hsl(var(--foreground));
-}
-.theme-screen[data-theme='light'] button.bg-background\/50,
-.theme-screen[data-theme='light'] .bg-muted\/50,
-.theme-screen[data-theme='light'] .bg-muted\/30 {
-  background-color: hsl(var(--muted));
-}
-.theme-screen[data-theme='light'] .bg-background\/80 {
-  background-color: hsl(var(--background) / 0.8);
-}
-
 
 @layer base {
   :root {
@@ -368,4 +349,15 @@
 /* Capa base OSM con apariencia oscura operativa (sin proveedor con API key) */
 .operix-dark-tiles .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95) saturate(0.7);
+}
+
+/* Controles de las pantallas con tema independiente: neutralizar estilos oscuros
+   de controles globales sin afectar al resto del sistema. */
+.theme-screen[data-theme='light'] button.bg-card {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+.theme-screen[data-theme='light'] button.bg-background\/50 {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
