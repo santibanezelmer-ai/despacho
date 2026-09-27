@@ -48,8 +48,9 @@ interface Props {
 }
 
 export default function VehicleProfileDialog({ open, onClose, vehicle }: Props) {
-  const { orgId } = useOrganization();
-  const { canWrite } = useAuth();
+  const { orgId, canWrite: orgCanWrite } = useOrganization();
+  const { canWrite: globalCanWrite } = useAuth();
+  const canWrite = orgCanWrite || globalCanWrite;
   const qc = useQueryClient();
   const { formatDateTime } = useTimeFormat();
   const { maintenance, documents, checklists, logbook } = useVehicleProfile(open ? vehicle?.id : null);
