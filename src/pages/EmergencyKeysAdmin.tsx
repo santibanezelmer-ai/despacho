@@ -34,9 +34,9 @@ export default function EmergencyKeysAdmin() {
   const [uploading, setUploading] = useState(false);
   const { data: keys, isLoading } = useEmergencyKeys();
   const { hasRole } = useAuth();
-  const { orgId } = useOrganization();
-  const qc = useQueryClient();
-  const isAdmin = hasRole('admin');
+  const { orgId, isOrgAdmin } = useOrganization();
+
+  const isAdmin = hasRole('admin') || isOrgAdmin;
 
   // Fetch ALL keys (including inactive) for admin
   const [allKeys, setAllKeys] = useState<any[]>([]);

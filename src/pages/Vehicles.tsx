@@ -19,8 +19,9 @@ export default function Vehicles() {
   const [profileVehicle, setProfileVehicle] = useState<any>(null);
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const { data: vehicles, isLoading } = useVehicles();
-  const { canWrite } = useAuth();
-  const { orgId, scopedCompanyId } = useOrganization();
+  const { canWrite: appCanWrite } = useAuth();
+  const { orgId, scopedCompanyId, canWrite: orgCanWrite } = useOrganization();
+  const canWrite = orgCanWrite || appCanWrite;
   const qc = useQueryClient();
 
   // Alertas por móvil (mantención vencida/próxima y documentos por vencer)

@@ -53,8 +53,9 @@ export default function Equipment() {
   const { data: vehicles } = useVehicles();
   const { data: companies } = useCompanies();
   const { data: equipment, isLoading } = useEquipment(vehicleFilter !== 'all' ? vehicleFilter : undefined);
-  const { canWrite } = useAuth();
-  const { scopedCompanyId, currentOrg } = useOrganization();
+  const { canWrite: appCanWrite } = useAuth();
+  const { scopedCompanyId, currentOrg, canWrite: orgCanWrite } = useOrganization();
+  const canWrite = orgCanWrite || appCanWrite;
   const qc = useQueryClient();
 
   // If company-scoped, force the filter to that company and hide the picker.

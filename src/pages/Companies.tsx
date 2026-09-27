@@ -39,8 +39,9 @@ export default function Companies() {
   const [editing, setEditing] = useState<CompanyForm | null>(null);
   const [saving, setSaving] = useState(false);
   const { data: companies, isLoading } = useCompanies();
-  const { canWrite } = useAuth();
-  const { orgId } = useOrganization();
+  const { canWrite: appCanWrite } = useAuth();
+  const { orgId, canWrite: orgCanWrite } = useOrganization();
+  const canWrite = orgCanWrite || appCanWrite;
   const qc = useQueryClient();
 
   const filtered = (companies ?? []).filter(c =>
