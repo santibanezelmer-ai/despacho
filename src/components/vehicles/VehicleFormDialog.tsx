@@ -23,10 +23,11 @@ interface VehicleData {
   company_id: string;
   status: string;
   fuel_level: string;
+  odometer: string;
 }
 
 const empty: VehicleData = {
-  code: '', type: '', brand: '', model: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible', fuel_level: '',
+  code: '', type: '', brand: '', model: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible', fuel_level: '', odometer: '',
 };
 
 interface Props {
