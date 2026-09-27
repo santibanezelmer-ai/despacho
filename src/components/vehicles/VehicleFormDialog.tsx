@@ -146,6 +146,10 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
               <Label className="text-xs">Combustible %</Label>
               <Input value={form.fuel_level} onChange={e => setForm(f => ({ ...f, fuel_level: e.target.value }))} type="number" min={0} max={100} className="bg-muted/50" />
             </div>
+            <div>
+              <Label className="text-xs">Kilometraje (km)</Label>
+              <Input value={form.odometer} onChange={e => setForm(f => ({ ...f, odometer: e.target.value }))} type="number" min={0} inputMode="numeric" placeholder="Ej. 45230" className="bg-muted/50" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
