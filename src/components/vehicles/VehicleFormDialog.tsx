@@ -58,6 +58,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         company_id: vehicle.company_id ?? '',
         status: vehicle.status,
         fuel_level: vehicle.fuel_level?.toString() ?? '',
+        odometer: vehicle.odometer?.toString() ?? '',
       });
     } else {
       setForm(empty);
@@ -83,6 +84,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         status: form.status as any,
         organization_id: orgId!,
         fuel_level: form.fuel_level === '' ? null : Math.max(0, Math.min(100, parseInt(form.fuel_level))),
+        odometer: form.odometer === '' ? null : Math.max(0, parseInt(form.odometer) || 0),
       };
       if (form.fuel_level !== '') payload.fuel_updated_at = new Date().toISOString();
 
