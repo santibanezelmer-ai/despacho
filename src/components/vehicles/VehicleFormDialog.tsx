@@ -23,10 +23,11 @@ interface VehicleData {
   company_id: string;
   status: string;
   fuel_level: string;
+  odometer: string;
 }
 
 const empty: VehicleData = {
-  code: '', type: '', brand: '', model: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible', fuel_level: '',
+  code: '', type: '', brand: '', model: '', plate: '', year: '', capacity: '6', company_id: '', status: 'disponible', fuel_level: '', odometer: '',
 };
 
 interface Props {
@@ -57,6 +58,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         company_id: vehicle.company_id ?? '',
         status: vehicle.status,
         fuel_level: vehicle.fuel_level?.toString() ?? '',
+        odometer: vehicle.odometer?.toString() ?? '',
       });
     } else {
       setForm(empty);
@@ -82,12 +84,24 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
         status: form.status as any,
         organization_id: orgId!,
         fuel_level: form.fuel_level === '' ? null : Math.max(0, Math.min(100, parseInt(form.fuel_level))),
+        odometer: form.odometer === '' ? null : Math.max(0, parseInt(form.odometer) || 0),
       };
       if (form.fuel_level !== '') payload.fuel_updated_at = new Date().toISOString();
 
       if (isEdit) {
         const { error } = await supabase.from('vehicles').update(payload).eq('id', form.id!);
         if (error) throw error;
+        // Auditoría cuando se ajusta el kilometraje manualmente
+        if (payload.odometer !== (vehicle?.odometer ?? null)) {
+          await supabase.rpc('insert_audit_log', {
+            _organization_id: orgId!,
+            _action: 'vehicle_odometer_manual_update',
+            _table_name: 'vehicles',
+            _record_id: form.id!,
+            _old_data: { odometer: vehicle?.odometer ?? null } as any,
+            _new_data: { odometer: payload.odometer } as any,
+          });
+        }
         toast.success('Móvil actualizado');
       } else {
         const { error } = await supabase.from('vehicles').insert(payload);
@@ -130,7 +144,7 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
               <Input value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} placeholder="Atego 1725" className="bg-muted/50" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Patente</Label>
               <Input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} className="bg-muted/50" />
@@ -142,6 +156,10 @@ export default function VehicleFormDialog({ open, onClose, vehicle }: Props) {
             <div>
               <Label className="text-xs">Combustible %</Label>
               <Input value={form.fuel_level} onChange={e => setForm(f => ({ ...f, fuel_level: e.target.value }))} type="number" min={0} max={100} className="bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs">Kilometraje (km)</Label>
+              <Input value={form.odometer} onChange={e => setForm(f => ({ ...f, odometer: e.target.value }))} type="number" min={0} inputMode="numeric" placeholder="Ej. 45230" className="bg-muted/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
