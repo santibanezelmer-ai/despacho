@@ -40,7 +40,9 @@ interface Props {
 
 export default function VolunteerProfileDialog({ open, onClose, volunteer }: Props) {
   const { orgId } = useOrganization();
-  const { canWrite } = useAuth();
+  const { canWrite: appCanWrite } = useAuth();
+  const { canWrite: orgCanWrite } = useOrganization();
+  const canWrite = orgCanWrite || appCanWrite;
   const qc = useQueryClient();
   const { formatDateTime } = useTimeFormat();
   const { training, equipment, attendance, records } = useVolunteerProfile(open ? volunteer?.id : null);
