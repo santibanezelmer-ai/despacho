@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
+import OfflineDispatchBanner from '@/components/dispatch/OfflineDispatchBanner';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
 
 const navItems = [
@@ -272,6 +273,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <OfflineIndicator />
+        <OfflineDispatchBanner />
         <DemoBanner />
         <main className="flex-1 overflow-y-auto flex flex-col">{children}</main>
         <DemoExpiredOverlay />
