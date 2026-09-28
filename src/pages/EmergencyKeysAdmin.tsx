@@ -35,6 +35,7 @@ export default function EmergencyKeysAdmin() {
   const { data: keys, isLoading } = useEmergencyKeys();
   const { hasRole } = useAuth();
   const { orgId, isOrgAdmin } = useOrganization();
+  const qc = useQueryClient();
 
   const isAdmin = hasRole('admin') || isOrgAdmin;
 
