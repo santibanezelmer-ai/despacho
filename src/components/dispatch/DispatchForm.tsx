@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
-import { sendPushToOrganization } from '@/services/pushService';
-import { resolveToneUrl } from '@/lib/toneUrl';
+import { getPlayableToneSrc } from '@/services/toneCache';
+import { enqueueDispatch, isNetworkError, performDispatch, type PendingDispatch } from '@/services/offlineDispatchQueue';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
@@ -67,7 +67,7 @@ async function playNextGlobalTone() {
   }
   const tone = globalToneQueue[globalToneIndex];
   globalOnUpdate?.(true, tone.label);
-  const src = (await resolveToneUrl(tone.url)) ?? tone.url;
+  const src = await getPlayableToneSrc(tone.url);
   const audio = new Audio(src);
   globalAudio = audio;
   audio.onended = () => {
@@ -232,91 +232,55 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     }
 
     setSubmitting(true);
+    const payload: PendingDispatch = {
+      clientId: crypto.randomUUID(),
+      orgId: orgId!,
+      userId: user?.id ?? null,
+      keyId: emergencyKey.id,
+      keyCode: emergencyKey.code,
+      keyName: emergencyKey.name,
+      address: address.trim(),
+      reference: reference.trim() || null,
+      callerName: callerName.trim() || null,
+      callerPhone: callerPhone.trim() || null,
+      observations: observations.trim() || null,
+      latitude: locationFix?.latitude ?? null,
+      longitude: locationFix?.longitude ?? null,
+      locationRequestId,
+      vehicleIds: selectedVehicleIds,
+      vehicleLabels: selectedVehicleIds.map(id => (allVehicles ?? []).find(v => v.id === id)?.code ?? '').filter(Boolean),
+      createdAt: new Date().toISOString(),
+    };
+    const toneQueue = buildToneQueue(selectedVehicleIds);
+
+    const queueOffline = () => {
+      enqueueDispatch(payload);
+      startGlobalToneSequence(toneQueue);
+      toast.warning(`Sin conexión: ${emergencyKey.code} despachada localmente. Se enviará al volver internet.`);
+      clearDraft();
+      onClose();
+    };
+
     try {
-      // 1. Create emergency
-      const { data: emergency, error: eErr } = await supabase
-        .from('emergencies')
-        .insert({
-          emergency_key_id: emergencyKey.id,
-          organization_id: orgId!,
-          address: address.trim(),
-          reference: reference.trim() || null,
-          caller_name: callerName.trim() || null,
-          caller_phone: callerPhone.trim() || null,
-          observations: observations.trim() || null,
-          created_by: user?.id ?? null,
-          latitude: locationFix?.latitude ?? null,
-          longitude: locationFix?.longitude ?? null,
-          folio: '',
-        })
-        .select()
-        .single();
-
-      if (eErr) throw eErr;
-
-      // 1b. Vincular la solicitud de ubicación y su historial con la emergencia
-      if (locationRequestId) {
-        await supabase
-          .from('location_requests')
-          .update({ emergency_id: emergency.id })
-          .eq('id', locationRequestId);
+      if (!navigator.onLine) {
+        queueOffline();
+        return;
       }
-
-
-
-      // 2. Assign vehicles
-      if (selectedVehicleIds.length > 0) {
-        const { data: vehicleData } = await supabase
-          .from('vehicles')
-          .select('id, odometer')
-          .in('id', selectedVehicleIds);
-
-        const odometerMap = new Map((vehicleData ?? []).map(v => [v.id, v.odometer]));
-
-        const vehicleInserts = selectedVehicleIds.map(vid => ({
-          emergency_id: emergency.id,
-          vehicle_id: vid,
-          organization_id: orgId!,
-          odometer_start: odometerMap.get(vid) ?? null,
-        }));
-        const { error: vErr } = await supabase.from('emergency_vehicles').insert(vehicleInserts);
-        if (vErr) throw vErr;
-
-        await supabase
-          .from('vehicles')
-          .update({ status: 'en_servicio' as const })
-          .in('id', selectedVehicleIds);
-      }
-
-      // 3. Add log entry
-      await supabase.from('emergency_log').insert({
-        emergency_id: emergency.id,
-        organization_id: orgId!,
-        message: `Emergencia despachada: ${emergencyKey.code} - ${emergencyKey.name}`,
-        created_by: user?.id ?? null,
-      });
-
-      // 4. Build tone queue BEFORE closing — then start global player
-      const toneQueue = buildToneQueue(selectedVehicleIds);
+      await performDispatch(payload);
       startGlobalToneSequence(toneQueue);
 
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
 
-      if (import.meta.env.DEV) console.log('[Dispatch] 📤 Calling sendPushToOrganization', { orgId, emergencyId: emergency.id });
-      sendPushToOrganization(
-        orgId!,
-        emergency.id,
-        `${emergencyKey.code} — ${emergencyKey.name}`,
-        `Dirección: ${address.trim()}`
-      ).then(() => { if (import.meta.env.DEV) console.log('[Dispatch] ✓ Push call completed'); })
-       .catch(e => { if (import.meta.env.DEV) console.error('[Dispatch] ✗ Push call failed:', e); });
-
       toast.success(`Emergencia ${emergencyKey.code} despachada correctamente`);
       clearDraft();
       onClose();
     } catch (err: any) {
-      toast.error(err.message || 'Error al despachar');
+      if (isNetworkError(err)) {
+        queueOffline();
+      } else {
+        toast.error(err.message || 'Error al despachar');
+      }
     } finally {
       setSubmitting(false);
     }
