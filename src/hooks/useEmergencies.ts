@@ -34,7 +34,7 @@ export function useActiveEmergencies() {
         ? await Promise.all([
             supabase
               .from('emergency_vehicles')
-              .select('emergency_id, vehicle_id, released_at, vehicles(code)')
+              .select('id, emergency_id, vehicle_id, released_at, operational_status, vehicles(code)')
               .in('emergency_id', ids)
               .is('released_at', null),
             supabase
