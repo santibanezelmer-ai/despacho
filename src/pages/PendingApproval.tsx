@@ -25,7 +25,31 @@ export default function PendingApproval() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      setRequest(data);
+      let current = data;
+      if (!current) {
+        try {
+          const raw = localStorage.getItem('operix.pendingOrgRequest');
+          const pending = raw ? JSON.parse(raw) : null;
+          if (pending && pending.email === (user.email ?? '').toLowerCase() && pending.orgName) {
+            const { data: created, error } = await (supabase as any).from('organization_requests').insert({
+              user_id: user.id,
+              organization_name: pending.orgName,
+              applicant_name: pending.name || user.user_metadata?.full_name || user.email || '',
+              applicant_email: user.email ?? '',
+              phone: pending.phone || null,
+              commune: pending.commune || null,
+              region: pending.region || null,
+              message: pending.message || null,
+            }).select('*').maybeSingle();
+            if (!error) {
+              localStorage.removeItem('operix.pendingOrgRequest');
+              current = created;
+              toast.success('Solicitud enviada');
+            }
+          }
+        } catch { /* ignorar */ }
+      }
+      setRequest(current);
       setLoading(false);
     };
     fetchRequest();
