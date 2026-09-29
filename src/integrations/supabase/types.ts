@@ -642,36 +642,51 @@ export type Database = {
       emergency_vehicles: {
         Row: {
           assigned_at: string
+          controlled_at: string | null
           emergency_id: string
           id: string
           odometer_end: number | null
           odometer_start: number | null
+          on_scene_at: string | null
+          operational_status: string
           organization_id: string
           released_at: string | null
+          status_updated_at: string
           vehicle_id: string
           volunteer_count: number
+          withdrawing_at: string | null
         }
         Insert: {
           assigned_at?: string
+          controlled_at?: string | null
           emergency_id: string
           id?: string
           odometer_end?: number | null
           odometer_start?: number | null
+          on_scene_at?: string | null
+          operational_status?: string
           organization_id: string
           released_at?: string | null
+          status_updated_at?: string
           vehicle_id: string
           volunteer_count?: number
+          withdrawing_at?: string | null
         }
         Update: {
           assigned_at?: string
+          controlled_at?: string | null
           emergency_id?: string
           id?: string
           odometer_end?: number | null
           odometer_start?: number | null
+          on_scene_at?: string | null
+          operational_status?: string
           organization_id?: string
           released_at?: string | null
+          status_updated_at?: string
           vehicle_id?: string
           volunteer_count?: number
+          withdrawing_at?: string | null
         }
         Relationships: [
           {
