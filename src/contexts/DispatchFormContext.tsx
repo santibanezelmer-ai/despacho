@@ -18,7 +18,7 @@ const Ctx = createContext<DispatchFormCtx>({
 export function DispatchFormProvider({ children }: { children: React.ReactNode }) {
   const [openKey, setOpenKey] = useState<EmergencyKeyRow | null>(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = sessionStorage.getItem(STORAGE_KEY);
       return raw ? (JSON.parse(raw) as EmergencyKeyRow) : null;
     } catch {
       // Sin borrador previo válido: se abre limpio
@@ -28,8 +28,8 @@ export function DispatchFormProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     try {
-      if (openKey) localStorage.setItem(STORAGE_KEY, JSON.stringify(openKey));
-      else localStorage.removeItem(STORAGE_KEY);
+      if (openKey) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(openKey));
+      else sessionStorage.removeItem(STORAGE_KEY);
     } catch {
       // Almacenamiento no disponible: la ventana sigue funcionando en memoria
     }
