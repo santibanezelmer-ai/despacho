@@ -29,6 +29,13 @@
       "when": 1790114804969,
       "tag": "0003_emergency_location_source",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790649919180,
+      "tag": "0004_emergency_vehicle_operational_status",
+      "breakpoints": true
     }
   ]
 }
