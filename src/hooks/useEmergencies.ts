@@ -44,14 +44,22 @@ export function useActiveEmergencies() {
           ])
         : [{ data: [] as any[] }, { data: [] as any[] }];
 
-      const assignedByEmergency = new Map<string, Map<string, string>>();
+      type AssignedVehicle = { evId: string; vehicleId: string; code: string; operationalStatus: string };
+      const assignedByEmergency = new Map<string, Map<string, AssignedVehicle>>();
       for (const ev of evRows ?? []) {
         const emgId = (ev as any).emergency_id as string;
         const id = (ev as any).vehicle_id as string | null;
         if (!emgId || !id) continue;
         if (!assignedByEmergency.has(emgId)) assignedByEmergency.set(emgId, new Map());
         const m = assignedByEmergency.get(emgId)!;
-        if (!m.has(id)) m.set(id, ((ev as any).vehicles?.code as string) ?? '—');
+        if (!m.has(id)) {
+          m.set(id, {
+            evId: (ev as any).id as string,
+            vehicleId: id,
+            code: ((ev as any).vehicles?.code as string) ?? '—',
+            operationalStatus: ((ev as any).operational_status as string) ?? 'despachado',
+          });
+        }
       }
 
       const personnelByEmergency = new Map<string, number>();
