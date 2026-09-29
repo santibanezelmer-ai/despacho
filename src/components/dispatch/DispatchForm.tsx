@@ -33,7 +33,7 @@ type DispatchDraft = {
 
 function loadDraft(keyId: string): Partial<DispatchDraft> {
   try {
-    const raw = localStorage.getItem(DISPATCH_DRAFT_KEY);
+    const raw = sessionStorage.getItem(DISPATCH_DRAFT_KEY);
     if (!raw) return {};
     const d = JSON.parse(raw) as DispatchDraft;
     return d.keyId === keyId ? d : {};
@@ -45,7 +45,7 @@ function loadDraft(keyId: string): Partial<DispatchDraft> {
 
 function clearDraft() {
   try {
-    localStorage.removeItem(DISPATCH_DRAFT_KEY);
+    sessionStorage.removeItem(DISPATCH_DRAFT_KEY);
   } catch {
     // Almacenamiento no disponible: nada que limpiar
   }
@@ -133,7 +133,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   // Mantener el borrador de la ventana aunque se navegue o se cierre el navegador
   useEffect(() => {
     try {
-      localStorage.setItem(
+      sessionStorage.setItem(
         DISPATCH_DRAFT_KEY,
         JSON.stringify({
           keyId: emergencyKey.id,
