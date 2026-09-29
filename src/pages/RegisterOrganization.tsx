@@ -17,7 +17,7 @@ const REGIONES = [
 
 export default function RegisterOrganization() {
   const { signUp } = useAuth();
-  const [step, setStep] = useState<'form' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'success' | 'confirm'>('form');
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '', email: '', password: '',
@@ -48,8 +48,15 @@ export default function RegisterOrganization() {
 
       if (!session?.user) {
         // Email confirmation flow: user must confirm first, then request will be created on next login.
+        try {
+          localStorage.setItem('operix.pendingOrgRequest', JSON.stringify({
+            email: form.email.trim().toLowerCase(),
+            orgName: form.orgName, name: form.name, phone: form.phone,
+            commune: form.commune, region: form.region, message: form.message,
+          }));
+        } catch { /* almacenamiento no disponible */ }
         toast.info('Revisa tu correo para confirmar tu cuenta antes de continuar.');
-        setStep('success');
+        setStep('confirm');
         return;
       }
 
@@ -74,7 +81,7 @@ export default function RegisterOrganization() {
     }
   };
 
-  if (step === 'success') {
+  if (step === 'success' || step === 'confirm') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Helmet>
@@ -89,10 +96,16 @@ export default function RegisterOrganization() {
       </Helmet>
         <div className="w-full max-w-sm text-center space-y-4 console-panel p-8">
           <CheckCircle className="mx-auto h-12 w-12 text-success" />
-          <h2 className="text-lg font-bold text-foreground">Solicitud Enviada</h2>
+          <h2 className="text-lg font-bold text-foreground">{step === 'confirm' ? 'Confirma tu correo' : 'Solicitud Enviada'}</h2>
+          {step === 'confirm' ? (
+          <p className="text-sm text-muted-foreground">
+            Te enviamos un correo a <strong>{form.email}</strong>. Confírmalo e inicia sesión en este mismo equipo: la solicitud para <strong>{form.orgName}</strong> se enviará automáticamente para revisión.
+          </p>
+          ) : (
           <p className="text-sm text-muted-foreground">
             Tu solicitud para <strong>{form.orgName}</strong> ha sido recibida. Revisa tu email para confirmar tu cuenta. Un administrador revisará tu solicitud antes de activar el acceso.
           </p>
+          )}
           <Link to="/login">
             <Button variant="outline" className="mt-4">Ir al Login</Button>
           </Link>

@@ -103,14 +103,29 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
     await supabase.from('location_requests').update({ emergency_id: d.clientId }).eq('id', d.locationRequestId);
   }
 
-  if (d.vehicleIds.length > 0 && !alreadyExisted) {
+  // Reintento: completar solo lo que falte (idempotente por paso)
+  let missingVehicleIds = d.vehicleIds;
+  let logExists = false;
+  if (alreadyExisted) {
+    const { data: evRows, error: evErr } = await supabase
+      .from('emergency_vehicles').select('vehicle_id').eq('emergency_id', d.clientId);
+    if (evErr) throw evErr;
+    const have = new Set((evRows ?? []).map(r => r.vehicle_id));
+    missingVehicleIds = d.vehicleIds.filter(id => !have.has(id));
+    const { count, error: lErr } = await supabase
+      .from('emergency_log').select('id', { count: 'exact', head: true }).eq('emergency_id', d.clientId);
+    if (lErr) throw lErr;
+    logExists = (count ?? 0) > 0;
+  }
+
+  if (missingVehicleIds.length > 0) {
     const { data: vehicleData } = await supabase
       .from('vehicles')
       .select('id, odometer')
-      .in('id', d.vehicleIds);
+      .in('id', missingVehicleIds);
     const odometerMap = new Map((vehicleData ?? []).map(v => [v.id, v.odometer]));
     const { error: vErr } = await supabase.from('emergency_vehicles').insert(
-      d.vehicleIds.map(vid => ({
+      missingVehicleIds.map(vid => ({
         emergency_id: d.clientId,
         vehicle_id: vid,
         organization_id: d.orgId,
@@ -118,12 +133,15 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
       }))
     );
     if (vErr) throw vErr;
-    await supabase.from('vehicles').update({ status: 'en_servicio' as const }).in('id', d.vehicleIds);
+  }
+  if (d.vehicleIds.length > 0) {
+    const { error: sErr } = await supabase.from('vehicles').update({ status: 'en_servicio' as const }).in('id', d.vehicleIds);
+    if (sErr) throw sErr;
   }
 
-  if (!alreadyExisted) {
+  if (!logExists) {
     const time = new Date(d.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-    await supabase.from('emergency_log').insert({
+    const { error: logErr } = await supabase.from('emergency_log').insert({
       emergency_id: d.clientId,
       organization_id: d.orgId,
       message: opts.offlineSync
@@ -131,6 +149,7 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
         : `Emergencia despachada: ${d.keyCode} - ${d.keyName}`,
       created_by: d.userId,
     });
+    if (logErr) throw logErr;
 
     sendPushToOrganization(d.orgId, d.clientId, `${d.keyCode} — ${d.keyName}`, `Dirección: ${d.address}`).catch(
       () => {}
