@@ -44,17 +44,12 @@ export interface RouteKmQuery { routeCode: string; kilometer: number }
  */
 export function parseRouteKmQuery(input: string): RouteKmQuery | null {
   const s = input.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
-  const route = /(?:ruta\s*)?\b(ch|[a-z])?\s*-?\s*(\d{1,4})\b(?!\s*[.,]?\d)/;
-  const km = /\b(?:km|kms|kilometro|kilometros|k)\s*\.?\s*(\d+(?:[.,]\d+)?)/;
-  const kmMatch = s.match(km);
+  const kmMatch = s.match(/\b(?:km|kms|kilometro|kilometros)\s*\.?\s*(\d+(?:[.,]\d+)?)/);
   if (!kmMatch) return null;
   const rest = s.replace(kmMatch[0], ' ');
-  const r = rest.match(/(?:\bruta\s*)?\b(ch|[a-z])\s*-?\s*(\d{1,4})\b/) || rest.match(/\bruta\s*(\d{1,4})\b/);
-  void route;
+  const r = rest.match(/\b(ch)\s*-?\s*(\d{1,4})\b/) || rest.match(/\bruta\s*()(\d{1,4})\b/);
   if (!r) return null;
-  const letter = r.length === 3 ? r[1] : 'ch';
-  const num = r.length === 3 ? r[2] : r[1];
-  return { routeCode: `${letter.toUpperCase()}-${Number(num)}`, kilometer: Number(kmMatch[1].replace(',', '.')) };
+  return { routeCode: `CH-${Number(r[2])}`, kilometer: Number(kmMatch[1].replace(',', '.')) };
 }
 
 export function isRouteSupported(code: string) { return code in ROUTE_LOADERS; }
