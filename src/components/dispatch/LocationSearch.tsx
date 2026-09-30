@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, MapPin, AlertTriangle } from 'lucide-react';
+import { Loader2, Search, MapPin, AlertTriangle, Ruler, CheckCircle2 } from 'lucide-react';
+import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult } from '@/lib/routeKilometer';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLocation, type LocationCandidate, type LocationConfidence } from '@/lib/locationResolver';
@@ -32,6 +33,8 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
   const [results, setResults] = useState<LocationCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<LocationCandidate | null>(null);
+  const [routeResult, setRouteResult] = useState<RouteKmResult | null>(null);
+  const [routeSelected, setRouteSelected] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const { data: org } = useQuery({
@@ -49,8 +52,14 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setLoading(true); setError(null); setSelected(null);
+    setLoading(true); setError(null); setSelected(null); setRouteResult(null); setRouteSelected(false);
     try {
+      // Prioridad 1: Ruta + kilometraje → copia local Vialidad/MOP (sin consultas HTTP al MOP).
+      const rk = parseRouteKmQuery(query);
+      if (rk) {
+        const r = await resolveRouteKm(rk);
+        if (r.status !== 'unsupported_route') { setResults(null); setRouteResult(r); return; }
+      }
       const list = await resolveLocation(query, {
         defaultContext: org?.commune ?? null,
         near: org?.latitude != null && org?.longitude != null ? { lat: org.latitude, lng: org.longitude } : null,
@@ -90,10 +99,49 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
         </Button>
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Escribe la vía y, separado por coma, la comuna o localidad.{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
+        Escribe la vía y, separado por coma, la comuna o localidad, o una ruta y kilómetro (Ej: CH-215 km 55).{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
       </p>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {routeResult && routeResult.status === 'found' && (
+        <button
+          type="button"
+          onClick={() => {
+            setRouteSelected(true);
+            onSelect({
+              id: `route-${routeResult.routeCode}-${routeResult.kilometer}`,
+              label: `Ruta ${routeResult.routeCode} km ${routeResult.kilometer}`,
+              secondary: routeResult.meta.name,
+              latitude: routeResult.latitude, longitude: routeResult.longitude,
+              type: 'ruta', street: `Ruta ${routeResult.routeCode}`, locality: null, commune: null, region: null,
+              confidence: 'high', reason: 'Referencia kilométrica oficial de Vialidad/MOP.', source: 'vialidad',
+            });
+          }}
+          className={`w-full rounded-md border p-2 text-left text-xs transition-colors ${routeSelected ? 'border-primary bg-primary/10' : 'border-success/50 bg-background/60 hover:border-primary/60'}`}
+        >
+          <p className="flex items-center gap-1.5 font-semibold text-foreground"><MapPin className="h-3.5 w-3.5 text-emergency" /> Ruta {routeResult.routeCode}</p>
+          <p className="flex items-center gap-1.5 text-foreground"><Ruler className="h-3.5 w-3.5" /> Km {routeResult.kilometer}</p>
+          <p className="flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Ubicación encontrada</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">Fuente: Vialidad/MOP · {routeResult.meta.name}</p>
+          <p className="text-[10px] text-muted-foreground">
+            Confianza: <span className={`rounded border px-1.5 py-0.5 font-semibold ${CONF_META.high.cls}`}>Alta</span>
+            {' '}· {routeResult.latitude.toFixed(5)}, {routeResult.longitude.toFixed(5)}
+          </p>
+          {routeSelected && (
+            <p className="mt-1 text-[10px] text-muted-foreground">Revisa el marcador (puedes arrastrarlo) y presiona <b>Guardar ubicación</b>.</p>
+          )}
+        </button>
+      )}
+
+      {routeResult && routeResult.status === 'out_of_range' && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs">
+          <p className="flex items-center gap-1 font-semibold text-destructive"><AlertTriangle className="h-3.5 w-3.5" /> Kilómetro no encontrado</p>
+          <p className="text-muted-foreground">
+            La Ruta {routeResult.routeCode} va del km {routeResult.minKm} al km {routeResult.maxKm.toFixed(1)} según Vialidad/MOP. No se marcó ningún punto.
+          </p>
+        </div>
+      )}
 
       {results && results.length === 0 && !loading && (
         <p className="text-xs text-muted-foreground">Sin resultados. Marca el punto en el mapa o ingresa coordenadas manualmente.</p>
