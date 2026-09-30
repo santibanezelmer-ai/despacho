@@ -145,7 +145,10 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
       )}
 
       {results && results.length === 0 && !loading && (
-        <p className="text-xs text-muted-foreground">Sin resultados. Marca el punto en el mapa o ingresa coordenadas manualmente.</p>
+        <div className="rounded-md border border-warning/50 bg-warning/10 p-2 text-xs" role="status">
+          <p className="font-semibold text-foreground">No se encontró esta dirección</p>
+          <p className="text-muted-foreground">⚠️ No existe una coincidencia suficiente en las fuentes disponibles. Ubique manualmente el punto en el mapa.</p>
+        </div>
       )}
 
       {results && results.length > 0 && (
