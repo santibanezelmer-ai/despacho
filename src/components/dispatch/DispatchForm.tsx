@@ -365,9 +365,30 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <User className="h-3.5 w-3.5" /> Solicitante
+                <User className="h-3.5 w-3.5" /> {isServiceKey ? 'Autorizado por' : 'Solicitante'}
               </label>
-              <Input value={callerName} onChange={e => setCallerName(e.target.value)} placeholder="Nombre del solicitante" className="bg-muted/50" spellCheck={false} autoCorrect="off" />
+              <Input
+                value={callerName}
+                onChange={e => setCallerName(e.target.value)}
+                placeholder={isServiceKey ? 'Ej: Comandante, Capitán 1ª Cía, Oficial de Guardia' : 'Nombre del solicitante'}
+                className="bg-muted/50"
+                spellCheck={false}
+                autoCorrect="off"
+              />
+              {isServiceKey && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {AUTHORIZER_RANKS.map(rank => (
+                    <button
+                      key={rank}
+                      type="button"
+                      onClick={() => setCallerName(prev => (prev.trim() ? prev : `${rank} `))}
+                      className="rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                    >
+                      {rank}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
