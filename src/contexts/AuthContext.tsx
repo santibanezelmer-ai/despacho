@@ -48,11 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session) {
+        // Now handled by Supabase storage natively, but kept for legacy sync just in case
         void persistNativeAuthSession(session);
       } else if (event === 'SIGNED_OUT') {
-        // No borrar el respaldo nativo aquí: este evento también puede llegar
-        // por un refresh fallido (p. ej. sin conexión). El respaldo solo se
-        // elimina en el cierre de sesión explícito (signOut()).
         console.warn('[Auth] SIGNED_OUT recibido; se conserva el respaldo nativo');
       }
 

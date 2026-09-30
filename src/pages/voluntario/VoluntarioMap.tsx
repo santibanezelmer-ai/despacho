@@ -73,6 +73,7 @@ export default function VoluntarioMap() {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const initRef = useRef(false);
+  const [mapReady, setMapReady] = useState(false);
   const [bounds, setBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
@@ -113,6 +114,7 @@ export default function VoluntarioMap() {
     map.on('moveend', updateBounds);
     updateBounds();
     mapRef.current = map;
+    setMapReady(true);
     setTimeout(() => map.invalidateSize(), 200);
     requestGeolocation().then((geo) => {
       if (geo) { map.setView([geo.lat, geo.lng], 14); setLocationDenied(false); }
@@ -155,7 +157,7 @@ export default function VoluntarioMap() {
       markers.forEach(m => m.remove());
       delete (window as any).__volMapNav;
     };
-  }, [emergencies, navigate]);
+  }, [emergencies, navigate, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -171,7 +173,7 @@ export default function VoluntarioMap() {
       markers.push(m);
     });
     return () => { markers.forEach(m => m.remove()); };
-  }, [hydrants, sharedHydrants]);
+  }, [hydrants, sharedHydrants, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -190,7 +192,7 @@ export default function VoluntarioMap() {
       markers.push(m);
     });
     return () => { markers.forEach(m => m.remove()); };
-  }, [stations]);
+  }, [stations, mapReady]);
 
   const handleLocate = useCallback(async () => {
     const map = mapRef.current;

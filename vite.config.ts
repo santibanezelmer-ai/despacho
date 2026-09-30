@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     sourcemap: false,
     minify: "esbuild",
   },
-  esbuild: mode === "production" ? { drop: ["console", "debugger"], legalComments: "none" } : undefined,
+  esbuild: mode === "production" ? { legalComments: "none" } : undefined,
   plugins: [
     react(),
     mode === "development" && componentTagger(),

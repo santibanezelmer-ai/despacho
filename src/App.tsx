@@ -63,8 +63,6 @@ import { canAccessPath, defaultPathFor } from "@/lib/rolePermissions";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Evitar refetch/re-render al cambiar de pestaña o volver al navegador.
-      // Las vistas operativas ya usan polling con intervalos propios.
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     },
@@ -79,17 +77,17 @@ function PageFallback() {
   );
 }
 
+function PushNotificationWrapper({ children }: { children: React.ReactNode }) {
+  usePushNotifications();
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
   const orgCtx = useOrganizationOptional();
   const location = useLocation();
   const isNativeMobile = useIsNativeMobile();
 
-  // Init push notifications for any authenticated native user
-  usePushNotifications();
-
-  // Fallback: if OrganizationProvider isn't mounted yet (or this tree was
-  // rendered outside it), show a loading screen instead of throwing.
   if (!orgCtx) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -109,7 +107,6 @@ function AppRoutes() {
   }
 
   if (!user) {
-    // On native/mobile, skip landing and go straight to login
     if (isNativeMobile && location.pathname === '/') {
       return <Navigate to="/login" replace />;
     }
@@ -125,8 +122,15 @@ function AppRoutes() {
     );
   }
 
-  // Authenticated user on native/mobile hitting a non-mobile route → redirect to mobile feed
-  if (isNativeMobile && !location.pathname.startsWith('/mobile') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
+  // Si estamos en la app nativa (APK), SIEMPRE redirigimos a la interfaz de Voluntario
+  // sin importar qué rol tenga (Oficial, Admin, etc.) porque la app móvil nativa
+  // es de uso exclusivo para lectura operativa de emergencias.
+  if (isNativeMobile && !location.pathname.startsWith('/voluntario')) {
+    return <Navigate to="/voluntario" replace />;
+  }
+
+  // Authenticated user on web mobile hitting a non-mobile route
+  if (!isNativeMobile && window.innerWidth <= 768 && !location.pathname.startsWith('/mobile') && !location.pathname.startsWith('/voluntario') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
     return <Navigate to="/mobile/feed" replace />;
   }
 
@@ -203,7 +207,7 @@ function AppRoutes() {
     );
   }
 
-  // Mobile routes
+  // Mobile routes (Only reached on web mobile if they navigate here manually or have higher roles)
   if (location.pathname.startsWith('/mobile')) {
     return (
       <MobileLayout>
@@ -276,14 +280,16 @@ const App = () => (
             <OrganizationProvider>
               <SecurityGuard />
               <UserWatermark />
-              <Routes>
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/invite/:token" element={<AcceptInvitation />} />
-                <Route path="/location/:token" element={<SharedLocationPage />} />
-                <Route path="/terminos" element={<TermsPage />} />
-                <Route path="/voluntario/*" element={<VoluntarioApp />} />
-                <Route path="*" element={<AppRoutes />} />
-              </Routes>
+              <PushNotificationWrapper>
+                <Routes>
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/invite/:token" element={<AcceptInvitation />} />
+                  <Route path="/location/:token" element={<SharedLocationPage />} />
+                  <Route path="/terminos" element={<TermsPage />} />
+                  <Route path="/voluntario/*" element={<VoluntarioApp />} />
+                  <Route path="*" element={<AppRoutes />} />
+                </Routes>
+              </PushNotificationWrapper>
             </OrganizationProvider>
           </AuthProvider>
         </RouteErrorBoundary>

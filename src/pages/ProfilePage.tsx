@@ -2,17 +2,34 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Save, Loader2 } from 'lucide-react';
+import { User, Save, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState('');
+  const [appVersion, setAppVersion] = useState<string>('');
+
+  useEffect(() => {
+    const getVersion = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const info = await CapacitorApp.getInfo();
+          setAppVersion(`v${info.version}`);
+        } catch (e) {}
+      } else {
+        setAppVersion('Versión Web');
+      }
+    };
+    getVersion();
+  }, []);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['my-profile', user?.id],
@@ -76,6 +93,13 @@ export default function ProfilePage() {
           </Button>
         </CardContent>
       </Card>
+
+      {appVersion && (
+        <div className="flex items-center justify-center gap-1.5 mt-8 text-xs text-muted-foreground opacity-70">
+          <Info className="h-4 w-4" />
+          <span>Operix Dispatch {appVersion}</span>
+        </div>
+      )}
     </div>
   );
 }

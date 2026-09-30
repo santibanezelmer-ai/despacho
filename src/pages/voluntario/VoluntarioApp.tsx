@@ -47,12 +47,11 @@ export default function VoluntarioApp() {
         .from('organization_members')
         .select('organization_id, role, status, organizations(id, name, status, logo_url)')
         .eq('user_id', user.id)
-        .eq('status', 'active')
-        .in('role', ['voluntario', 'visor']);
+        .eq('status', 'active');
 
       if (err) { setError(err.message); setChecking(false); return; }
       if (!data?.length) {
-        setError('Esta cuenta no tiene acceso de voluntario. Pídele a tu administrador que te invite.');
+        setError('Esta cuenta no pertenece a ninguna organización. Pídele a tu administrador que te invite.');
         setChecking(false);
         return;
       }

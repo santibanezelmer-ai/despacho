@@ -33,7 +33,8 @@ export function usePushNotifications() {
 
     const initializePush = async () => {
       console.log('[Push][Hook] initializing push notifications');
-      await syncRegistration(false, false);
+      // Aseguramos que sea completamente silencioso (silent = true)
+      await syncRegistration(false, true);
     };
 
     void initializePush();

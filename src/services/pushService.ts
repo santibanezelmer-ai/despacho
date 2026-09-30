@@ -101,6 +101,7 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<boo
 
     if (!membership?.organization_id) {
       console.warn('[Push] No org membership; token not saved');
+      toast.error('Token no guardado: No tienes una organización activa', { id: 'push-org' });
       return false;
     }
 
@@ -122,6 +123,7 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<boo
 
     if (error) {
       console.error('[Push] DB error saving token:', error.message);
+      toast.error('Error guardando token en DB: ' + error.message, { id: 'push-db' });
       return false;
     }
 
@@ -155,7 +157,11 @@ export async function ensureRegistrationListeners(): Promise<void> {
       const saved = await saveTokenToSupabase(tokenData.value, Capacitor.getPlatform());
       if (saved) {
         pendingTokenToSave = null;
-        if (!pendingRegistrationSilent) toast.success('Notificaciones activadas');
+        // Solo mostramos el toast de éxito si el usuario explícitamente tocó un botón
+        // (no en los registros automáticos de fondo durante el inicio de la app)
+        if (!pendingRegistrationSilent) {
+          toast.success('Notificaciones activadas');
+        }
       } else {
         // No session/org yet (cold start). Keep it and retry on the next sync.
         pendingTokenToSave = tokenData.value;

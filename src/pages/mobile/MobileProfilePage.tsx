@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, LogOut, Mail, ShieldCheck, User2, Bell } from 'lucide-react';
+import { Building2, LogOut, Mail, ShieldCheck, User2, Bell, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Button } from '@/components/ui/button';
 import { simulatePushNotification } from '@/services/pushService';
 import { useActiveEmergencies } from '@/hooks/useEmergencies';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 function formatRole(role: string | null) {
   if (!role) return 'Sin rol';
@@ -17,6 +19,24 @@ export default function MobileProfilePage() {
   const { currentOrg, orgRole } = useOrganization();
   const navigate = useNavigate();
   const { data: emergencies } = useActiveEmergencies();
+  const [appVersion, setAppVersion] = useState<string>('');
+
+  useEffect(() => {
+    const getVersion = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const info = await CapacitorApp.getInfo();
+          setAppVersion(`v${info.version}`);
+        } catch (e) {
+          console.error('Error al obtener la versión:', e);
+        }
+      } else {
+        // En web se podría inyectar por variable de entorno
+        setAppVersion('Versión Web');
+      }
+    };
+    getVersion();
+  }, []);
 
   const displayName = useMemo(() => {
     const name = user?.user_metadata?.full_name as string | undefined;
@@ -81,6 +101,13 @@ export default function MobileProfilePage() {
         <LogOut className="h-4 w-4" />
         Cerrar sesión
       </Button>
+
+      {appVersion && (
+        <div className="flex items-center justify-center gap-1.5 pt-4 text-xs text-muted-foreground opacity-70">
+          <Info className="h-3.5 w-3.5" />
+          <span>Operix Dispatch {appVersion}</span>
+        </div>
+      )}
     </div>
   );
 }
