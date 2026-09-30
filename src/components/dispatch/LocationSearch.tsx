@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Search, MapPin, AlertTriangle, Ruler, CheckCircle2 } from 'lucide-react';
+import { LANDMARK_TYPE_LABEL, type LandmarkType } from '@/lib/landmarks';
 import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult } from '@/lib/routeKilometer';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -99,7 +100,7 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
         </Button>
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Escribe la vía y, separado por coma, la comuna o localidad, o una ruta y kilómetro (Ej: CH-215 km 55).{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
+        Escribe la vía y, separado por coma, la comuna o localidad, una ruta y kilómetro (Ej: CH-215 km 55) o un puente (Ej: Puente Ñilque).{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
       </p>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -162,7 +163,16 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
                   <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emergency" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-foreground">{c.label}</span>
-                    <span className="block truncate text-[10px] text-muted-foreground">{TYPE_LABEL[c.type]} · {c.secondary}</span>
+                    {c.landmark ? (
+                      <span className="block text-[10px] text-muted-foreground">
+                        Tipo: {LANDMARK_TYPE_LABEL[c.landmark.type as LandmarkType] ?? c.landmark.type}
+                        {c.landmark.routeCode && <> · Ruta: {c.landmark.routeCode}</>}
+                        {c.landmark.kilometer != null && <> · Km: {c.landmark.kilometer}</>}
+                        <span className="block">✓ Ubicación encontrada · Fuente: {c.landmark.source === 'Dirección de Vialidad / MOP' ? 'Vialidad/MOP' : c.landmark.source}</span>
+                      </span>
+                    ) : (
+                      <span className="block truncate text-[10px] text-muted-foreground">{TYPE_LABEL[c.type]} · {c.secondary}</span>
+                    )}
                   </span>
                   <span className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${meta.cls}`}>{meta.label}</span>
                 </button>
