@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useVehicles } from '@/hooks/useVehicles';
+import { useVolunteers } from '@/hooks/useVolunteers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -140,6 +141,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const queryClient = useQueryClient();
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
+  const { data: volunteers } = useVolunteers();
   const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
   const isServiceKey = isAuthorizedServiceKey(emergencyKey);
 
