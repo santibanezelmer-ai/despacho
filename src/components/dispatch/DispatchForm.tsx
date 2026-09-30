@@ -155,6 +155,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
+  const [authorizerSearch, setAuthorizerSearch] = useState('');
   const [locationRequestId, setLocationRequestId] = useState<string | null>(draft.locationRequestId ?? null);
   const [locationFix, setLocationFix] = useState<LocationFix | null>(draft.locationFix ?? null);
 
