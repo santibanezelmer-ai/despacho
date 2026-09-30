@@ -90,6 +90,15 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const [showFinalize, setShowFinalize] = useState(false);
   const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
   const unassign = useUnassignVehicle();
+  const statusMutation = useVehicleOperationalStatus();
+  const assignedVehicles = emergency.assignedVehicles?.length
+    ? emergency.assignedVehicles
+    : emergency.vehicleCodes.map((code, i) => ({
+        evId: '',
+        vehicleId: emergency.vehicleIds?.[i] ?? '',
+        code,
+        operationalStatus: 'despachado',
+      }));
 
 
   const flags = [
