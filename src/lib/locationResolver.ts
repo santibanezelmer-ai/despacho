@@ -106,7 +106,7 @@ let lastCall = 0;
 
 /** Respeta la política de uso de Nominatim: máx. 1 solicitud por segundo y caché local. */
 async function nominatim(params: Record<string, string>, signal?: AbortSignal): Promise<NominatimResult[]> {
-  const qs = new URLSearchParams({ format: 'jsonv2', addressdetails: '1', countrycodes: 'cl', 'accept-language': 'es', ...params });
+  const qs = new URLSearchParams({ format: 'jsonv2', addressdetails: '1', countrycodes: 'cl', ...params });
   const key = qs.toString();
   const hit = cache.get(key);
   if (hit) return hit;
