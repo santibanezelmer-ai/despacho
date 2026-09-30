@@ -21,6 +21,7 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 import LocationSearch from './LocationSearch';
+import TerritoryStatus from './TerritoryStatus';
 
 
 
@@ -477,6 +478,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                       <span>Haz clic para marcar o arrastra el marcador para ajustar. La rueda del mouse sobre el mapa acerca o aleja.</span>
                       {mapCoords && <span className="font-mono">{mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}</span>}
                     </div>
+                    {mapCoords && <div className="mt-2"><TerritoryStatus latitude={mapCoords.lat} longitude={mapCoords.lng} /></div>}
                     <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
                       <p>
                         Origen de la ubicación:{' '}
