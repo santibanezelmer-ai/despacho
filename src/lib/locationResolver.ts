@@ -194,9 +194,6 @@ function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: 
   }
 
   const label = r.name || street || r.display_name.split(',')[0];
-
-
-  const label = mode === 'context-only' ? (r.name || r.display_name.split(',')[0]) : (r.name || street || r.display_name.split(',')[0]);
   const secondary = [locality, commune && commune !== locality ? commune : null, a.state].filter(Boolean).join(', ');
   return {
     id: String(r.place_id),
@@ -205,7 +202,7 @@ function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: 
     latitude: parseFloat(r.lat),
     longitude: parseFloat(r.lon),
     type,
-    street: mode === 'street' ? street : null,
+    street,
     locality,
     commune,
     region: a.state ?? null,
@@ -260,12 +257,15 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
 
   const results: LocationCandidate[] = [];
   const seen = new Set<string>();
-  const push = (list: NominatimResult[], mode: 'street' | 'context-only', ctx: string[]) => {
+  // Una vía buscada nunca se da por encontrada con un resultado que es solo localidad/comuna.
+  const wantsPlace = parsed.type === 'sector' || parsed.type === 'localidad';
+  const push = (list: NominatimResult[], ctx: string[]) => {
     for (const r of list) {
+      if (!wantsPlace && isPlaceResult(r)) continue;
       const k = `${normalizeText(r.name ?? '')}|${Number(r.lat).toFixed(3)}|${Number(r.lon).toFixed(3)}`;
       if (seen.has(k)) continue;
       seen.add(k);
-      results.push(toCandidate(r, parsed, ctx, mode));
+      results.push(toCandidate(r, parsed, ctx));
     }
   };
 
@@ -274,7 +274,7 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
     const [s, n, w, e] = area.boundingbox.map(Number);
     const pad = 0.05;
     const viewbox = `${w - pad},${n + pad},${e + pad},${s - pad}`;
-    push(await nominatim({ q: parsed.street, viewbox, bounded: '1', limit: '6' }, opts.signal), 'street', contexts);
+    push(await nominatim({ q: parsed.street, viewbox, bounded: '1', limit: '6' }, opts.signal), contexts);
   }
 
   // 3) Búsqueda con texto completo (Chile). Si el contexto era por defecto, se evalúa sin exigirlo.
@@ -285,13 +285,10 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
       const d = 0.6;
       extra.viewbox = `${opts.near.lng - d},${opts.near.lat + d},${opts.near.lng + d},${opts.near.lat - d}`;
     }
-    push(await nominatim(extra, opts.signal), 'street', usingDefault ? [] : contexts);
+    push(await nominatim(extra, opts.signal), usingDefault ? [] : contexts);
   }
 
-  // 4) Solo se encontró el contexto: se ofrece como ubicación aproximada (baja confianza).
-  if (results.length === 0 && area && parsed.context.length) {
-    push([area], 'context-only', contexts);
-  }
+  // Sin coincidencia de la vía: no se ofrece el centro de la comuna como ubicación seleccionable.
 
   return results.sort((a, b) => RANK[a.confidence] - RANK[b.confidence]).slice(0, 8);
 }
