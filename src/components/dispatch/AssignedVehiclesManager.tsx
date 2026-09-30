@@ -33,6 +33,7 @@ interface Target {
 export default function AssignedVehiclesManager({ emergencyId }: Props) {
   const [target, setTarget] = useState<Target | null>(null);
   const unassign = useUnassignVehicle();
+  const statusMutation = useVehicleOperationalStatus();
 
   const { data: assigned, isLoading } = useQuery({
     queryKey: ['emergency-vehicles-assigned', emergencyId],
