@@ -4,6 +4,13 @@ import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
 import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
+import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
+import {
+  SELECTABLE_VEHICLE_STATUSES,
+  VEHICLE_STATUS_META,
+  vehicleStatusMeta,
+} from '@/lib/vehicleOperationalStatus';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +68,7 @@ interface EmergencyCardProps {
     emergency_keys: { code: string; name: string; color: string } | null;
     vehicleCodes: string[];
     vehicleIds: string[];
+    assignedVehicles?: { evId: string; vehicleId: string; code: string; operationalStatus: string }[];
     personnelCount: number;
     _offline?: boolean;
   };
