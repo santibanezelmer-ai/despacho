@@ -2375,6 +2375,10 @@ export type Database = {
       is_org_volunteer: { Args: { _org_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       purge_old_vehicle_positions: { Args: never; Returns: undefined }
+      register_device_token: {
+        Args: { _organization_id: string; _platform: string; _token: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "operador" | "oficial" | "visor"
