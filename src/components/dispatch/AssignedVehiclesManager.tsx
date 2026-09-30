@@ -14,6 +14,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Loader2, Truck, Trash2 } from 'lucide-react';
 import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
+import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
+import {
+  SELECTABLE_VEHICLE_STATUSES,
+  VEHICLE_STATUS_META,
+  vehicleStatusMeta,
+} from '@/lib/vehicleOperationalStatus';
 
 interface Props {
   emergencyId: string;
@@ -33,7 +39,7 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('emergency_vehicles')
-        .select('id, vehicle_id, released_at, vehicles(code, type, companies(name))')
+        .select('id, vehicle_id, released_at, operational_status, status_updated_at, vehicles(code, type, companies(name))')
         .eq('emergency_id', emergencyId)
         .is('released_at', null);
       if (error) throw error;

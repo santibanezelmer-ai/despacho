@@ -34,6 +34,8 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus, for
     mutationFn: async ({ evId, vehicleId, odometerEnd }: { evId: string; vehicleId: string; odometerEnd: number | null }) => {
       const update: Record<string, any> = {
         released_at: new Date().toISOString(),
+        operational_status: 'en_cuartel',
+        status_updated_at: new Date().toISOString(),
       };
       if (odometerEnd !== null) update.odometer_end = odometerEnd;
 
