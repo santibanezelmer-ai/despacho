@@ -58,28 +58,9 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus, for
         created_by: user?.id ?? null,
       });
 
-      // Check if ALL vehicles have returned
-      const { data: remaining } = await supabase
-        .from('emergency_vehicles')
-        .select('id')
-        .eq('emergency_id', emergencyId)
-        .is('released_at', null);
-
-      // If this was the last one (remaining includes current before update propagates, so check <=1)
-      if (!deferQuarters && (!remaining || remaining.length === 0)) {
-        // All vehicles returned — update emergency to en_cuartel
-        await supabase.from('emergencies').update({
-          status: 'en_cuartel' as any,
-          in_quarters_at: new Date().toISOString(),
-        }).eq('id', emergencyId);
-
-        await supabase.from('emergency_log').insert({
-          emergency_id: emergencyId,
-          organization_id: orgId!,
-          message: 'Todos los móviles en cuartel — emergencia cerrada operativamente',
-          created_by: user?.id ?? null,
-        });
-      }
+      // Liberar móviles afecta solo a los móviles: la emergencia sigue abierta y
+      // editable hasta que el operador la cierre/finalice de forma explícita.
+      void deferQuarters;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-return', emergencyId] });
@@ -122,6 +103,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus, for
     !hideCloseButton && emergencyStatus === 'finalizada' && (allVehicles.length === 0 || pending.length === 0);
 
   const handleCloseEmergency = async () => {
+    if (!window.confirm('¿Cerrar definitivamente la emergencia? Dejará de estar activa.')) return;
     await supabase.from('emergencies').update({
       status: 'en_cuartel' as any,
       in_quarters_at: new Date().toISOString(),
