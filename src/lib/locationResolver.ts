@@ -211,6 +211,7 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
   if (looksLikeLandmark(query)) {
     const matches = await searchLandmarks(query);
     if (matches.length) {
+      const exactCount = matches.filter(m => m.exact).length;
       return matches.map(({ landmark: l, exact }) => ({
         id: l.id,
         label: l.name,
@@ -220,7 +221,8 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
         type: 'desconocido' as LocationType,
         street: l.road_name ?? null,
         locality: null, commune: null, region: null,
-        confidence: (exact ? 'high' : 'medium') as LocationConfidence,
+        // Varios puentes con el mismo nombre: el operador debe elegir; ninguno se marca como Alta.
+        confidence: (exact && exactCount === 1 ? 'high' : 'medium') as LocationConfidence,
         reason: `${exact ? 'Coincidencia exacta' : 'Coincidencia parcial'} con punto de referencia oficial (${l.source}${l.source_ref ? `, código ${l.source_ref}` : ''}).`,
         source: 'landmark' as const,
         landmark: { type: l.type, routeCode: l.route_code, kilometer: l.kilometer, source: l.source },
