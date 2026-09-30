@@ -103,6 +103,31 @@ function stopGlobalTones() {
   globalOnUpdate?.(false, '');
 }
 
+// ── Claves de salida autorizada / otros servicios (10-9 y similares) ──
+const AUTHORIZED_SERVICE_TERMS = [
+  'otros servicios',
+  'otro servicio',
+  'servicio especial',
+  'servicios especiales',
+  'traslado',
+  'salida autorizada',
+];
+
+const AUTHORIZER_RANKS = [
+  'Superintendente',
+  'Comandante',
+  '2° Comandante',
+  'Capitán',
+  'Oficial de Guardia',
+];
+
+function isAuthorizedServiceKey(key: { code: string; name: string }): boolean {
+  const code = (key.code ?? '').replace(/\s/g, '').toLowerCase();
+  if (code === '10-9' || code === '109') return true;
+  const name = (key.name ?? '').toLowerCase();
+  return AUTHORIZED_SERVICE_TERMS.some(term => name.includes(term));
+}
+
 interface Props {
   emergencyKey: EmergencyKeyRow;
   onClose: () => void;
@@ -116,6 +141,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
   const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
+  const isServiceKey = isAuthorizedServiceKey(emergencyKey);
 
   const [draft] = useState(() => loadDraft(emergencyKey.id));
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>(draft.selectedVehicleIds ?? []);
@@ -339,9 +365,30 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <User className="h-3.5 w-3.5" /> Solicitante
+                <User className="h-3.5 w-3.5" /> {isServiceKey ? 'Autorizado por' : 'Solicitante'}
               </label>
-              <Input value={callerName} onChange={e => setCallerName(e.target.value)} placeholder="Nombre del solicitante" className="bg-muted/50" spellCheck={false} autoCorrect="off" />
+              <Input
+                value={callerName}
+                onChange={e => setCallerName(e.target.value)}
+                placeholder={isServiceKey ? 'Ej: Comandante, Capitán 1ª Cía, Oficial de Guardia' : 'Nombre del solicitante'}
+                className="bg-muted/50"
+                spellCheck={false}
+                autoCorrect="off"
+              />
+              {isServiceKey && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {AUTHORIZER_RANKS.map(rank => (
+                    <button
+                      key={rank}
+                      type="button"
+                      onClick={() => setCallerName(prev => (prev.trim() ? prev : `${rank} `))}
+                      className="rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                    >
+                      {rank}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -374,9 +421,21 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <MessageSquare className="h-3.5 w-3.5" /> Observaciones
+              <MessageSquare className="h-3.5 w-3.5" /> {isServiceKey ? 'Motivo del servicio' : 'Observaciones'}
             </label>
-            <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" spellCheck lang="es-CL" autoCorrect="off" />
+            <Textarea
+              value={observations}
+              onChange={e => setObservations(e.target.value)}
+              onFocus={() => {
+                if (isServiceKey && !observations.trim()) setObservations('Motivo: ');
+              }}
+              placeholder={isServiceKey ? 'Motivo del servicio, destino o instrucción de la salida...' : 'Detalles adicionales de la emergencia...'}
+              rows={3}
+              className="bg-muted/50"
+              spellCheck
+              lang="es-CL"
+              autoCorrect="off"
+            />
           </div>
 
           {/* Vehicle selection */}
