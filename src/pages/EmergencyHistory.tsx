@@ -136,7 +136,7 @@ export default function EmergencyHistory() {
                     </td>
                     <td className="py-2 px-3 text-xs text-muted-foreground truncate max-w-[200px]">{e.address}</td>
                     <td className="py-2 px-3 text-xs text-muted-foreground font-mono">
-                      {e.finished_at ? new Date(e.finished_at).toLocaleString('es-CL') : '—'}
+                      {new Date(e.finished_at || e.created_at).toLocaleString('es-CL')}
                     </td>
                     <td className="py-2 px-3 text-right">
                       <div className="flex items-center justify-end gap-1">
