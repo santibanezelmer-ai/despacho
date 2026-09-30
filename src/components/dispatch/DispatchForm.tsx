@@ -248,6 +248,18 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     return queue;
   }, [allVehicles, companies, emergencyKey]);
 
+  const authorizerMatches = (() => {
+    const q = authorizerSearch.trim().toLowerCase();
+    if (!isServiceKey || q.length < 2) return [];
+    return (volunteers ?? [])
+      .filter((v: any) => {
+        const name = (v.name ?? '').toLowerCase();
+        const internalId = String(v.internal_id ?? v.registration_number ?? v.id ?? '').toLowerCase();
+        return name.includes(q) || internalId.includes(q);
+      })
+      .slice(0, 6);
+  })();
+
   const toggleVehicle = (id: string) => {
     setSelectedVehicleIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
