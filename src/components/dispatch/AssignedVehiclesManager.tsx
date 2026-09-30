@@ -66,23 +66,59 @@ export default function AssignedVehiclesManager({ emergencyId }: Props) {
         <div className="space-y-1">
           {list.map((ev: any) => {
             const v = ev.vehicles;
+            const code = v?.code ?? '—';
+            const meta = vehicleStatusMeta(ev.operational_status);
             return (
               <div
                 key={ev.id}
-                className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/20 px-3 py-2"
+                className="space-y-2 rounded-md border border-border bg-muted/20 px-3 py-2"
               >
-                <span className="text-xs font-mono text-foreground truncate">
-                  {v?.code ?? '—'} · {v?.type ?? ''}
-                  {v?.companies?.name ? ` (${v.companies.name})` : ''}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setTarget({ vehicleId: ev.vehicle_id, code: v?.code ?? '—' })}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-xs font-mono text-foreground">
+                    {code} · {v?.type ?? ''}
+                    {v?.companies?.name ? ` (${v.companies.name})` : ''}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className={`rounded border px-1.5 py-0.5 text-[10px] font-mono ${meta.chip}`}>
+                      {meta.code} {meta.label}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => setTarget({ vehicleId: ev.vehicle_id, code })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {SELECTABLE_VEHICLE_STATUSES.map(key => {
+                    const opt = VEHICLE_STATUS_META[key];
+                    const active = key === meta.key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        title={opt.description}
+                        disabled={active || statusMutation.isPending}
+                        onClick={() => statusMutation.mutate({
+                          evId: ev.id,
+                          emergencyId,
+                          vehicleCode: code,
+                          status: key,
+                        })}
+                        className={`rounded border px-1.5 py-0.5 text-[10px] font-mono transition-colors ${
+                          active
+                            ? `${opt.chip} font-semibold`
+                            : 'border-border text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {opt.code}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
