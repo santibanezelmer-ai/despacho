@@ -42,7 +42,7 @@ def main(path):
     doc = root.find("k:Document", NS)
     if root.findall(".//k:NetworkLink", NS):
         sys.exit("El KML contiene NetworkLink: exportar sin 'Mantener sincronizado'.")
-    layers, features = [], []
+    layers, features, seen = [], [], set()
     for folder in doc.findall("k:Folder", NS):
         fname = folder.findtext("k:name", "", NS).strip()
         if fname not in CATEGORY:
@@ -76,7 +76,11 @@ def main(path):
             else:
                 print("Sin geometría, omitido:", fname, name); continue
             key = f"{cid}|{name}|{json.dumps(f['coordinates'])[:200]}"
-            f["id"] = f"{cid}-" + hashlib.sha1(key.encode()).hexdigest()[:12]
+            fid = f"{cid}-" + hashlib.sha1(key.encode()).hexdigest()[:12]
+            n = 2
+            while fid in seen:  # duplicados exactos del KML se conservan (no se pierde información)
+                print("Duplicado exacto en el KML:", fname, name); fid = fid.split("~")[0] + f"~{n}"; n += 1
+            seen.add(fid); f["id"] = fid
             features.append(f)
         layers.append({"id": cid, "label": label, "source_folder": fname,
                        "counts": {k: v for k, v in count.items() if v}})
