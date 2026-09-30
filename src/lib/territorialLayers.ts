@@ -76,10 +76,14 @@ function popupContent(f: TerritorialFeature, label: string, source: string): HTM
 }
 
 /** Construye un LayerGroup por categoría (una sola vez por mapa). */
-export function buildTerritorialLayerGroups(ds: TerritorialDataset): Map<TerritorialLayerId, L.LayerGroup> {
+export function buildTerritorialLayerGroups(map: L.Map, ds: TerritorialDataset): Map<TerritorialLayerId, L.LayerGroup> {
   const groups = new Map<TerritorialLayerId, L.LayerGroup>();
   const labels = new Map(TERRITORIAL_LAYERS.map((l) => [l.id, l]));
-  const renderer = L.canvas({ padding: 0.5 });
+  // Polígonos debajo, puntos encima y ambos bajo los marcadores operativos.
+  if (!map.getPane('territorialAreas')) map.createPane('territorialAreas').style.zIndex = '380';
+  if (!map.getPane('territorialPoints')) map.createPane('territorialPoints').style.zIndex = '420';
+  const renderer = L.canvas({ padding: 0.5, pane: 'territorialAreas' });
+  const pointRenderer = L.canvas({ padding: 0.5, pane: 'territorialPoints' });
   for (const f of ds.features) {
     const cat = labels.get(f.layer);
     if (!cat) continue;
@@ -89,13 +93,13 @@ export function buildTerritorialLayerGroups(ds: TerritorialDataset): Map<Territo
     if (f.geometry === 'polygon') {
       const color = f.color ?? cat.color;
       // Geometría exacta del KML, sin simplificar (smoothFactor 0).
-      L.polygon(f.coordinates, { color, weight: 2, fillColor: color, fillOpacity: 0.12, smoothFactor: 0, renderer })
+      L.polygon(f.coordinates, { color, weight: 2, fillColor: color, fillOpacity: 0.12, smoothFactor: 0, renderer, pane: 'territorialAreas' })
         .bindPopup(content).bindTooltip(f.name, { sticky: true }).addTo(g);
     } else if (f.geometry === 'line') {
       L.polyline(f.coordinates, { color: f.color ?? cat.color, weight: 3, smoothFactor: 0, renderer })
         .bindPopup(content).addTo(g);
     } else {
-      L.circleMarker(f.coordinates, { radius: 6, color: '#ffffff', weight: 1.5, fillColor: cat.color, fillOpacity: 0.95, renderer })
+      L.circleMarker(f.coordinates, { radius: 6, color: '#ffffff', weight: 1.5, fillColor: cat.color, fillOpacity: 0.95, renderer: pointRenderer, pane: 'territorialPoints' })
         .bindPopup(content).bindTooltip(f.name, { direction: 'top' }).addTo(g);
     }
   }

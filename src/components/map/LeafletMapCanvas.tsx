@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { addBaseTileLayer, OSM_TILE_URL } from '@/lib/mapTiles';
+import { buildTerritorialLayerGroups, loadTerritorialDataset, type TerritorialLayerId } from '@/lib/territorialLayers';
 import { HYDRANT_STATUS, type HydrantOutlet, type HydrantStatus } from '@/lib/hydrants';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -90,6 +91,8 @@ type LeafletMapCanvasProps = {
   onLocateResult?: (latlng: { lat: number; lng: number } | null) => void;
   /** Ubicación en vivo compartida por el solicitante de una emergencia */
   liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
+  /** Capas territoriales visibles (solo visualización, Fase 5) */
+  territorialLayers?: TerritorialLayerId[];
 };
 
 
@@ -245,6 +248,7 @@ export default function LeafletMapCanvas({
   locateRequested,
   onLocateResult,
   liveLocation,
+  territorialLayers = [],
 }: LeafletMapCanvasProps) {
 
   const hydrantsRef = useRef(hydrants);
@@ -455,6 +459,33 @@ export default function LeafletMapCanvas({
       markers.clear();
     };
   }, []);
+
+  // Capas territoriales: se cargan una vez (al activarse la primera) y se reutilizan
+  const territorialGroupsRef = useRef<Map<TerritorialLayerId, L.LayerGroup> | null>(null);
+  const territorialKey = territorialLayers.join(',');
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!territorialLayers.length && !territorialGroupsRef.current) return;
+    let cancelled = false;
+    const apply = () => {
+      const groups = territorialGroupsRef.current;
+      if (!groups || cancelled) return;
+      const wanted = new Set(territorialLayers);
+      groups.forEach((g, id) => {
+        if (wanted.has(id)) { if (!map.hasLayer(g)) g.addTo(map); }
+        else if (map.hasLayer(g)) g.remove();
+      });
+    };
+    if (territorialGroupsRef.current) apply();
+    else loadTerritorialDataset().then((ds) => {
+      if (cancelled || mapRef.current !== map) return;
+      territorialGroupsRef.current ??= buildTerritorialLayerGroups(map, ds);
+      apply();
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [territorialKey]);
 
   // Geolocation
 
