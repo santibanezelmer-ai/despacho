@@ -20,6 +20,7 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
+import LocationSearch from './LocationSearch';
 
 
 
@@ -435,6 +436,13 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         )}
                         <p className="mt-1 text-[10px] text-muted-foreground">Visible solo en la consola de despacho hasta finalizar la emergencia.</p>
                       </div>
+                    )}
+
+                    {!isClosed && (
+                      <LocationSearch
+                        initialQuery={emergency.address ?? ''}
+                        onSelect={c => setMapCoords({ lat: c.latitude, lng: c.longitude })}
+                      />
                     )}
 
                     {!isClosed && (
