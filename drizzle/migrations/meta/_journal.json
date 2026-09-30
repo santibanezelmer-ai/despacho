@@ -43,6 +43,13 @@
       "when": 1790735305355,
       "tag": "0005_register_device_token_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790735831175,
+      "tag": "0006_rls_org_isolation_device_tokens_equipment",
+      "breakpoints": true
     }
   ]
 }
