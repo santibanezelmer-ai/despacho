@@ -151,37 +151,49 @@ function nameMatches(searched: string, found: string) {
   return words.every(w => f.includes(w));
 }
 
+/** Nombre idéntico al buscado, ignorando solo el tipo de vía (Pasaje/Pje, Camino…). */
+function stripTypePrefix(s: string) {
+  let n = normalizeText(s);
+  for (const p of TYPE_PREFIXES) n = n.replace(p.re, '');
+  return n.trim();
+}
+function nameIsExact(searched: string, found: string) {
+  const a = stripTypePrefix(searched);
+  return a.length > 0 && a === stripTypePrefix(found);
+}
+
 function contextMatches(ctx: string, a: Record<string, string> = {}) {
   const c = normalizeText(ctx);
   return Object.values(a).some(v => normalizeText(v) === c || normalizeText(v).includes(c));
 }
 
-function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: string[], mode: 'street' | 'context-only'): LocationCandidate {
+function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: string[]): LocationCandidate {
   const a = r.address ?? {};
   const street = a.road || (r.category === 'highway' ? r.name : null) || null;
   const locality = localityOf(a);
   const commune = communeOf(a);
-  const type = mode === 'context-only' ? 'localidad' : typeFromResult(r, parsed.type);
+  const type = typeFromResult(r, parsed.type);
   const ctxOk = contexts.length > 0 && contexts.every(c => contextMatches(c, a));
-  const nameOk = mode === 'street' && nameMatches(parsed.name, r.name ?? street ?? '');
+  const foundName = r.name ?? street ?? '';
+  const exact = nameIsExact(parsed.name, foundName);
+  const nameOk = exact || nameMatches(parsed.name, foundName);
 
   let confidence: LocationConfidence;
   let reason: string;
-  if (mode === 'context-only') {
-    confidence = 'low';
-    reason = `No se encontró "${parsed.street}" en OpenStreetMap; solo se ubicó la localidad/comuna.`;
-  } else if (nameOk && ctxOk) {
+  if (exact && ctxOk) {
     confidence = 'high';
-    reason = 'Coincide la vía y el contexto geográfico.';
+    reason = 'Coincidencia exacta de la vía y del contexto geográfico.';
   } else if (nameOk) {
     confidence = 'medium';
-    reason = contexts.length ? 'Coincide la vía, pero no el contexto indicado.' : 'Coincide la vía; sin comuna/localidad para confirmar.';
+    reason = !exact
+      ? `Coincidencia similar, no idéntica: se encontró "${foundName}".`
+      : contexts.length ? 'Coincide la vía, pero no el contexto indicado.' : 'Coincide la vía; sin comuna/localidad para confirmar.';
   } else {
     confidence = 'low';
     reason = 'El nombre encontrado no coincide exactamente con lo buscado.';
   }
 
-  const label = mode === 'context-only' ? (r.name || r.display_name.split(',')[0]) : (r.name || street || r.display_name.split(',')[0]);
+  const label = r.name || street || r.display_name.split(',')[0];
   const secondary = [locality, commune && commune !== locality ? commune : null, a.state].filter(Boolean).join(', ');
   return {
     id: String(r.place_id),
@@ -190,7 +202,7 @@ function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: 
     latitude: parseFloat(r.lat),
     longitude: parseFloat(r.lon),
     type,
-    street: mode === 'street' ? street : null,
+    street,
     locality,
     commune,
     region: a.state ?? null,
@@ -245,12 +257,15 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
 
   const results: LocationCandidate[] = [];
   const seen = new Set<string>();
-  const push = (list: NominatimResult[], mode: 'street' | 'context-only', ctx: string[]) => {
+  // Una vía buscada nunca se da por encontrada con un resultado que es solo localidad/comuna.
+  const wantsPlace = parsed.type === 'sector' || parsed.type === 'localidad';
+  const push = (list: NominatimResult[], ctx: string[]) => {
     for (const r of list) {
+      if (!wantsPlace && isPlaceResult(r)) continue;
       const k = `${normalizeText(r.name ?? '')}|${Number(r.lat).toFixed(3)}|${Number(r.lon).toFixed(3)}`;
       if (seen.has(k)) continue;
       seen.add(k);
-      results.push(toCandidate(r, parsed, ctx, mode));
+      results.push(toCandidate(r, parsed, ctx));
     }
   };
 
@@ -259,7 +274,7 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
     const [s, n, w, e] = area.boundingbox.map(Number);
     const pad = 0.05;
     const viewbox = `${w - pad},${n + pad},${e + pad},${s - pad}`;
-    push(await nominatim({ q: parsed.street, viewbox, bounded: '1', limit: '6' }, opts.signal), 'street', contexts);
+    push(await nominatim({ q: parsed.street, viewbox, bounded: '1', limit: '6' }, opts.signal), contexts);
   }
 
   // 3) Búsqueda con texto completo (Chile). Si el contexto era por defecto, se evalúa sin exigirlo.
@@ -270,13 +285,10 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
       const d = 0.6;
       extra.viewbox = `${opts.near.lng - d},${opts.near.lat + d},${opts.near.lng + d},${opts.near.lat - d}`;
     }
-    push(await nominatim(extra, opts.signal), 'street', usingDefault ? [] : contexts);
+    push(await nominatim(extra, opts.signal), usingDefault ? [] : contexts);
   }
 
-  // 4) Solo se encontró el contexto: se ofrece como ubicación aproximada (baja confianza).
-  if (results.length === 0 && area && parsed.context.length) {
-    push([area], 'context-only', contexts);
-  }
+  // Sin coincidencia de la vía: no se ofrece el centro de la comuna como ubicación seleccionable.
 
   return results.sort((a, b) => RANK[a.confidence] - RANK[b.confidence]).slice(0, 8);
 }
