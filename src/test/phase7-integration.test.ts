@@ -70,18 +70,3 @@ describe('Fase 7 — Territorio', () => {
   });
 });
 
-import { resolveLocation } from '@/lib/locationResolver';
-describe('Fase 7 — Direcciones (OpenStreetMap real, solo lectura)', () => {
-  it.each([
-    'Pasaje Los Aromos, Entre Lagos', 'Camino El Encanto, Puyehue', 'Erico Laussen, Puyehue',
-    'Pje Los Alerces, Puyehue', 'Calle Inexistente Zzqxw 9999, Puyehue',
-  ])('%s', async (q) => {
-    const list = await resolveLocation(q, { defaultContext: 'Puyehue', near: { lat: -40.683, lng: -72.598 } });
-    const out = [];
-    for (const c of list.slice(0, 3)) {
-      expect(isValidLatLng(c.latitude, c.longitude)).toBe(true);
-      out.push(`${c.label} [${c.confidence}] ${c.latitude.toFixed(5)},${c.longitude.toFixed(5)} → ${await terr(c.latitude, c.longitude)}`);
-    }
-    console.log(`${q}: ${list.length} res\n  ${out.join('\n  ')}`);
-  }, 30000);
-});
