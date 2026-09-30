@@ -53,7 +53,7 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setLoading(true); setError(null); setSelected(null); setRouteResult(null); setRouteSelected(false);
+    setLoading(true); setError(null); setSelected(null); setResults(null); setRouteResult(null); setRouteSelected(false);
     try {
       // Prioridad 1: Ruta + kilometraje → copia local Vialidad/MOP (sin consultas HTTP al MOP).
       const rk = parseRouteKmQuery(query);
