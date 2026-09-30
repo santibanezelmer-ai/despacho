@@ -151,35 +151,50 @@ function nameMatches(searched: string, found: string) {
   return words.every(w => f.includes(w));
 }
 
+/** Nombre idéntico al buscado, ignorando solo el tipo de vía (Pasaje/Pje, Camino…). */
+function stripTypePrefix(s: string) {
+  let n = normalizeText(s);
+  for (const p of TYPE_PREFIXES) n = n.replace(p.re, '');
+  return n.trim();
+}
+function nameIsExact(searched: string, found: string) {
+  const a = stripTypePrefix(searched);
+  return a.length > 0 && a === stripTypePrefix(found);
+}
+
 function contextMatches(ctx: string, a: Record<string, string> = {}) {
   const c = normalizeText(ctx);
   return Object.values(a).some(v => normalizeText(v) === c || normalizeText(v).includes(c));
 }
 
-function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: string[], mode: 'street' | 'context-only'): LocationCandidate {
+function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: string[]): LocationCandidate {
   const a = r.address ?? {};
   const street = a.road || (r.category === 'highway' ? r.name : null) || null;
   const locality = localityOf(a);
   const commune = communeOf(a);
-  const type = mode === 'context-only' ? 'localidad' : typeFromResult(r, parsed.type);
+  const type = typeFromResult(r, parsed.type);
   const ctxOk = contexts.length > 0 && contexts.every(c => contextMatches(c, a));
-  const nameOk = mode === 'street' && nameMatches(parsed.name, r.name ?? street ?? '');
+  const foundName = r.name ?? street ?? '';
+  const exact = nameIsExact(parsed.name, foundName);
+  const nameOk = exact || nameMatches(parsed.name, foundName);
 
   let confidence: LocationConfidence;
   let reason: string;
-  if (mode === 'context-only') {
-    confidence = 'low';
-    reason = `No se encontró "${parsed.street}" en OpenStreetMap; solo se ubicó la localidad/comuna.`;
-  } else if (nameOk && ctxOk) {
+  if (exact && ctxOk) {
     confidence = 'high';
-    reason = 'Coincide la vía y el contexto geográfico.';
+    reason = 'Coincidencia exacta de la vía y del contexto geográfico.';
   } else if (nameOk) {
     confidence = 'medium';
-    reason = contexts.length ? 'Coincide la vía, pero no el contexto indicado.' : 'Coincide la vía; sin comuna/localidad para confirmar.';
+    reason = !exact
+      ? `Coincidencia similar, no idéntica: se encontró "${foundName}".`
+      : contexts.length ? 'Coincide la vía, pero no el contexto indicado.' : 'Coincide la vía; sin comuna/localidad para confirmar.';
   } else {
     confidence = 'low';
     reason = 'El nombre encontrado no coincide exactamente con lo buscado.';
   }
+
+  const label = r.name || street || r.display_name.split(',')[0];
+
 
   const label = mode === 'context-only' ? (r.name || r.display_name.split(',')[0]) : (r.name || street || r.display_name.split(',')[0]);
   const secondary = [locality, commune && commune !== locality ? commune : null, a.state].filter(Boolean).join(', ');
