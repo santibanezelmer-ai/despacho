@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useVehicles } from '@/hooks/useVehicles';
+import { useVolunteers } from '@/hooks/useVolunteers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -140,6 +141,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const queryClient = useQueryClient();
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
+  const { data: volunteers } = useVolunteers();
   const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
   const isServiceKey = isAuthorizedServiceKey(emergencyKey);
 
@@ -153,6 +155,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
+  const [authorizerSearch, setAuthorizerSearch] = useState('');
   const [locationRequestId, setLocationRequestId] = useState<string | null>(draft.locationRequestId ?? null);
   const [locationFix, setLocationFix] = useState<LocationFix | null>(draft.locationFix ?? null);
 
@@ -244,6 +247,18 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
     return queue;
   }, [allVehicles, companies, emergencyKey]);
+
+  const authorizerMatches = (() => {
+    const q = authorizerSearch.trim().toLowerCase();
+    if (!isServiceKey || q.length < 2) return [];
+    return (volunteers ?? [])
+      .filter((v: any) => {
+        const name = (v.name ?? '').toLowerCase();
+        const internalId = String(v.internal_id ?? v.registration_number ?? v.id ?? '').toLowerCase();
+        return name.includes(q) || internalId.includes(q);
+      })
+      .slice(0, 6);
+  })();
 
   const toggleVehicle = (id: string) => {
     setSelectedVehicleIds(prev =>
@@ -375,6 +390,38 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
                 spellCheck={false}
                 autoCorrect="off"
               />
+              {isServiceKey && (
+                <div className="relative mt-2">
+                  <Input
+                    value={authorizerSearch}
+                    onChange={e => setAuthorizerSearch(e.target.value)}
+                    placeholder="Buscar personal por nombre o ID..."
+                    className="bg-muted/50 text-xs"
+                    spellCheck={false}
+                    autoCorrect="off"
+                  />
+                  {authorizerMatches.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                      {authorizerMatches.map((v: any) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setCallerName(v.name);
+                            setAuthorizerSearch('');
+                          }}
+                          className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted/60"
+                        >
+                          <span className="font-medium">{v.name}</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {v.internal_id ?? v.registration_number ?? ''}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {isServiceKey && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {AUTHORIZER_RANKS.map(rank => (
