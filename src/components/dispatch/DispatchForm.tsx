@@ -421,9 +421,21 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <MessageSquare className="h-3.5 w-3.5" /> Observaciones
+              <MessageSquare className="h-3.5 w-3.5" /> {isServiceKey ? 'Motivo del servicio' : 'Observaciones'}
             </label>
-            <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" spellCheck lang="es-CL" autoCorrect="off" />
+            <Textarea
+              value={observations}
+              onChange={e => setObservations(e.target.value)}
+              onFocus={() => {
+                if (isServiceKey && !observations.trim()) setObservations('Motivo: ');
+              }}
+              placeholder={isServiceKey ? 'Motivo del servicio, destino o instrucción de la salida...' : 'Detalles adicionales de la emergencia...'}
+              rows={3}
+              className="bg-muted/50"
+              spellCheck
+              lang="es-CL"
+              autoCorrect="off"
+            />
           </div>
 
           {/* Vehicle selection */}
