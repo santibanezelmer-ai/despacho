@@ -79,11 +79,12 @@ function popupContent(f: TerritorialFeature, label: string, source: string): HTM
 export function buildTerritorialLayerGroups(map: L.Map, ds: TerritorialDataset): Map<TerritorialLayerId, L.LayerGroup> {
   const groups = new Map<TerritorialLayerId, L.LayerGroup>();
   const labels = new Map(TERRITORIAL_LAYERS.map((l) => [l.id, l]));
+  // SVG: solo la forma captura clics (un canvas encima bloquearía los polígonos).
   // Polígonos debajo, puntos encima y ambos bajo los marcadores operativos.
   if (!map.getPane('territorialAreas')) map.createPane('territorialAreas').style.zIndex = '380';
   if (!map.getPane('territorialPoints')) map.createPane('territorialPoints').style.zIndex = '420';
-  const renderer = L.canvas({ padding: 0.5, pane: 'territorialAreas' });
-  const pointRenderer = L.canvas({ padding: 0.5, pane: 'territorialPoints' });
+  const renderer = L.svg({ padding: 0.5, pane: 'territorialAreas' });
+  const pointRenderer = L.svg({ padding: 0.5, pane: 'territorialPoints' });
   for (const f of ds.features) {
     const cat = labels.get(f.layer);
     if (!cat) continue;
