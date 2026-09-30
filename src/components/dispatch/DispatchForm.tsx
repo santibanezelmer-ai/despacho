@@ -155,7 +155,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
-  const [authorizerSearch, setAuthorizerSearch] = useState('');
+  const [authorizerJustPicked, setAuthorizerJustPicked] = useState(false);
   const [locationRequestId, setLocationRequestId] = useState<string | null>(draft.locationRequestId ?? null);
   const [locationFix, setLocationFix] = useState<LocationFix | null>(draft.locationFix ?? null);
 
@@ -248,14 +248,17 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     return queue;
   }, [allVehicles, companies, emergencyKey]);
 
+  // El propio campo "Autorizado por" actúa como buscador de personal (un solo input)
   const authorizerMatches = (() => {
-    const q = authorizerSearch.trim().toLowerCase();
-    if (!isServiceKey || q.length < 2) return [];
+    if (!isServiceKey || authorizerJustPicked) return [];
+    const q = callerName.trim().toLowerCase();
+    if (q.length < 2) return [];
     return (volunteers ?? [])
       .filter((v: any) => {
         const name = (v.name ?? '').toLowerCase();
-        const internalId = String(v.internal_id ?? v.registration_number ?? v.id ?? '').toLowerCase();
-        return name.includes(q) || internalId.includes(q);
+        const code = String(v.code ?? v.internal_id ?? v.registration_number ?? '').toLowerCase();
+        const rut = String(v.rut ?? '').toLowerCase();
+        return name.includes(q) || (code && code.includes(q)) || (rut && rut.includes(q));
       })
       .slice(0, 6);
   })();
@@ -382,46 +385,41 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <User className="h-3.5 w-3.5" /> {isServiceKey ? 'Autorizado por' : 'Solicitante'}
               </label>
-              <Input
-                value={callerName}
-                onChange={e => setCallerName(e.target.value)}
-                placeholder={isServiceKey ? 'Ej: Comandante, Capitán 1ª Cía, Oficial de Guardia' : 'Nombre del solicitante'}
-                className="bg-muted/50"
-                spellCheck={false}
-                autoCorrect="off"
-              />
-              {isServiceKey && (
-                <div className="relative mt-2">
-                  <Input
-                    value={authorizerSearch}
-                    onChange={e => setAuthorizerSearch(e.target.value)}
-                    placeholder="Buscar personal por nombre o ID..."
-                    className="bg-muted/50 text-xs"
-                    spellCheck={false}
-                    autoCorrect="off"
-                  />
-                  {authorizerMatches.length > 0 && (
-                    <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
-                      {authorizerMatches.map((v: any) => (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => {
-                            setCallerName(v.name);
-                            setAuthorizerSearch('');
-                          }}
-                          className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted/60"
-                        >
-                          <span className="font-medium">{v.name}</span>
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            {v.internal_id ?? v.registration_number ?? ''}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="relative">
+                <Input
+                  value={callerName}
+                  onChange={e => {
+                    setCallerName(e.target.value);
+                    setAuthorizerJustPicked(false);
+                  }}
+                  placeholder={isServiceKey ? 'Nombre, cargo o ID de personal…' : 'Nombre del solicitante'}
+                  className="bg-muted/50"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoComplete="off"
+                />
+                {authorizerMatches.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                    {authorizerMatches.map((v: any) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          setCallerName(v.name);
+                          setAuthorizerJustPicked(true);
+                        }}
+                        className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted/60"
+                      >
+                        <span className="font-medium">{v.name}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {[v.code, v.rut].filter(Boolean).join(' · ') || ''}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {isServiceKey && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {AUTHORIZER_RANKS.map(rank => (
