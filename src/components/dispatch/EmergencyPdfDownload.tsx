@@ -46,7 +46,7 @@ function vehicleKeyHistory(ev: any, logs: any[]): KeyEntry[] {
     for (const l of fromLog) {
       const rest = l.message.slice(prefix!.length);
       const [k, ...d] = rest.split(' — ');
-      entries.push({ code: k.trim(), description: d.join(' — ').trim(), at: l.created_at });
+      entries.push({ code: k.trim(), description: d.join(' - ').trim(), at: l.created_at });
     }
   } else {
     if (ev?.on_scene_at) entries.push({ code: M.en_lugar.code, description: M.en_lugar.description, at: ev.on_scene_at });
@@ -188,7 +188,7 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         if (!ep) return '';
         const name = ep.volunteers?.name ?? '';
         const id = ep.volunteers?.code?.trim();
-        return `${name} — ID: ${id || 'sin ID registrado'}`;
+        return `${name} - ID: ${id || 'sin ID registrado'}`;
       };
 
       // ---- Información de los móviles ----
