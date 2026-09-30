@@ -124,16 +124,11 @@ export async function registerVolunteerPush(organizationId: string, userId: stri
     }
     console.log('[FCM Web] ✓ Token obtained:', token.slice(0, 25) + '…');
 
-    const { error } = await (supabase as any).from('device_tokens').upsert(
-      {
-        user_id: userId,
-        organization_id: organizationId,
-        token,
-        platform: 'web',
-        last_seen_at: new Date().toISOString(),
-      },
-      { onConflict: 'token' },
-    );
+    const { error } = await (supabase as any).rpc('register_device_token', {
+      _token: token,
+      _platform: 'web',
+      _organization_id: organizationId,
+    });
     if (error) console.error('[FCM Web] device_tokens upsert failed:', error.message);
     else console.log('[FCM Web] ✓ Token stored for user', userId);
 
