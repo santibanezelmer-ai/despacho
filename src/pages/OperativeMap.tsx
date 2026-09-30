@@ -14,6 +14,9 @@ import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 import { useStations } from '@/hooks/useStations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import HydrantDetailSheet from '@/components/map/HydrantDetailSheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TERRITORIAL_LAYERS, type TerritorialLayerId } from '@/lib/territorialLayers';
 import { isHydrantStatus, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
 
 
@@ -36,6 +39,10 @@ export default function OperativeMap() {
   const [showStations, setShowStations] = useState(true);
   const [showVehicles, setShowVehicles] = useState(true);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
+  // Capas territoriales: todas apagadas por defecto (mapa limpio)
+  const [territorialLayers, setTerritorialLayers] = useState<TerritorialLayerId[]>([]);
+  const toggleTerritorial = (id: TerritorialLayerId, on: boolean) =>
+    setTerritorialLayers((prev) => (on ? [...prev.filter((x) => x !== id), id] : prev.filter((x) => x !== id)));
 
 
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
@@ -312,6 +319,37 @@ export default function OperativeMap() {
             </Label>
           </div>
 
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant={territorialLayers.length ? 'default' : 'outline'} className="h-7 text-xs gap-1">
+                <Layers className="h-3 w-3" /> Capas territoriales
+                {territorialLayers.length > 0 && <span className="tabular-nums">({territorialLayers.length})</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 z-[1100] p-3">
+              <p className="mb-2 text-xs font-semibold text-foreground">Capas territoriales</p>
+              <div className="space-y-2">
+                {TERRITORIAL_LAYERS.map((l) => (
+                  <label key={l.id} className="flex cursor-pointer items-center gap-2 text-xs text-foreground">
+                    <Checkbox
+                      checked={territorialLayers.includes(l.id)}
+                      onCheckedChange={(v) => toggleTerritorial(l.id, v === true)}
+                      aria-label={l.label}
+                    />
+                    <span className="h-2.5 w-2.5 rounded-full border border-border" style={{ backgroundColor: l.color }} />
+                    {l.label}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
+                <span className="text-[10px] text-muted-foreground">Fuente: Mapa Cobertura Territorial Prehospitalaria Prov. Osorno</span>
+                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setTerritorialLayers([])} disabled={!territorialLayers.length}>
+                  Apagar todo
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <div className="flex items-center gap-1">
             <Button
               size="sm"
@@ -351,6 +389,7 @@ export default function OperativeMap() {
           locateRequested={locateCounter}
           onLocateResult={handleLocateResult}
           liveLocation={liveLocation}
+          territorialLayers={territorialLayers}
         />
 
         {clickMode && (
