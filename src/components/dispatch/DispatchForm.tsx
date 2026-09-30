@@ -18,6 +18,7 @@ import { useScreenTheme } from '@/hooks/useScreenTheme';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 import TerritoryStatus from './TerritoryStatus';
+import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
 
 import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
 
@@ -273,6 +274,13 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const handleSubmit = async () => {
     if (!address.trim()) {
       toast.error('La dirección es obligatoria');
+      return;
+    }
+
+    // Bloquea coordenadas fuera de rango antes de guardar el despacho.
+    // No corrige la coordenada: el operador debe reubicar el marcador.
+    if (locationFix && !isValidLatLng(locationFix.latitude, locationFix.longitude)) {
+      toast.error(coordRangeMessage(locationFix.latitude, locationFix.longitude));
       return;
     }
 
