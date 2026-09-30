@@ -103,6 +103,31 @@ function stopGlobalTones() {
   globalOnUpdate?.(false, '');
 }
 
+// ── Claves de salida autorizada / otros servicios (10-9 y similares) ──
+const AUTHORIZED_SERVICE_TERMS = [
+  'otros servicios',
+  'otro servicio',
+  'servicio especial',
+  'servicios especiales',
+  'traslado',
+  'salida autorizada',
+];
+
+const AUTHORIZER_RANKS = [
+  'Superintendente',
+  'Comandante',
+  '2° Comandante',
+  'Capitán',
+  'Oficial de Guardia',
+];
+
+function isAuthorizedServiceKey(key: { code: string; name: string }): boolean {
+  const code = (key.code ?? '').replace(/\s/g, '').toLowerCase();
+  if (code === '10-9' || code === '109') return true;
+  const name = (key.name ?? '').toLowerCase();
+  return AUTHORIZED_SERVICE_TERMS.some(term => name.includes(term));
+}
+
 interface Props {
   emergencyKey: EmergencyKeyRow;
   onClose: () => void;
