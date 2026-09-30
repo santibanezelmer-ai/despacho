@@ -99,7 +99,7 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
         </Button>
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Escribe la vía y, separado por coma, la comuna o localidad.{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
+        Escribe la vía y, separado por coma, la comuna o localidad, o una ruta y kilómetro (Ej: CH-215 km 55).{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
       </p>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -115,7 +115,7 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
               secondary: routeResult.meta.name,
               latitude: routeResult.latitude, longitude: routeResult.longitude,
               type: 'ruta', street: `Ruta ${routeResult.routeCode}`, locality: null, commune: null, region: null,
-              confidence: 'high', reason: 'Referencia kilométrica oficial de Vialidad/MOP.', source: 'nominatim',
+              confidence: 'high', reason: 'Referencia kilométrica oficial de Vialidad/MOP.', source: 'vialidad',
             });
           }}
           className={`w-full rounded-md border p-2 text-left text-xs transition-colors ${routeSelected ? 'border-primary bg-primary/10' : 'border-success/50 bg-background/60 hover:border-primary/60'}`}

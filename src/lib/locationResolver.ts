@@ -32,7 +32,7 @@ export interface LocationCandidate {
   region: string | null;
   confidence: LocationConfidence;
   reason: string;
-  source: 'nominatim';
+  source: 'nominatim' | 'vialidad';
 }
 
 export interface ResolveOptions {
