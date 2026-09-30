@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
+import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
 
 function useInvalidate() {
   const qc = useQueryClient();
@@ -50,6 +51,11 @@ export function useUpdateLocation() {
   const { orgId } = useOrganization();
   return useMutation({
     mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: number; longitude: number }) => {
+      // Bloquea coordenadas fuera de rango (ej. longitud -344.6 al arrastrar
+      // el marcador con el mapa muy alejado). No corrige: solo impide guardar.
+      if (!isValidLatLng(latitude, longitude)) {
+        throw new Error(coordRangeMessage(latitude, longitude));
+      }
       // Guarda el estado anterior para bitácora/auditoría
       const { data: before } = await supabase
         .from('emergencies')
@@ -93,7 +99,7 @@ export function useUpdateLocation() {
       }
     },
     onSuccess: () => { invalidate(); toast.success('Ubicación guardada'); },
-    onError: () => toast.error('Error al guardar ubicación'),
+    onError: (err) => toast.error(err instanceof Error && err.message.startsWith('Coordenada fuera de rango') ? err.message : 'Error al guardar ubicación'),
   });
 }
 
