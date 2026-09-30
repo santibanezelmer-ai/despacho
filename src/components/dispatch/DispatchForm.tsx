@@ -141,6 +141,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
   const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
+  const isServiceKey = isAuthorizedServiceKey(emergencyKey);
 
   const [draft] = useState(() => loadDraft(emergencyKey.id));
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>(draft.selectedVehicleIds ?? []);
