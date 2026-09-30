@@ -391,6 +391,38 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
                 autoCorrect="off"
               />
               {isServiceKey && (
+                <div className="relative mt-2">
+                  <Input
+                    value={authorizerSearch}
+                    onChange={e => setAuthorizerSearch(e.target.value)}
+                    placeholder="Buscar personal por nombre o ID..."
+                    className="bg-muted/50 text-xs"
+                    spellCheck={false}
+                    autoCorrect="off"
+                  />
+                  {authorizerMatches.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                      {authorizerMatches.map((v: any) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setCallerName(v.name);
+                            setAuthorizerSearch('');
+                          }}
+                          className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted/60"
+                        >
+                          <span className="font-medium">{v.name}</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {v.internal_id ?? v.registration_number ?? ''}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {isServiceKey && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {AUTHORIZER_RANKS.map(rank => (
                     <button
