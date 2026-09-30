@@ -24,5 +24,5 @@
 - [x] Validar móviles pendientes (KM obligatorio) antes de finalizar una emergencia.
 - [x] Corrector ortográfico nativo (es-CL) en los campos de texto del despacho.
 - [x] Zoom con la rueda del mouse sobre el mapa de la ventana de despacho.
-- [ ] Claves de estado por móvil (6-3, 6-7, 6-9, 6-10) controladas individualmente en la consola.
-- [ ] Mantener en app móvil y voluntarios solo despachada / en trabajo / controlada / finalizada.
+- [x] Claves de estado por móvil (6-3, 6-7, 6-9, 6-10) controladas individualmente en la consola.
+- [x] Mantener en app móvil y voluntarios solo despachada / en trabajo / controlada / finalizada.

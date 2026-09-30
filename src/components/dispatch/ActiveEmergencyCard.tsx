@@ -4,6 +4,13 @@ import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
 import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
+import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
+import {
+  SELECTABLE_VEHICLE_STATUSES,
+  VEHICLE_STATUS_META,
+  vehicleStatusMeta,
+} from '@/lib/vehicleOperationalStatus';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +68,7 @@ interface EmergencyCardProps {
     emergency_keys: { code: string; name: string; color: string } | null;
     vehicleCodes: string[];
     vehicleIds: string[];
+    assignedVehicles?: { evId: string; vehicleId: string; code: string; operationalStatus: string }[];
     personnelCount: number;
     _offline?: boolean;
   };
@@ -82,6 +90,15 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const [showFinalize, setShowFinalize] = useState(false);
   const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
   const unassign = useUnassignVehicle();
+  const statusMutation = useVehicleOperationalStatus();
+  const assignedVehicles = emergency.assignedVehicles?.length
+    ? emergency.assignedVehicles
+    : emergency.vehicleCodes.map((code, i) => ({
+        evId: '',
+        vehicleId: emergency.vehicleIds?.[i] ?? '',
+        code,
+        operationalStatus: 'despachado',
+      }));
 
 
   const flags = [
@@ -169,26 +186,75 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
             </div>
           </div>
 
-          {emergency.vehicleCodes.length > 0 && (
+          {assignedVehicles.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {emergency.vehicleCodes.map((v, i) => (
-                <span
-                  key={emergency.vehicleIds?.[i] ?? `${v}-${i}`}
-                  className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground"
-                >
-                  {v}
-                  {emergency.vehicleIds?.[i] && (
-                    <button
-                      type="button"
-                      title={`Quitar móvil ${v} de la emergencia`}
-                      className="text-destructive/70 hover:text-destructive"
-                      onClick={() => setUnassignTarget({ vehicleId: emergency.vehicleIds[i], code: v })}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </span>
-              ))}
+              {assignedVehicles.map((av, i) => {
+                const meta = vehicleStatusMeta(av.operationalStatus);
+                return (
+                  <span
+                    key={av.evId ?? av.vehicleId ?? `${av.code}-${i}`}
+                    className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-mono ${meta.chip}`}
+                  >
+                    {av.evId ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            title={`${av.code} · ${meta.code} ${meta.description}`}
+                            className="flex items-center gap-1 font-mono hover:underline"
+                          >
+                            <span className="font-semibold">{av.code}</span>
+                            <span className="opacity-80">· {meta.code}</span>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-60 p-1">
+                          <p className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                            Clave de {av.code}
+                          </p>
+                          {SELECTABLE_VEHICLE_STATUSES.map(key => {
+                            const opt = VEHICLE_STATUS_META[key];
+                            const active = key === meta.key;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                disabled={active || statusMutation.isPending}
+                                onClick={() => statusMutation.mutate({
+                                  evId: av.evId,
+                                  emergencyId: emergency.id,
+                                  vehicleCode: av.code,
+                                  status: key,
+                                })}
+                                className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
+                                  active ? 'bg-muted font-semibold' : 'hover:bg-muted/60'
+                                }`}
+                              >
+                                <span className="font-mono">{opt.code}</span>
+                                <span className="flex-1">{opt.description}</span>
+                              </button>
+                            );
+                          })}
+                          <p className="border-t px-2 pt-1.5 pb-1 text-[10px] leading-snug text-muted-foreground">
+                            6-10 En cuartel se marca al registrar el kilometraje de retorno.
+                          </p>
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <span className="font-semibold">{av.code}</span>
+                    )}
+                    {av.vehicleId && (
+                      <button
+                        type="button"
+                        title={`Quitar móvil ${av.code} de la emergencia`}
+                        className="text-destructive/70 hover:text-destructive"
+                        onClick={() => setUnassignTarget({ vehicleId: av.vehicleId, code: av.code })}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
             </div>
           )}
 

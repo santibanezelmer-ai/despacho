@@ -69,11 +69,13 @@ export function useActiveEmergencies() {
       }
 
       const enriched = (data ?? []).map((e: any) => {
-        const assigned = assignedByEmergency.get(e.id) ?? new Map<string, string>();
+        const assigned = assignedByEmergency.get(e.id) ?? new Map<string, AssignedVehicle>();
+        const list = Array.from(assigned.values());
         return {
           ...e,
-          vehicleCodes: Array.from(assigned.values()),
-          vehicleIds: Array.from(assigned.keys()),
+          vehicleCodes: list.map(v => v.code),
+          vehicleIds: list.map(v => v.vehicleId),
+          assignedVehicles: list,
           personnelCount: personnelByEmergency.get(e.id) ?? 0,
         };
       });
