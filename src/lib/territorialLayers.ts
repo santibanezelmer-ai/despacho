@@ -59,7 +59,11 @@ function popupContent(f: TerritorialFeature, label: string, source: string): HTM
   };
   add('div', f.name || 'Sin nombre', 'font-weight:700;font-size:13px;margin-bottom:2px');
   add('div', `Tipo: ${label}`);
-  if (f.fields?.length) {
+  // Hogares y Residencias Protegidas: el KML solo trae contactos personales
+  // (nombres, teléfonos, correos). Se conservan en la copia local pero no se exponen.
+  if (f.layer === 'residence') {
+    // solo nombre, tipo y fuente
+  } else if (f.fields?.length) {
     const box = document.createElement('div');
     box.setAttribute('style', 'margin-top:4px;max-height:160px;overflow:auto');
     f.fields.forEach(([k, v]) => {
