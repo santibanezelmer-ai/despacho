@@ -113,16 +113,12 @@ async function saveTokenToSupabase(token: string, platform: string): Promise<boo
       .neq('token', token);
     if (delError) console.warn('[Push] Could not clean stale tokens:', delError.message);
 
-    const { error } = await (supabase as any)
-      .from('device_tokens')
-      .upsert({
-        user_id: user.id,
-        organization_id: membership.organization_id,
-        token,
-        platform,
-        last_seen_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'token' });
+    // RPC: reasigna el token si el teléfono quedó registrado con otra cuenta
+    const { error } = await (supabase as any).rpc('register_device_token', {
+      _token: token,
+      _platform: platform,
+      _organization_id: membership.organization_id,
+    });
 
     if (error) {
       console.error('[Push] DB error saving token:', error.message);
