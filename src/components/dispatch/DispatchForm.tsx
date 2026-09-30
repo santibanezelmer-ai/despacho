@@ -256,8 +256,9 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     return (volunteers ?? [])
       .filter((v: any) => {
         const name = (v.name ?? '').toLowerCase();
-        const internalId = String(v.internal_id ?? v.registration_number ?? v.id ?? '').toLowerCase();
-        return name.includes(q) || internalId.includes(q);
+        const code = String(v.code ?? v.internal_id ?? v.registration_number ?? '').toLowerCase();
+        const rut = String(v.rut ?? '').toLowerCase();
+        return name.includes(q) || (code && code.includes(q)) || (rut && rut.includes(q));
       })
       .slice(0, 6);
   })();
@@ -412,7 +413,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
                       >
                         <span className="font-medium">{v.name}</span>
                         <span className="font-mono text-[10px] text-muted-foreground">
-                          {v.internal_id ?? v.registration_number ?? ''}
+                          {[v.code, v.rut].filter(Boolean).join(' · ') || ''}
                         </span>
                       </button>
                     ))}
