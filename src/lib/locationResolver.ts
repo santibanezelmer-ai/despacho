@@ -5,6 +5,8 @@
  * Nunca inventa coordenadas: todo punto proviene de un resultado real de OSM.
  */
 
+import { looksLikeLandmark, searchLandmarks } from './landmarks';
+
 export type LocationType = 'calle' | 'avenida' | 'pasaje' | 'camino' | 'ruta' | 'sector' | 'localidad' | 'desconocido';
 export type LocationConfidence = 'high' | 'medium' | 'low';
 
@@ -32,7 +34,9 @@ export interface LocationCandidate {
   region: string | null;
   confidence: LocationConfidence;
   reason: string;
-  source: 'nominatim' | 'vialidad';
+  source: 'nominatim' | 'vialidad' | 'landmark';
+  /** Presente cuando proviene de un punto de referencia local (puente, etc.). */
+  landmark?: { type: string; routeCode: string | null; kilometer: number | null; source: string };
 }
 
 export interface ResolveOptions {
@@ -203,6 +207,29 @@ const RANK: Record<LocationConfidence, number> = { high: 0, medium: 1, low: 2 };
  * El operador siempre elige; nunca se coloca un punto automáticamente.
  */
 export async function resolveLocation(query: string, opts: ResolveOptions = {}): Promise<LocationCandidate[]> {
+  // Prioridad 2: puntos de referencia locales (puentes). La prioridad 1 (ruta + km) se resuelve antes en la consola.
+  if (looksLikeLandmark(query)) {
+    const matches = await searchLandmarks(query);
+    if (matches.length) {
+      const exactCount = matches.filter(m => m.exact).length;
+      return matches.map(({ landmark: l, exact }) => ({
+        id: l.id,
+        label: l.name,
+        secondary: [l.route_code ? `Ruta ${l.route_code}` : l.road_name, l.kilometer != null ? `Km ${l.kilometer}` : null].filter(Boolean).join(' — ') || l.source,
+        latitude: l.latitude,
+        longitude: l.longitude,
+        type: 'desconocido' as LocationType,
+        street: l.road_name ?? null,
+        locality: null, commune: null, region: null,
+        // Varios puentes con el mismo nombre: el operador debe elegir; ninguno se marca como Alta.
+        confidence: (exact && exactCount === 1 ? 'high' : 'medium') as LocationConfidence,
+        reason: `${exact ? 'Coincidencia exacta' : 'Coincidencia parcial'} con punto de referencia oficial (${l.source}${l.source_ref ? `, código ${l.source_ref}` : ''}).`,
+        source: 'landmark' as const,
+        landmark: { type: l.type, routeCode: l.route_code, kilometer: l.kilometer, source: l.source },
+      }));
+    }
+  }
+
   const parsed = parseLocationQuery(query);
   if (normalizeText(parsed.name).length < 3) return [];
 
