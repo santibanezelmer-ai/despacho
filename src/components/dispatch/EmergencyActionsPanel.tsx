@@ -136,12 +136,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     setLocFix(fix);
     setSharedCoords({ lat: fix.latitude, lng: fix.longitude });
     if (operatorLocked) {
-      toast.info('Ubicación compartida recibida — se conserva la corregida por el operador');
+      toast.info('Ubicación compartida recibida — se conserva la corregida por el operador', { id: 'location-received' });
       return;
     }
     setMapCoords({ lat: fix.latitude, lng: fix.longitude });
     setLocationSource('compartida');
-    toast.success('Ubicación recibida y asignada al mapa');
+    toast.success('Ubicación recibida y asignada al mapa', { id: 'location-received' });
     queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
   }, [queryClient, operatorLocked]);
 

@@ -190,7 +190,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         ? prev
         : fix.address ?? `${fix.latitude.toFixed(6)}, ${fix.longitude.toFixed(6)}`
     );
-    toast.success('Ubicación recibida correctamente.');
+    toast.success('Ubicación recibida correctamente.', { id: 'location-received' });
   }, []);
 
   const handleManualCoords = useCallback((lat: number, lng: number) => {

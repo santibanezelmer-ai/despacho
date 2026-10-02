@@ -42,9 +42,14 @@ export default function LocationRequestPanel({ phone, requestId, onRequestCreate
   const [duplicate, setDuplicate] = useState<{ token: string; expires_at: string } | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  const lastFixKeyRef = useRef<string | null>(null);
   const applyRow = useCallback((row: any) => {
     if (row?.expires_at) setExpiresAt(row.expires_at);
     if (row?.latitude == null || row?.longitude == null) return;
+    // Realtime + polling entregan la misma lectura varias veces: solo se aplica una vez.
+    const key = `${row.latitude},${row.longitude},${row.last_ping_at ?? ''}`;
+    if (lastFixKeyRef.current === key) return;
+    lastFixKeyRef.current = key;
     onFix({
       latitude: row.latitude,
       longitude: row.longitude,
