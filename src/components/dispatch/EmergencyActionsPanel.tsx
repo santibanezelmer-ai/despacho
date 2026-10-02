@@ -22,6 +22,7 @@ import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 import LocationSearch from './LocationSearch';
 import TerritoryStatus from './TerritoryStatus';
+import { findNearestRouteKm, formatRouteKmAddress } from '@/lib/routeKilometer';
 
 
 
@@ -179,6 +180,18 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     });
   };
 
+  // Reconoce ruta oficial + km cuando el operador mueve el marcador a mano.
+  const recognizeRoute = async (lat: number, lng: number) => {
+    const r = await findNearestRouteKm(lat, lng);
+    if (!r) return;
+    const text = formatRouteKmAddress(r);
+    toast.info(`Punto sobre ${text}`, {
+      description: `A ${r.distanceM} m del eje oficial (Vialidad/MOP).`,
+      duration: 10000,
+      action: { label: 'Usar en dirección', onClick: () => setEditAddress(text) },
+    });
+  };
+
   const placeMarker = (lat: number, lng: number) => {
     if (!leafletMapRef.current) return;
     if (markerRef.current) {
@@ -190,6 +203,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       markerRef.current.on('dragend', () => {
         const pos = markerRef.current.getLatLng();
         setMapCoords({ lat: pos.lat, lng: pos.lng });
+        void recognizeRoute(pos.lat, pos.lng);
       });
     }
   };
@@ -215,6 +229,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       const { lat, lng } = e.latlng;
       setMapCoords({ lat, lng });
       placeMarker(lat, lng);
+      void recognizeRoute(lat, lng);
     });
 
 
