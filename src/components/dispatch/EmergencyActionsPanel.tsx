@@ -22,6 +22,7 @@ import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 import LocationSearch from './LocationSearch';
 import TerritoryStatus from './TerritoryStatus';
+import { useOrganizationLocation } from '@/hooks/useStations';
 import { findNearestRouteKm, formatRouteKmAddress } from '@/lib/routeKilometer';
 
 
@@ -59,6 +60,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [callerPhone, setCallerPhone] = useState('');
   const [savingPhone, setSavingPhone] = useState(false);
   const [locRequestId, setLocRequestId] = useState<string | null>(null);
+  const { data: orgLocation } = useOrganizationLocation();
   const [locFix, setLocFix] = useState<LocationFix | null>(null);
   const [locationSource, setLocationSource] = useState<string | null>(null);
   const [sharedCoords, setSharedCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -499,7 +501,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                       <span>Haz clic para marcar o arrastra el marcador para ajustar. La rueda del mouse sobre el mapa acerca o aleja.</span>
                       {mapCoords && <span className="font-mono">{mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}</span>}
                     </div>
-                    {mapCoords && <div className="mt-2"><TerritoryStatus latitude={mapCoords.lat} longitude={mapCoords.lng} /></div>}
+                    {mapCoords && <div className="mt-2"><TerritoryStatus latitude={mapCoords.lat} longitude={mapCoords.lng} homeLatitude={orgLocation?.latitude} homeLongitude={orgLocation?.longitude} /></div>}
                     <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
                       <p>
                         Origen de la ubicación:{' '}
@@ -512,7 +514,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                           <p className="font-mono">
                             Ubicación compartida recibida: {sharedCoords.lat.toFixed(5)}, {sharedCoords.lng.toFixed(5)}
                           </p>
-                          <TerritoryStatus latitude={sharedCoords.lat} longitude={sharedCoords.lng} />
+                          <TerritoryStatus latitude={sharedCoords.lat} longitude={sharedCoords.lng} homeLatitude={orgLocation?.latitude} homeLongitude={orgLocation?.longitude} />
                         </div>
                       )}
                       {operatorLocked && (
