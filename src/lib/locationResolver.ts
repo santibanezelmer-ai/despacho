@@ -180,7 +180,7 @@ function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: 
 
   let confidence: LocationConfidence;
   let reason: string;
-  if (exact && ctxOk) {
+  if (exact && (ctxOk || contexts.length === 0)) {
     confidence = 'high';
     reason = 'Coincidencia exacta de la vía y del contexto geográfico.';
   } else if (nameOk) {
@@ -257,11 +257,13 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
 
   const results: LocationCandidate[] = [];
   const seen = new Set<string>();
-  // Una vía buscada nunca se da por encontrada con un resultado que es solo localidad/comuna.
+  // Una vía buscada nunca se da por encontrada con un resultado que es solo localidad/comuna,
+  // salvo que el operador buscara justamente ese lugar (nombre coincidente).
   const wantsPlace = parsed.type === 'sector' || parsed.type === 'localidad';
   const push = (list: NominatimResult[], ctx: string[]) => {
     for (const r of list) {
-      if (!wantsPlace && isPlaceResult(r)) continue;
+      const placeName = r.name ?? '';
+      if (!wantsPlace && isPlaceResult(r) && !nameIsExact(parsed.name, placeName) && !nameMatches(parsed.name, placeName)) continue;
       const k = `${normalizeText(r.name ?? '')}|${Number(r.lat).toFixed(3)}|${Number(r.lon).toFixed(3)}`;
       if (seen.has(k)) continue;
       seen.add(k);
