@@ -182,9 +182,7 @@ function toCandidate(r: NominatimResult, parsed: ParsedLocationQuery, contexts: 
   let reason: string;
   if (exact && (ctxOk || contexts.length === 0)) {
     confidence = 'high';
-    reason = ctxOk || contexts.length === 0
-      ? 'Coincidencia exacta de la vía y del contexto geográfico.'
-      : 'Coincide la vía, pero no el contexto indicado.';
+    reason = 'Coincidencia exacta de la vía y del contexto geográfico.';
   } else if (nameOk) {
     confidence = 'medium';
     reason = !exact
