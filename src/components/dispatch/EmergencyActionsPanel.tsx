@@ -135,15 +135,21 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const handleLocationFix = useCallback((fix: LocationFix) => {
     setLocFix(fix);
     setSharedCoords({ lat: fix.latitude, lng: fix.longitude });
-    if (operatorLocked) {
-      toast.info('Ubicación compartida recibida — se conserva la corregida por el operador', { id: 'location-received' });
-      return;
-    }
-    setMapCoords({ lat: fix.latitude, lng: fix.longitude });
-    setLocationSource('compartida');
-    toast.success('Ubicación recibida y asignada al mapa', { id: 'location-received' });
-    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-  }, [queryClient, operatorLocked]);
+    // La ubicación compartida solo se recepciona: nunca mueve el marcador,
+    // porque quien la envía puede retirarse del lugar del incidente.
+    toast.info('Ubicación compartida recibida — el marcador no se mueve', {
+      id: 'location-received',
+      action: {
+        label: 'Usar en el mapa',
+        onClick: () => {
+          setMapCoords({ lat: fix.latitude, lng: fix.longitude });
+          setLocationSource('compartida');
+          queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+        },
+      },
+      duration: 12000,
+    });
+  }, [queryClient]);
 
   const handleSavePhone = async () => {
     const cleaned = callerPhone.trim();
