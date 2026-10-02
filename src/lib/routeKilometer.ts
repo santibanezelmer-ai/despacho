@@ -151,3 +151,62 @@ export function formatRouteKmAddress(r: { routeCode: string; kilometer: number; 
   const km = r.kilometer.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return `Ruta ${r.routeCode} km ${km}${r.meta.name ? ` (${r.meta.name})` : ''}`;
 }
+
+// ---------------- Cruces entre rutas ----------------
+
+export interface RouteCrossingQuery { a: string; b: string }
+
+function normRouteToken(t: string): string | null {
+  const s = t.replace(/\b(ruta|camino|cruce|interseccion|de|la|el)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  const u = s.match(/^([a-z])\s*-?\s*(\d{1,4})(?:\s*-?\s*([a-z]))?$/);
+  if (u && u[1] !== 'c') return `${u[1].toUpperCase()}-${Number(u[2])}${u[3] ? `-${u[3].toUpperCase()}` : ''}`;
+  const ch = s.match(/^(?:ch\s*-?\s*)?(\d{1,4})$/);
+  if (ch) return `CH-${Number(ch[1])}`;
+  return null;
+}
+
+/** Detecta "Cruce Ruta 215 con U-475", "Ruta 215 y U-475", "215 / U-475", "215 esq. U-475". */
+export function parseRouteCrossingQuery(input: string): RouteCrossingQuery | null {
+  const s = input.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (/\b(km|kms|kilometro)/.test(s)) return null;
+  const parts = s.split(/\s+(?:con|y|esq\.?|esquina|x)\s+|\s*\/\s*|\s*&\s*/);
+  if (parts.length !== 2) return null;
+  const a = normRouteToken(parts[0]), b = normRouteToken(parts[1]);
+  if (!a || !b || a === b) return null;
+  return { a, b };
+}
+
+export type RouteCrossingResult =
+  | { status: 'found'; a: string; b: string; kmA: number; kmB: number; latitude: number; longitude: number; gapM: number; metaA: RouteMeta; metaB: RouteMeta }
+  | { status: 'no_crossing'; a: string; b: string }
+  | { status: 'unsupported_route'; a: string; b: string; missing: string[] };
+
+/** Punto de cruce más cercano entre dos rutas locales (máx. 150 m entre trazados). */
+export async function resolveRouteCrossing(q: RouteCrossingQuery, maxGapM = 150): Promise<RouteCrossingResult> {
+  const missing = [q.a, q.b].filter(c => !isRouteSupported(c));
+  if (missing.length) return { status: 'unsupported_route', ...q, missing };
+  const [A, B] = await Promise.all([loadRoute(q.a), loadRoute(q.b)]);
+  const ptsB = B.segments.flatMap(s => s.points);
+  let best: { d: number; pa: [number, number, number]; pb: [number, number, number] } | null = null;
+  for (const seg of A.segments) for (const pa of seg.points) {
+    const kx = 111320 * Math.cos((pa[0] * Math.PI) / 180);
+    for (const pb of ptsB) {
+      const dy = (pa[0] - pb[0]) * 110540;
+      if (Math.abs(dy) > (best?.d ?? maxGapM)) continue;
+      const d = Math.hypot(dy, (pa[1] - pb[1]) * kx);
+      if (d <= maxGapM && (!best || d < best.d)) best = { d, pa, pb };
+    }
+  }
+  if (!best) return { status: 'no_crossing', ...q };
+  return {
+    status: 'found', ...q,
+    kmA: +(best.pa[2] / 1000).toFixed(1), kmB: +(best.pb[2] / 1000).toFixed(1),
+    latitude: +((best.pa[0] + best.pb[0]) / 2).toFixed(6), longitude: +((best.pa[1] + best.pb[1]) / 2).toFixed(6),
+    gapM: Math.round(best.d), metaA: A.meta, metaB: B.meta,
+  };
+}
+
+export function formatRouteCrossing(r: Extract<RouteCrossingResult, { status: 'found' }>) {
+  const f = (k: number) => k.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return `Cruce Ruta ${r.a} (km ${f(r.kmA)}) con Ruta ${r.b} (km ${f(r.kmB)})`;
+}

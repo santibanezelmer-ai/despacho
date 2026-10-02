@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, AlertTriangle, Ruler, CheckCircle2 } from 'lucide-react';
 import { LANDMARK_TYPE_LABEL, type LandmarkType } from '@/lib/landmarks';
-import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult } from '@/lib/routeKilometer';
+import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult, parseRouteCrossingQuery, resolveRouteCrossing, formatRouteCrossing } from '@/lib/routeKilometer';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLocation, type LocationCandidate, type LocationConfidence } from '@/lib/locationResolver';
@@ -56,6 +56,26 @@ export default function LocationSearch({ query, onSelect }: Props) {
     abortRef.current = ctrl;
     setLoading(true); setError(null); setSelected(null); setResults(null); setRouteResult(null); setRouteSelected(false);
     try {
+      // Prioridad 0: cruce entre dos rutas locales (ej. "Ruta 215 con U-475").
+      const cq = parseRouteCrossingQuery(query);
+      if (cq) {
+        const cr = await resolveRouteCrossing(cq);
+        if (cr.status === 'found') {
+          const c: LocationCandidate = {
+            id: `cross-${cr.a}-${cr.b}`, label: formatRouteCrossing(cr),
+            secondary: [cr.metaA.name, cr.metaB.name].filter(Boolean).join(' · '),
+            latitude: cr.latitude, longitude: cr.longitude,
+            type: 'ruta', street: `Ruta ${cr.a}`, locality: null, commune: null, region: null,
+            confidence: 'high', reason: 'Intersección calculada con trazados oficiales de Vialidad/MOP.', source: 'vialidad',
+          };
+          setResults([c]); choose(c);
+          return;
+        }
+        if (cr.status === 'no_crossing') {
+          setError(`Las rutas ${cr.a} y ${cr.b} no se cruzan según los trazados disponibles. Ubique el punto manualmente en el mapa.`);
+          return;
+        }
+      }
       // Prioridad 1: Ruta + kilometraje → copia local Vialidad/MOP (sin consultas HTTP al MOP).
       const rk = parseRouteKmQuery(query);
       if (rk) {
