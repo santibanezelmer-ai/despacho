@@ -107,7 +107,7 @@ export default function OperativeMap() {
             accuracy: row.accuracy ?? null,
             ts: new Date(row.captured_at ?? Date.now()).getTime(),
           });
-          toast.success('Ubicación recibida correctamente.');
+          toast.success('Ubicación recibida correctamente.', { id: 'location-received' });
           queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
         },
       )
