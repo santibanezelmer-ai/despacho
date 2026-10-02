@@ -4,18 +4,20 @@ Importa la geometría oficial de una ruta desde la Red Vial de Dirección de Via
 y genera una copia local en src/data/routes/<codigo>.json para el Location Resolver.
 
 Se ejecuta SOLO para actualizar datos, nunca durante una emergencia.
-Uso: python3 scripts/import-mop-route.py "Ruta 215 CH" CH-215
+Uso: python3 scripts/import-mop-route.py "Ruta 215 CH" CH-215 [capa=1]
 """
 import json, sys, datetime, urllib.parse, urllib.request, pathlib
 
-SERVICE = "https://rest-sit.mop.gob.cl/arcgis/rest/services/VIALIDAD/Red_Vial_Chile/MapServer/1"
+BASE = "https://rest-sit.mop.gob.cl/arcgis/rest/services/VIALIDAD/Red_Vial_Chile/MapServer"
 
-def main(rol: str, code: str):
+def main(rol: str, code: str, layer: str = "1"):
+    SERVICE = f"{BASE}/{layer}"
     q = urllib.parse.urlencode({
         "where": f"ROL='{rol}'", "outFields": "*", "returnGeometry": "true",
         "returnM": "true", "outSR": "4326", "f": "json",
     })
-    with urllib.request.urlopen(f"{SERVICE}/query?{q}", timeout=120) as r:
+    req = urllib.request.Request(f"{SERVICE}/query?{q}", headers={"User-Agent": "OperixDispatch/1.0"})
+    with urllib.request.urlopen(req, timeout=120) as r:
         data = json.load(r)
     feats = data.get("features") or []
     if not feats:
@@ -41,7 +43,7 @@ def main(rol: str, code: str):
         "meta": {
             "source": "Dirección de Vialidad / MOP",
             "service": SERVICE,
-            "layer": "Red_Vial_Chile / capa 1",
+            "layer": f"Red_Vial_Chile / capa {layer}",
             "rol": rol,
             "routeCode": code,
             "name": " / ".join(sorted(n for n in names if n)),
@@ -58,4 +60,4 @@ def main(rol: str, code: str):
     print(dest, sum(len(s["points"]) for s in segments), "puntos", len(segments), "tramos")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "1")
