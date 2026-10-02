@@ -508,9 +508,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         </span>
                       </p>
                       {sharedCoords && (
-                        <p className="font-mono">
-                          Ubicación compartida recibida: {sharedCoords.lat.toFixed(5)}, {sharedCoords.lng.toFixed(5)}
-                        </p>
+                        <div className="space-y-1">
+                          <p className="font-mono">
+                            Ubicación compartida recibida: {sharedCoords.lat.toFixed(5)}, {sharedCoords.lng.toFixed(5)}
+                          </p>
+                          <TerritoryStatus latitude={sharedCoords.lat} longitude={sharedCoords.lng} />
+                        </div>
                       )}
                       {operatorLocked && (
                         <p>Las ubicaciones que lleguen por el enlace ya no reemplazan esta corrección.</p>
