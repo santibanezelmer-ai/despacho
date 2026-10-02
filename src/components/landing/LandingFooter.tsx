@@ -50,6 +50,12 @@ export default function LandingFooter() {
             >
               Términos y Condiciones
             </Link>
+            <Link
+              to="/privacidad"
+              className="text-xs text-muted-foreground hover:text-emergency transition-colors"
+            >
+              Política de Privacidad
+            </Link>
             <p className="text-xs text-muted-foreground/50">
               Plataforma de despacho en tiempo real para cuerpos de bomberos
             </p>
