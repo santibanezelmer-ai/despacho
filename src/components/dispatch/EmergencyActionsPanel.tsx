@@ -417,6 +417,13 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                           {updateAddress.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         </Button>
                       </div>
+                      {!isClosed && <p className="mt-1 text-[10px] text-muted-foreground">La ubicación se reconoce automáticamente al escribir (vía y comuna, ruta y km, o puente). Puedes ajustar el texto o mover el marcador en el mapa.</p>}
+                      {!isClosed && (
+                        <LocationSearch
+                          query={editAddress}
+                          onSelect={c => setMapCoords({ lat: c.latitude, lng: c.longitude })}
+                        />
+                      )}
                     </div>
 
                     {!isClosed && (
@@ -437,13 +444,6 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         )}
                         <p className="mt-1 text-[10px] text-muted-foreground">Visible solo en la consola de despacho hasta finalizar la emergencia.</p>
                       </div>
-                    )}
-
-                    {!isClosed && (
-                      <LocationSearch
-                        initialQuery={emergency.address ?? ''}
-                        onSelect={c => setMapCoords({ lat: c.latitude, lng: c.longitude })}
-                      />
                     )}
 
                     {!isClosed && (
