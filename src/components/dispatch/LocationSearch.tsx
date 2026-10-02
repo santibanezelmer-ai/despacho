@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, MapPin, AlertTriangle, Ruler, CheckCircle2 } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle, Ruler, CheckCircle2 } from 'lucide-react';
 import { LANDMARK_TYPE_LABEL, type LandmarkType } from '@/lib/landmarks';
 import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult } from '@/lib/routeKilometer';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,8 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLocation, type LocationCandidate, type LocationConfidence } from '@/lib/locationResolver';
 
 interface Props {
-  initialQuery?: string;
+  /** Texto de la dirección (controlado por el campo Dirección). La búsqueda es automática al escribir. */
+  query: string;
   /** Se llama al elegir una sugerencia; el operador luego guarda con el flujo existente. */
   onSelect: (candidate: LocationCandidate) => void;
 }
@@ -27,9 +28,9 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 /** Buscador central de ubicaciones (Location Resolver) para la consola web. */
-export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
+export default function LocationSearch({ query, onSelect }: Props) {
   const { orgId } = useOrganization();
-  const [query, setQuery] = useState(initialQuery);
+  const initialRef = useRef(query);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<LocationCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
   });
 
   const handleSearch = async () => {
-    if (query.trim().length < 3) { setError('Escribe al menos 3 letras'); return; }
+    if (query.trim().length < 3) { setResults(null); setRouteResult(null); setError(null); return; }
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -59,14 +60,22 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
       const rk = parseRouteKmQuery(query);
       if (rk) {
         const r = await resolveRouteKm(rk);
-        if (r.status !== 'unsupported_route') { setResults(null); setRouteResult(r); return; }
+        if (r.status !== 'unsupported_route') {
+          setResults(null); setRouteResult(r);
+          if (r.status === 'found') applyRoute(r);
+          return;
+        }
       }
       const list = await resolveLocation(query, {
         defaultContext: org?.commune ?? null,
         near: org?.latitude != null && org?.longitude != null ? { lat: org.latitude, lng: org.longitude } : null,
         signal: ctrl.signal,
       });
+      if (ctrl.signal.aborted) return;
       setResults(list);
+      // Reconocimiento automático: solo se aplica una coincidencia Alta inequívoca.
+      const highs = list.filter(c => c.confidence === 'high');
+      if (highs.length >= 1 && list[0].confidence === 'high') choose(list[0]);
     } catch (e: any) {
       if (e?.name !== 'AbortError') setError('No se pudo consultar el buscador de mapas. Usa el mapa o las coordenadas manuales.');
     } finally {
@@ -79,46 +88,39 @@ export default function LocationSearch({ initialQuery = '', onSelect }: Props) {
     onSelect(c);
   };
 
-  return (
-    <div className="rounded-md border border-border/60 bg-muted/30 p-2 space-y-2">
-      <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Search className="h-3.5 w-3.5" /> Buscar ubicación
-      </label>
-      <div className="flex gap-2">
-        <Input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(); } }}
-          placeholder="Ej: Pasaje Los Aromos, Entre Lagos"
-          className="min-w-0 flex-1 bg-background/60 text-xs"
-          spellCheck
-          lang="es-CL"
-          autoCorrect="off"
-        />
-        <Button type="button" size="sm" onClick={handleSearch} disabled={loading} aria-label="Buscar ubicación">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-        </Button>
-      </div>
-      <p className="text-[10px] text-muted-foreground">
-        Escribe la vía y, separado por coma, la comuna o localidad, una ruta y kilómetro (Ej: CH-215 km 55) o un puente (Ej: Puente Ñilque).{org?.commune ? ` Sin contexto se usa ${org.commune}.` : ''}
-      </p>
+  const applyRoute = (r: RouteKmResult) => {
+    if (r.status !== 'found') return;
+    setRouteSelected(true);
+    onSelect({
+      id: `route-${r.routeCode}-${r.kilometer}`,
+      label: `Ruta ${r.routeCode} km ${r.kilometer}`,
+      secondary: r.meta.name,
+      latitude: r.latitude, longitude: r.longitude,
+      type: 'ruta', street: `Ruta ${r.routeCode}`, locality: null, commune: null, region: null,
+      confidence: 'high', reason: 'Referencia kilométrica oficial de Vialidad/MOP.', source: 'vialidad',
+    });
+  };
 
+  // Búsqueda automática al escribir (con pausa), sin tocar la dirección original al abrir.
+  useEffect(() => {
+    if (query === initialRef.current) return;
+    initialRef.current = '\u0000';
+    const t = setTimeout(() => { void handleSearch(); }, 900);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  return (
+    <div className="space-y-2 empty:hidden">
+      {loading && (
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Reconociendo dirección…</p>
+      )}
       {error && <p className="text-xs text-destructive">{error}</p>}
 
       {routeResult && routeResult.status === 'found' && (
         <button
           type="button"
-          onClick={() => {
-            setRouteSelected(true);
-            onSelect({
-              id: `route-${routeResult.routeCode}-${routeResult.kilometer}`,
-              label: `Ruta ${routeResult.routeCode} km ${routeResult.kilometer}`,
-              secondary: routeResult.meta.name,
-              latitude: routeResult.latitude, longitude: routeResult.longitude,
-              type: 'ruta', street: `Ruta ${routeResult.routeCode}`, locality: null, commune: null, region: null,
-              confidence: 'high', reason: 'Referencia kilométrica oficial de Vialidad/MOP.', source: 'vialidad',
-            });
-          }}
+          onClick={() => applyRoute(routeResult)}
           className={`w-full rounded-md border p-2 text-left text-xs transition-colors ${routeSelected ? 'border-primary bg-primary/10' : 'border-success/50 bg-background/60 hover:border-primary/60'}`}
         >
           <p className="flex items-center gap-1.5 font-semibold text-foreground"><MapPin className="h-3.5 w-3.5 text-emergency" /> Ruta {routeResult.routeCode}</p>
