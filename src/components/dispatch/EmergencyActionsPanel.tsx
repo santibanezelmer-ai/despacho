@@ -60,6 +60,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [callerPhone, setCallerPhone] = useState('');
   const [savingPhone, setSavingPhone] = useState(false);
   const [locRequestId, setLocRequestId] = useState<string | null>(null);
+  const { data: orgLocation } = useOrganizationLocation();
   const [locFix, setLocFix] = useState<LocationFix | null>(null);
   const [locationSource, setLocationSource] = useState<string | null>(null);
   const [sharedCoords, setSharedCoords] = useState<{ lat: number; lng: number } | null>(null);
