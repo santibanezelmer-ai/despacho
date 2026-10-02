@@ -53,6 +53,7 @@ import OnboardingPage from "@/pages/admin/OnboardingPage";
 import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import SharedLocationPage from "@/pages/SharedLocationPage";
 import TermsPage from "@/pages/legal/TermsPage";
+import PrivacyPage from "@/pages/legal/PrivacyPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -281,6 +282,7 @@ const App = () => (
                 <Route path="/invite/:token" element={<AcceptInvitation />} />
                 <Route path="/location/:token" element={<SharedLocationPage />} />
                 <Route path="/terminos" element={<TermsPage />} />
+                <Route path="/privacidad" element={<PrivacyPage />} />
                 <Route path="/voluntario/*" element={<VoluntarioApp />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>
