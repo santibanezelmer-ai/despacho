@@ -53,7 +53,17 @@ function vehicleKeyHistory(ev: any, logs: any[]): KeyEntry[] {
     if (ev?.controlled_at) entries.push({ code: M.controlada.code, description: M.controlada.description, at: ev.controlled_at });
     if (ev?.withdrawing_at) entries.push({ code: M.retirandose.code, description: M.retirandose.description, at: ev.withdrawing_at });
   }
-  if (ev?.released_at) entries.push({ code: M.en_cuartel.code, description: M.en_cuartel.description, at: ev.released_at });
+  // Una reasignación desde 6-9/10-9 cierra la participación sin volver a cuartel:
+  // se registra como reasignación, nunca como un 6-10.
+  const reassign = code
+    ? logs.find(l => typeof l.message === 'string' && l.message.startsWith(`Móvil ${code} reasignado a `))
+    : null;
+  if (reassign) {
+    const target = reassign.message.slice(`Móvil ${code} reasignado a `.length).split(' desde ')[0];
+    entries.push({ code: 'REASIGNADO', description: `Reasignado a ${target} (sin retorno a cuartel)`, at: reassign.created_at });
+  } else if (ev?.released_at) {
+    entries.push({ code: M.en_cuartel.code, description: M.en_cuartel.description, at: ev.released_at });
+  }
   return entries.sort((a, b) => (a.at ? Date.parse(a.at) : Infinity) - (b.at ? Date.parse(b.at) : Infinity));
 }
 

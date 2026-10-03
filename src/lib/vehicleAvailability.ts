@@ -95,6 +95,13 @@ export function useVehicleAvailability(excludeEmergencyId?: string) {
   return list;
 }
 
+/** Móviles seleccionados que hoy están comprometidos sin 6-9 / 10-9 (consulta al servidor). */
+export async function findVehicleConflicts(orgId: string, vehicleIds: string[]) {
+  if (!vehicleIds.length) return [] as OpenAssignment[];
+  const open = await fetchOpenAssignments(orgId, vehicleIds);
+  return open.filter(a => !assignmentAllowsReassign(a));
+}
+
 /**
  * Antes de asignar: vuelve a comprobar en el servidor y cierra (sin borrar) la
  * participación anterior de móviles con 6-9 / 10-9. Lanza error si alguno sigue
