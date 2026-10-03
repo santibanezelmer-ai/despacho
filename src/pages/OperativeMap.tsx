@@ -17,6 +17,7 @@ import HydrantDetailSheet from '@/components/map/HydrantDetailSheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TERRITORIAL_LAYERS, type TerritorialLayerId } from '@/lib/territorialLayers';
+import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { isHydrantStatus, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
 
 
@@ -28,7 +29,14 @@ const statusLabels: Record<string, string> = {
   controlada: 'CONTROLADA',
 };
 
-export default function OperativeMap() {
+export default function OperativeMap({ screen = false }: { screen?: boolean }) {
+  const { formatClock } = useTimeFormat();
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    if (!screen) return;
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, [screen]);
   const queryClient = useQueryClient();
   const { data: emergencies } = useActiveEmergencies();
   const { data: hydrants } = useHydrants();
@@ -264,10 +272,18 @@ export default function OperativeMap() {
   );
 
   return (
-    <div className="flex w-full flex-col h-full" style={{ width: '100%' }}>
+    <div className={screen ? 'flex h-screen w-screen flex-col bg-background' : 'flex w-full flex-col h-full'} style={screen ? undefined : { width: '100%' }}>
       <div className="flex flex-col gap-3 border-b border-border bg-card p-3 xl:flex-row xl:items-center xl:justify-between">
         <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Map className="h-5 w-5 text-info" /> Mapa Operativo
+          {screen && (
+            <>
+              {(emergencies ?? []).length > 0 && (
+                <span className="ml-2 text-xs font-bold text-emergency">{(emergencies ?? []).length} emergencia{(emergencies ?? []).length !== 1 ? 's' : ''}</span>
+              )}
+              <span className="ml-3 font-mono text-sm tabular-nums text-foreground">{formatClock(now)}</span>
+            </>
+          )}
         </h1>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
@@ -350,7 +366,7 @@ export default function OperativeMap() {
             </PopoverContent>
           </Popover>
 
-          <div className="flex items-center gap-1">
+          {!screen && <div className="flex items-center gap-1">
             <Button
               size="sm"
               variant={clickMode ? 'default' : 'outline'}
@@ -366,7 +382,7 @@ export default function OperativeMap() {
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleLocate} disabled={locating}>
               <LocateFixed className={`h-3 w-3 ${locating ? 'animate-pulse' : ''}`} /> Mi ubicación
             </Button>
-          </div>
+          </div>}
         </div>
       </div>
 
