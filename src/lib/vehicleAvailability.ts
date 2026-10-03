@@ -89,7 +89,7 @@ export function useVehicleAvailability(excludeEmergencyId?: string) {
       return { ...base, assignable: true, kind: 'reasignable_69' as const, label: `6-9 · Disponible para reasignación (${current.folio})` };
     }
     if (v.status === 'disponible') return { ...base, assignable: true, kind: 'cuartel' as const, label: 'Disponible' };
-    if (v.status === 'en_servicio') return { ...base, assignable: true, kind: 'cuartel' as const, label: 'Disponible' };
+    if (v.status === 'en_servicio') return { ...base, assignable: false, kind: 'bloqueado' as const, label: 'En servicio · No disponible' };
     return { ...base, assignable: false, kind: 'no_operativo' as const, label: v.status === 'mantencion' ? 'En mantención' : 'Fuera de servicio' };
   });
   return list;
