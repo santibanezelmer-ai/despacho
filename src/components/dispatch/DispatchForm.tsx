@@ -14,6 +14,7 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { getPlayableToneSrc } from '@/services/toneCache';
 import { enqueueDispatch, isNetworkError, performDispatch, type PendingDispatch } from '@/services/offlineDispatchQueue';
+import { findVehicleConflicts } from '@/lib/vehicleAvailability';
 import { useVehicleAvailability } from '@/lib/vehicleAvailability';
 import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailabilityPicker';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
@@ -320,6 +321,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       if (!navigator.onLine) {
         queueOffline();
         return;
+      }
+      // Revalida en el servidor justo antes de crear la emergencia: si otro
+      // operador comprometió un móvil, no se despacha y se pide elegir otro.
+      if (selectedVehicleIds.length) {
+        const conflicts = await findVehicleConflicts(orgId!, selectedVehicleIds);
+        if (conflicts.length) {
+          const codes = conflicts
+            .map(c => `${(allVehicles ?? []).find(v => v.id === c.vehicleId)?.code ?? 'Móvil'} (${c.folio})`)
+            .join(', ');
+          setSelectedVehicleIds(prev => prev.filter(id => !conflicts.some(c => c.vehicleId === id)));
+          toast.error(`Móvil ya comprometido en otra emergencia: ${codes}. Se quitó de la selección; elige otro y vuelve a despachar.`, { duration: 10000 });
+          return;
+        }
       }
       await performDispatch(payload);
       startGlobalToneSequence(toneQueue);
