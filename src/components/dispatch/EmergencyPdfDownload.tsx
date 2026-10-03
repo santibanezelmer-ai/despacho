@@ -214,7 +214,9 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         const conductor = vehPersonnel.find((ep: any) => ep.role === 'conductor');
         const aCargo = vehPersonnel.find((ep: any) => ep.role === 'oficial_a_cargo');
         const assignedAt = (ev as any)?.assigned_at ?? emg.created_at;
-        const releasedAt = (ev as any)?.released_at ?? null;
+        // Si fue reasignado desde 6-9/10-9 no hubo llegada a cuartel: sin hora de llegada.
+        const wasReassigned = !!v?.code && logs.some(l => typeof l.message === 'string' && l.message.startsWith(`Móvil ${v.code} reasignado a `));
+        const releasedAt = wasReassigned ? null : ((ev as any)?.released_at ?? null);
 
         const r1: number[] = [16, 22, 14, 22, 18, 22, 18, 22, 14, contentW - 168];
         drawDataRow(

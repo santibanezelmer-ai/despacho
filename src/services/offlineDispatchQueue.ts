@@ -120,15 +120,26 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
   }
 
   if (missingVehicleIds.length > 0) {
+    const { data: created } = await supabase.from('emergencies').select('folio').eq('id', d.clientId).maybeSingle();
+    const targetFolio = created?.folio || `nueva emergencia ${d.keyCode}`;
+    const vehicleCodes = Object.fromEntries(d.vehicleIds.map((id, i) => [id, d.vehicleLabels?.[i] ?? '']));
     // Reasignación directa de móviles con 6-9 / 10-9; bloquea los comprometidos.
-    await prepareReassignment({
+    const moved = await prepareReassignment({
       orgId: d.orgId,
       vehicleIds: missingVehicleIds,
       targetEmergencyId: d.clientId,
-      targetLabel: `nueva emergencia ${d.keyCode}`,
-      vehicleCodes: Object.fromEntries(d.vehicleIds.map((id, i) => [id, d.vehicleLabels?.[i] ?? ''])),
+      targetLabel: targetFolio,
+      vehicleCodes,
       userId: d.userId,
     });
+    for (const m of moved) {
+      await supabase.from('emergency_log').insert({
+        emergency_id: d.clientId,
+        organization_id: d.orgId,
+        created_by: d.userId,
+        message: `Móvil ${vehicleCodes[m.vehicleId] ?? ''} asignado (reasignado desde ${m.folio})`,
+      });
+    }
     const { data: vehicleData } = await supabase
       .from('vehicles')
       .select('id, odometer')
