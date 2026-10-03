@@ -1,75 +1,46 @@
-# Revisión de aislamiento por organización (RLS) — solo análisis
+# Mapa Operativo unificado y reasignación de móviles con 6-9
 
-Revisé las 56 políticas de las 14 tablas prioritarias en la base de datos real. No hay cambios aplicados todavía.
+## 1. Pantalla Central → Mapa Operativo (/pantalla-mapa)
 
-## 1. Políticas inseguras encontradas
+Hoy hay dos mapas distintos:
+- Consola (/mapa): usa el mapa compartido con móviles por estado, capas territoriales, grifos con ficha, cuarteles y ubicación compartida.
+- Pantalla Central (/pantalla-mapa): mapa propio, más antiguo, sin esas mejoras. Sus botones `+` y `−` quedan tapados por la barra "Mapa Operativo / reloj" (ambos arriba a la izquierda).
 
-- **No hay** políticas `USING (true)` en estas tablas.
-- **No hay** políticas que dependan solo de `has_role(auth.uid(), ...)`. Esas políticas antiguas ya se eliminaron en una limpieza anterior. Cada tabla tiene hoy exactamente 4 políticas (select/insert/update/delete), sin duplicados.
+Cambios:
+- La Pantalla Central pasa a usar el mismo mapa compartido de la consola (mismos marcadores, estados y posición de móviles, emergencias, ubicación compartida, grifos, cuarteles, capas territoriales, actualización cada pocos segundos). Se elimina el código duplicado.
+- Se mantiene su formato de pantalla completa para TV: barra con título, conteo y reloj.
+- Los botones `+` y `−` nativos se mueven abajo a la izquierda (o se desplaza la barra) para que nunca queden tapados, con capa por encima de la barra y funcionando en TV y pantallas chicas.
 
-Aun así encontré **2 fugas reales entre organizaciones**:
+## 2–3. Disponibilidad de móviles
 
-**A. device_tokens (grave).** `dt_insert` y `dt_update` solo comprueban `auth.uid() = user_id`, no la organización. Un usuario de la Org. A podría registrar su teléfono con `organization_id = B`. El envío de avisos selecciona los teléfonos por organización, así que **recibiría las alertas de emergencia de la Org. B**, con dirección y datos del llamante.
+Regla nueva (una sola, usada en despacho nuevo y en "Agregar móvil" de una emergencia activa):
 
-**B. equipment (media).** En `eq_insert`, `eq_update` y `eq_delete`, la condición de administrador de compañía comprueba la organización del **móvil**, no la del equipo. Un administrador de compañía de la Org. A podría crear o modificar un equipo con `organization_id = B` si lo asocia a un móvil suyo. Esa fila quedaría visible en la Org. B.
+| Situación del móvil | Se puede asignar | Cómo se muestra |
+|---|---|---|
+| Disponible en cuartel | Sí | `B-1 — Disponible` |
+| En emergencia activa, sin 6-9 | No (bloqueado) | `B-1 — EMG-2026-0233 — 6-3 En el lugar — No disponible` |
+| En emergencia activa, con 6-9 | Sí | `B-1 — 6-9 — Disponible para reasignación (EMG-2026-0233)` |
+| En emergencia de clave 10-9 | Sí, con aviso | `B-1 — 10-9 en curso (EMG-…) — Asignable` |
+| Mantención / fuera de servicio | No (como hoy) | sin cambios |
 
-## 2. Políticas que se mantienen (correctas)
+Los móviles bloqueados se ven en la lista, deshabilitados, con el motivo; no se ocultan.
 
-- emergencies, emergency_vehicles, emergency_personnel, emergency_log, volunteers, vehicles, ranks, emergency_keys, hydrants, training: todas usan `get_my_organization_ids()`, `can_write_in_org()`, `has_org_role()` o `is_company_admin()` sobre el `organization_id` de la propia fila, con `is_superadmin()` como excepción.
-- vehicle_devices: `is_org_member` / `has_org_role(admin)`, más el trigger que exige que el móvil sea de la misma organización.
-- profiles: cada usuario ve el suyo; los administradores ven a los miembros activos de su organización; el superadmin ve todo.
-- device_tokens `dt_select` y `dt_delete`: solo el dueño o el superadmin.
-- equipment `eq_select`: correcta.
+## 4. Historial y trazabilidad
 
-## 3. Políticas que se reemplazan (no se eliminan sin reemplazo)
+Al reasignar un móvil con 6-9 (o en 10-9) a la Emergencia B:
+- En la Emergencia A su participación se cierra con la hora de reasignación (queda con todas sus claves y horarios hasta el 6-9) y la bitácora registra "Móvil B-1 reasignado a EMG-B desde 6-9". No se borra nada; el kilometraje de llegada no se exige (no volvió a cuartel).
+- En la Emergencia B se crea una participación nueva desde 6-0, con su propia bitácora "Móvil B-1 asignado (reasignado desde EMG-A)".
+- El móvil sigue "en servicio"; no se registra retorno a cuartel.
+- La ficha PDF de A sigue mostrando al móvil con sus claves hasta el 6-9.
 
-- `dt_insert`, `dt_update` en device_tokens
-- `eq_insert`, `eq_update`, `eq_delete` en equipment
+Protección: antes de guardar se vuelve a comprobar en el servidor que el móvil no tenga otra participación abierta sin 6-9, para impedir asignaciones simultáneas por error (dos operadores a la vez).
 
-## 4. SQL propuesto
+## 5. Validaciones
+Probaré en pantalla con la organización Demo: sin 6-9 bloqueado; con 6-9 asignable; sin retorno a cuartel; historial de A intacto y de B nuevo; 10-9 visible y asignable; Mapa Operativo mostrando el nuevo estado. No se tocan las claves, el despacho ni las notificaciones (la notificación de B sale igual que cualquier despacho).
 
-```sql
--- device_tokens: el teléfono solo puede quedar ligado a una organización del propio usuario
-DROP POLICY IF EXISTS dt_insert ON public.device_tokens;
-CREATE POLICY dt_insert ON public.device_tokens FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id AND is_org_member(organization_id));
-
-DROP POLICY IF EXISTS dt_update ON public.device_tokens;
-CREATE POLICY dt_update ON public.device_tokens FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id AND is_org_member(organization_id));
-
--- equipment: el móvil del admin de compañía debe ser de la misma organización del equipo
-DROP POLICY IF EXISTS eq_insert ON public.equipment;
-CREATE POLICY eq_insert ON public.equipment FOR INSERT TO authenticated
-  WITH CHECK (is_superadmin() OR can_write_in_org(organization_id) OR EXISTS (
-    SELECT 1 FROM vehicles v WHERE v.id = equipment.vehicle_id
-      AND v.organization_id = equipment.organization_id
-      AND is_company_admin(v.organization_id, v.company_id)));
-
-DROP POLICY IF EXISTS eq_update ON public.equipment;
-CREATE POLICY eq_update ON public.equipment FOR UPDATE TO authenticated
-  USING (is_superadmin() OR can_write_in_org(organization_id) OR EXISTS (
-    SELECT 1 FROM vehicles v WHERE v.id = equipment.vehicle_id
-      AND v.organization_id = equipment.organization_id
-      AND is_company_admin(v.organization_id, v.company_id)))
-  WITH CHECK (is_superadmin() OR can_write_in_org(organization_id) OR EXISTS (
-    SELECT 1 FROM vehicles v WHERE v.id = equipment.vehicle_id
-      AND v.organization_id = equipment.organization_id
-      AND is_company_admin(v.organization_id, v.company_id)));
-
-DROP POLICY IF EXISTS eq_delete ON public.equipment;
-CREATE POLICY eq_delete ON public.equipment FOR DELETE TO authenticated
-  USING (is_superadmin() OR has_org_role(organization_id, 'admin') OR EXISTS (
-    SELECT 1 FROM vehicles v WHERE v.id = equipment.vehicle_id
-      AND v.organization_id = equipment.organization_id
-      AND is_company_admin(v.organization_id, v.company_id)));
-```
-
-## 5. Impacto
-
-- Operix sigue funcionando igual. La app registra el teléfono con la organización del propio usuario, y los equipos se crean con la organización del móvil, así que ambos casos siguen cumpliendo las nuevas reglas.
-- El superadmin no pierde ningún acceso.
-- Se cierran las dos únicas vías encontradas para escribir o recibir datos de otra organización.
-- No cambian las tablas, los datos, las columnas, la aplicación ni las funciones del servidor.
-- El registro de teléfonos que corregí antes ya valida la pertenencia a la organización, así que es compatible.
+## Detalles técnicos
+- `MapScreen.tsx` se reescribe sobre `LeafletMapCanvas` reutilizando la preparación de datos de `OperativeMap.tsx` (se extrae a un hook compartido `useOperativeMapData`).
+- Nuevo `src/lib/vehicleAvailability.ts` + hook `useVehicleAvailability` que cruza `vehicles` con `emergency_vehicles` abiertas (`released_at IS NULL`) y la clave de la emergencia; usado en `DispatchForm.tsx` y `EmergencyActionsPanel.tsx`.
+- Reasignación: cerrar la fila abierta de A con `released_at = now()` (sin `odometer_end`, `operational_status` se mantiene en `retirandose`) e insertar la nueva fila en B; `vehicles.status` queda `en_servicio`. Sin tablas nuevas.
+- Comprobación al guardar contra filas abiertas; si se requiere a nivel de base de datos, una función de validación (pediré confirmación antes de tocar la base).
+- Se registra la regla en AGENTS.md.
