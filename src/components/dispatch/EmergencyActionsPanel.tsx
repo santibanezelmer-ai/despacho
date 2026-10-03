@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useVehicleAvailability } from '@/lib/vehicleAvailability';
+import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailabilityPicker';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
