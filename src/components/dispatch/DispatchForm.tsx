@@ -14,6 +14,8 @@ import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { getPlayableToneSrc } from '@/services/toneCache';
 import { enqueueDispatch, isNetworkError, performDispatch, type PendingDispatch } from '@/services/offlineDispatchQueue';
+import { useVehicleAvailability } from '@/lib/vehicleAvailability';
+import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailabilityPicker';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
@@ -144,7 +146,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
   const { data: volunteers } = useVolunteers();
-  const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
+  const availability = useVehicleAvailability();
   const isServiceKey = isAuthorizedServiceKey(emergencyKey);
 
   const [draft] = useState(() => loadDraft(emergencyKey.id));
@@ -498,25 +500,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Truck className="h-3.5 w-3.5" /> Asignar Móviles ({selectedVehicleIds.length} seleccionados)
             </label>
-            <div className="flex flex-wrap gap-2">
-              {available.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No hay móviles disponibles</p>
-              ) : (
-                available.map(v => (
-                  <button
-                    key={v.id}
-                    onClick={() => toggleVehicle(v.id)}
-                    className={`rounded-md border px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
-                      selectedVehicleIds.includes(v.id)
-                        ? 'border-emergency bg-emergency/20 text-emergency'
-                        : 'border-border bg-muted/30 text-muted-foreground hover:border-foreground/30'
-                    }`}
-                  >
-                    {v.code} · {v.type}
-                  </button>
-                ))
-              )}
-            </div>
+            <VehicleAvailabilityPicker items={availability} selected={selectedVehicleIds} onToggle={toggleVehicle} />
           </div>
 
           {/* Actions */}
