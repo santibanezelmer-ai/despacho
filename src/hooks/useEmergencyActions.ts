@@ -1,3 +1,4 @@
+import { prepareReassignment } from '@/lib/vehicleAvailability';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +12,7 @@ function useInvalidate() {
     qc.invalidateQueries({ queryKey: ['active-emergencies'] });
     qc.invalidateQueries({ queryKey: ['vehicles'] });
     qc.invalidateQueries({ queryKey: ['emergency-vehicles-assigned'] });
+    qc.invalidateQueries({ queryKey: ['open-vehicle-assignments'] });
     qc.invalidateQueries({ queryKey: ['emergency-vehicles-return'] });
     qc.invalidateQueries({ queryKey: ['emergency-vehicle-personnel'] });
     qc.invalidateQueries({ queryKey: ['emergency-personnel'] });
@@ -116,6 +118,14 @@ export function useAssignVehicles() {
         .in('id', vehicleIds);
       const odometerMap = new Map((vehicleData ?? []).map(v => [v.id, v.odometer]));
 
+      const { data: codesData } = await supabase.from('vehicles').select('id, code').in('id', vehicleIds);
+      const { data: target } = await supabase.from('emergencies').select('folio').eq('id', emergencyId).maybeSingle();
+      const codeMap = Object.fromEntries((codesData ?? []).map(v => [v.id, v.code]));
+      const moved = await prepareReassignment({
+        orgId: orgId!, vehicleIds, targetEmergencyId: emergencyId,
+        targetLabel: target?.folio ?? 'otra emergencia', vehicleCodes: codeMap,
+      });
+
       const inserts = vehicleIds.map(vid => ({
         emergency_id: emergencyId,
         vehicle_id: vid,
@@ -126,9 +136,12 @@ export function useAssignVehicles() {
       if (error) throw error;
       await supabase.from('vehicles').update({ status: 'en_servicio' as const }).in('id', vehicleIds);
       await log(emergencyId, `Móviles asignados: ${vehicleIds.length}`);
+      for (const m of moved) {
+        await log(emergencyId, `Móvil ${codeMap[m.vehicleId] ?? ''} asignado (reasignado desde ${m.folio})`);
+      }
     },
     onSuccess: () => { invalidate(); toast.success('Móviles asignados'); },
-    onError: () => toast.error('Error al asignar móviles'),
+    onError: (e: any) => toast.error(e?.message?.startsWith('Móvil comprometido') ? e.message : 'Error al asignar móviles'),
   });
 }
 

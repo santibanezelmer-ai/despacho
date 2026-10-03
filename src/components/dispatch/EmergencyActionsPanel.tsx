@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useVehicleAvailability } from '@/lib/vehicleAvailability';
+import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailabilityPicker';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
@@ -121,10 +123,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     return () => { cancelled = true; };
   }, [emergency.id, isClosed]);
 
-  const { data: allVehicles } = useVehicles({ refetchInterval: 5000 });
-  const available = (allVehicles ?? []).filter(
-    v => v.status === 'disponible' && !assignedVehicleIds.includes(v.id)
-  );
+  const availabilityAll = useVehicleAvailability(emergency.id);
+  const available = availabilityAll.filter(v => !assignedVehicleIds.includes(v.id));
   const [selectedNewVehicles, setSelectedNewVehicles] = useState<string[]>([]);
 
   const updateAddress = useUpdateAddress();
@@ -535,22 +535,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <p className="text-xs text-muted-foreground">No hay móviles disponibles</p>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {available.map(v => (
-                    <button
-                      key={v.id}
-                      onClick={() => setSelectedNewVehicles(prev =>
-                        prev.includes(v.id) ? prev.filter(x => x !== v.id) : [...prev, v.id]
-                      )}
-                      className={`rounded-md border px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
-                        selectedNewVehicles.includes(v.id)
-                          ? 'border-emergency bg-emergency/20 text-emergency'
-                          : 'border-border bg-muted/30 text-muted-foreground hover:border-foreground/30'
-                      }`}
-                    >
-                      {v.code} · {v.type}
-                    </button>
-                  ))}
+                <div className="mb-2">
+                  <VehicleAvailabilityPicker
+                    items={available}
+                    selected={selectedNewVehicles}
+                    onToggle={(id) => setSelectedNewVehicles(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                  />
                 </div>
                 {selectedNewVehicles.length > 0 && (
                   <Button size="sm" onClick={handleAssignVehicles} disabled={assignVehicles.isPending}>

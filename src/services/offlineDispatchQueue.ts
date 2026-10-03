@@ -1,3 +1,4 @@
+import { prepareReassignment } from '@/lib/vehicleAvailability';
 import { supabase } from '@/integrations/supabase/client';
 import { sendPushToOrganization } from '@/services/pushService';
 
@@ -119,6 +120,15 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
   }
 
   if (missingVehicleIds.length > 0) {
+    // Reasignación directa de móviles con 6-9 / 10-9; bloquea los comprometidos.
+    await prepareReassignment({
+      orgId: d.orgId,
+      vehicleIds: missingVehicleIds,
+      targetEmergencyId: d.clientId,
+      targetLabel: `nueva emergencia ${d.keyCode}`,
+      vehicleCodes: Object.fromEntries(d.vehicleIds.map((id, i) => [id, d.vehicleLabels?.[i] ?? ''])),
+      userId: d.userId,
+    });
     const { data: vehicleData } = await supabase
       .from('vehicles')
       .select('id, odometer')

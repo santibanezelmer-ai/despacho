@@ -273,8 +273,10 @@ export default function LeafletMapCanvas({
     const map = L.map(mapContainerRef.current, {
       center: DEFAULT_CENTER,
       zoom: 13,
-      zoomControl: true,
+      zoomControl: false,
     });
+    // Zoom abajo a la derecha: libre de barras y leyendas superpuestas (TV y escritorio).
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
     mapRef.current = map;
 
     const reportBounds = () => {
