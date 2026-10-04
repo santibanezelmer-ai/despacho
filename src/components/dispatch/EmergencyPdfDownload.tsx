@@ -18,6 +18,36 @@ async function logoToDataUrl(value?: string | null): Promise<string | null> {
   return await toDataUrl(url);
 }
 
+// Abreviaturas de rango/cargo para la tabla de firmas (evita que el nombre quede oculto).
+const RANK_ABBR: [RegExp, string][] = [
+  [/^vice\s*super\s*intendente/i, 'VICE SUPTE.'],
+  [/^super\s*intendente/i, 'SUPTE.'],
+  [/^secretario\/?a?\s+general/i, 'SECR. GRAL.'],
+  [/^tesorero\/?a?\s+general/i, 'TES. GRAL.'],
+  [/^secretario\/?a?/i, 'SECR.'],
+  [/^tesorero\/?a?/i, 'TES.'],
+  [/^director/i, 'DIR.'],
+  [/^ayudante\s+de\s+comandancia/i, 'AYTE. CDCIA.'],
+  [/^ayudante/i, 'AYTE.'],
+  [/^comandante/i, 'CMDTE.'],
+  [/^capit[aá]n/i, 'CAP.'],
+  [/^teniente\s+de\s+m[aá]quina/i, 'TTE. MAQ.'],
+  [/^teniente\s*(\d)/i, 'TTE. $1°'],
+  [/^teniente/i, 'TTE.'],
+  [/^voluntario\/?a?/i, 'VOL.'],
+  [/^honorario\/?a?/i, 'HON.'],
+  [/^aspirante/i, 'ASP.'],
+];
+function abbreviateRank(rank?: string | null): string {
+  const r = rank?.trim();
+  if (!r) return '';
+  for (const [re, abbr] of RANK_ABBR) {
+    const m = r.match(re);
+    if (m) return abbr.replace('$1', m[1] ?? '');
+  }
+  return r.toUpperCase();
+}
+
 const fmtTime = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
 const fmtDate = (iso?: string | null) =>
