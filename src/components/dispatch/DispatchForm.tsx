@@ -158,6 +158,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [callerPhone, setCallerPhone] = useState(draft.callerPhone ?? '');
   const [observations, setObservations] = useState(draft.observations ?? '');
   const [submitting, setSubmitting] = useState(false);
+  // Id estable por ventana: reintentar no crea una emergencia duplicada
+  const [dispatchId] = useState(() => crypto.randomUUID());
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
   const [authorizerJustPicked, setAuthorizerJustPicked] = useState(false);
@@ -289,7 +291,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
     setSubmitting(true);
     const payload: PendingDispatch = {
-      clientId: crypto.randomUUID(),
+      clientId: dispatchId,
       orgId: orgId!,
       userId: user?.id ?? null,
       keyId: emergencyKey.id,
