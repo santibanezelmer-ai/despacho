@@ -18,6 +18,36 @@ async function logoToDataUrl(value?: string | null): Promise<string | null> {
   return await toDataUrl(url);
 }
 
+// Abreviaturas de rango/cargo para la tabla de firmas (evita que el nombre quede oculto).
+const RANK_ABBR: [RegExp, string][] = [
+  [/^vice\s*super\s*intendente/i, 'VICE SUPTE.'],
+  [/^super\s*intendente/i, 'SUPTE.'],
+  [/^secretario\/?a?\s+general/i, 'SECR. GRAL.'],
+  [/^tesorero\/?a?\s+general/i, 'TES. GRAL.'],
+  [/^secretario\/?a?/i, 'SECR.'],
+  [/^tesorero\/?a?/i, 'TES.'],
+  [/^director/i, 'DIR.'],
+  [/^ayudante\s+de\s+comandancia/i, 'AYTE. CDCIA.'],
+  [/^ayudante/i, 'AYTE.'],
+  [/^comandante/i, 'CMDTE.'],
+  [/^capit[aá]n/i, 'CAP.'],
+  [/^teniente\s+de\s+m[aá]quina/i, 'TTE. MAQ.'],
+  [/^teniente\s*(\d)/i, 'TTE. $1°'],
+  [/^teniente/i, 'TTE.'],
+  [/^voluntario\/?a?/i, 'VOL.'],
+  [/^honorario\/?a?/i, 'HON.'],
+  [/^aspirante/i, 'ASP.'],
+];
+function abbreviateRank(rank?: string | null): string {
+  const r = rank?.trim();
+  if (!r) return '';
+  for (const [re, abbr] of RANK_ABBR) {
+    const m = r.match(re);
+    if (m) return abbr.replace('$1', m[1] ?? '');
+  }
+  return r.toUpperCase();
+}
+
 const fmtTime = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
 const fmtDate = (iso?: string | null) =>
@@ -109,15 +139,20 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         .order('created_at', { ascending: true });
       const logs = logData ?? [];
 
-      // Resolve org logo + first company logo
+      // Resolve org logo + logos of every attending company, ordered 1ª, 2ª, ...
       const orgLogo = await logoToDataUrl(orgRow?.logo_url);
-      let companyLogo: string | null = null;
+      const companyMap = new Map<string, { number: number; logo_url: string }>();
       for (const ev of evData ?? []) {
         const c = (ev as any).vehicles?.companies;
-        if (c?.logo_url) {
-          companyLogo = await logoToDataUrl(c.logo_url);
-          if (companyLogo) break;
+        if (c?.id && c?.logo_url && !companyMap.has(c.id)) {
+          companyMap.set(c.id, { number: c.number ?? 999, logo_url: c.logo_url });
         }
+      }
+      const sortedCompanies = [...companyMap.values()].sort((a, b) => a.number - b.number);
+      const companyLogos: string[] = [];
+      for (const c of sortedCompanies) {
+        const l = await logoToDataUrl(c.logo_url);
+        if (l) companyLogos.push(l);
       }
 
       const ek = emg.emergency_keys as any;
@@ -131,9 +166,12 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
       if (orgLogo) {
         try { doc.addImage(orgLogo, 'PNG', margin, 10, 16, 16); } catch { /* ignore */ }
       }
-      if (companyLogo) {
-        try { doc.addImage(companyLogo, 'PNG', pageW - margin - 16, 10, 16, 16); } catch { /* ignore */ }
-      }
+      // Company logos at right, left-to-right in ascending company order
+      const logoSize = 16, logoGap = 2;
+      const startX = pageW - margin - companyLogos.length * logoSize - (companyLogos.length - 1) * logoGap;
+      companyLogos.forEach((l, i) => {
+        try { doc.addImage(l, 'PNG', startX + i * (logoSize + logoGap), 10, logoSize, logoSize); } catch { /* ignore */ }
+      });
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.text('SALIDA DE MOVIL 2026.', pageW / 2, 20, { align: 'center' });
@@ -326,9 +364,9 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
 
         // Distribute: fill column-pairs top to bottom, then left to right
         const names = list.map((ep: any) => {
-          const rank = ep.volunteers?.ranks?.name;
+          const rank = abbreviateRank(ep.volunteers?.ranks?.name);
           const name = ep.volunteers?.name ?? '';
-          return (rank ? `${rank.toUpperCase()} ` : '') + name.toUpperCase();
+          return (rank ? `${rank} ` : '') + name.toUpperCase();
         });
         const totalRows = Math.max(12, Math.ceil(names.length / 3));
 
