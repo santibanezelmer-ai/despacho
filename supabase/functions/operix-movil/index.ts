@@ -378,6 +378,72 @@ Deno.serve(async (req) => {
       return json({ ok: true, status });
     }
 
+    // ---------- 5. Claves operativas (solicitud; la consola confirma) ----------
+    if (action === 'operational-key') {
+      if (!device.vehicle_id) return json({ error: 'El dispositivo no tiene un móvil asociado' }, 409);
+      const key = String(body?.key ?? body?.status ?? '').trim();
+      const ALLOWED = ['6-3', '6-8', '6-9', '6-10'];
+      if (!ALLOWED.includes(key)) return json({ error: 'Clave no válida', allowed: ALLOWED }, 400);
+
+      const { data: link } = await supabase
+        .from('emergency_vehicles')
+        .select('id, emergency_id')
+        .eq('organization_id', device.organization_id)
+        .eq('vehicle_id', device.vehicle_id)
+        .is('released_at', null)
+        .order('assigned_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!link) return json({ error: 'El móvil no está asignado a una emergencia activa' }, 409);
+
+      const ts = body?.timestamp ?? body?.reported_at;
+      const d = ts ? new Date(ts) : new Date();
+      const reportedAt = Number.isNaN(d.getTime()) || d.getTime() > Date.now() + 120_000
+        ? new Date().toISOString()
+        : d.toISOString();
+      const lat = num(body?.latitude);
+      const lng = num(body?.longitude);
+      const odo = num(body?.odometer_end ?? body?.odometer);
+
+      // Una sola solicitud pendiente por móvil: la anterior queda reemplazada.
+      await supabase
+        .from('vehicle_operational_requests')
+        .update({ status: 'reemplazada', resolved_at: new Date().toISOString() })
+        .eq('emergency_vehicle_id', link.id)
+        .eq('status', 'pendiente');
+
+      const { data: reqRow, error } = await supabase
+        .from('vehicle_operational_requests')
+        .insert({
+          organization_id: device.organization_id,
+          emergency_id: link.emergency_id,
+          emergency_vehicle_id: link.id,
+          vehicle_id: device.vehicle_id,
+          device_id: device.id,
+          requested_status: key,
+          reported_at: reportedAt,
+          latitude: lat !== null && Math.abs(lat) <= 90 ? lat : null,
+          longitude: lng !== null && Math.abs(lng) <= 180 ? lng : null,
+          odometer_end: odo !== null && odo >= 0 ? Math.round(odo) : null,
+        })
+        .select('id, requested_status, reported_at, status')
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      await touchDevice(device);
+      return json({ ok: true, request: reqRow, message: `${key} enviado a Central · Pendiente de confirmación` });
+    }
+
+    if (action === 'operational-key-status') {
+      if (!device.vehicle_id) return json({ requests: [] });
+      const { data } = await supabase
+        .from('vehicle_operational_requests')
+        .select('id, requested_status, reported_at, status, resolved_at')
+        .eq('vehicle_id', device.vehicle_id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return json({ requests: data ?? [] });
+    }
+
     return json({ error: 'Acción no soportada' }, 404);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

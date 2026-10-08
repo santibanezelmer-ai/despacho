@@ -94,3 +94,11 @@ Lista los móviles de la organización del dispositivo.
 
 - `useVehicleDevices` / `useVehicleDeviceCodes` / `useVehicleDeviceActions`: administración desde el panel de la organización.
 - `useVehicleLastPositions` + `formatPositionAge` / `isPositionStale`: última posición por móvil, lista para usarse en Mapa Operativo, Pantalla Central, `/pantalla-mapa`, ficha del móvil y emergencia (Leaflet + OpenStreetMap, sin cambios de proveedor).
+
+## POST /operational-key
+Header `x-device-token`. Body: `{ "key": "6-3" | "6-8" | "6-9" | "6-10", "timestamp"?: ISO, "latitude"?, "longitude"?, "odometer_end"?: number }`.
+Crea una solicitud **pendiente** para la emergencia activa del móvil. No cambia nada por sí sola: la Central la acepta o descarta. Una nueva solicitud reemplaza la pendiente anterior.
+Respuesta: `{ ok, request: { id, requested_status, reported_at, status }, message }`. 409 si el móvil no está asignado.
+
+## POST /operational-key-status
+Devuelve las últimas 5 solicitudes del móvil con su estado (`pendiente`, `aceptada`, `rechazada`, `reemplazada`).

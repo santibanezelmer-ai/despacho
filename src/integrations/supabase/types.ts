@@ -2029,6 +2029,96 @@ export type Database = {
           },
         ]
       }
+      vehicle_operational_requests: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          emergency_id: string
+          emergency_vehicle_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          odometer_end: number | null
+          organization_id: string
+          reported_at: string
+          requested_status: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          emergency_id: string
+          emergency_vehicle_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          odometer_end?: number | null
+          organization_id: string
+          reported_at?: string
+          requested_status: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          emergency_id?: string
+          emergency_vehicle_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          odometer_end?: number | null
+          organization_id?: string
+          reported_at?: string
+          requested_status?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_operational_requests_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_emergency_vehicle_id_fkey"
+            columns: ["emergency_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_positions: {
         Row: {
           accuracy: number | null

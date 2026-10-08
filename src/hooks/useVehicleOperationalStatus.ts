@@ -14,6 +14,11 @@ interface Params {
   emergencyId: string;
   vehicleCode: string;
   status: VehicleOperationalStatus;
+  /** Hora de referencia (p. ej. la que reportó Operix Móvil). */
+  at?: string;
+  /** Texto extra para la bitácora. */
+  logSuffix?: string;
+  silent?: boolean;
 }
 
 /**
@@ -26,9 +31,9 @@ export function useVehicleOperationalStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ evId, emergencyId, vehicleCode, status }: Params) => {
+    mutationFn: async ({ evId, emergencyId, vehicleCode, status, at, logSuffix }: Params) => {
       const meta = VEHICLE_STATUS_META[status];
-      const now = new Date().toISOString();
+      const now = at ?? new Date().toISOString();
 
       const update: Record<string, any> = {
         operational_status: status,
@@ -44,11 +49,18 @@ export function useVehicleOperationalStatus() {
         .eq('id', evId);
       if (error) throw error;
 
+      // La consola manda: cualquier sugerencia pendiente del móvil queda reemplazada.
+      await supabase
+        .from('vehicle_operational_requests')
+        .update({ status: 'reemplazada', resolved_at: new Date().toISOString(), resolved_by: user?.id ?? null })
+        .eq('emergency_vehicle_id', evId)
+        .eq('status', 'pendiente');
+
       if (orgId) {
         await supabase.from('emergency_log').insert({
           emergency_id: emergencyId,
           organization_id: orgId,
-          message: `Móvil ${vehicleCode} marcó clave ${meta.code} — ${meta.description}`,
+          message: `Móvil ${vehicleCode} marcó clave ${meta.code} — ${meta.description}${logSuffix ?? ''}`,
           created_by: user?.id ?? null,
         });
       }
@@ -59,7 +71,8 @@ export function useVehicleOperationalStatus() {
       queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-assigned', vars.emergencyId] });
       queryClient.invalidateQueries({ queryKey: ['emergency-vehicles-return', vars.emergencyId] });
-      toast.success(`${vars.vehicleCode} · ${meta.code} ${meta.label}`);
+      queryClient.invalidateQueries({ queryKey: ['vehicle-operational-requests'] });
+      if (!vars.silent) toast.success(`${vars.vehicleCode} · ${meta.code} ${meta.label}`);
     },
     onError: (err: Error) => toast.error(err.message || 'No se pudo cambiar la clave del móvil'),
   });

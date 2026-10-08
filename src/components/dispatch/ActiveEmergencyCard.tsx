@@ -1,4 +1,6 @@
-import { memo, useEffect, useState } from 'react';
+import { Fragment, memo, useEffect, useState } from 'react';
+import { Check, Smartphone } from 'lucide-react';
+import { usePendingOperationalRequests, useResolveOperationalRequest } from '@/hooks/useVehicleOperationalRequests';
 import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
@@ -91,6 +93,8 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
   const unassign = useUnassignVehicle();
   const statusMutation = useVehicleOperationalStatus();
+  const { data: pendingRequests } = usePendingOperationalRequests();
+  const resolveRequest = useResolveOperationalRequest();
   const assignedVehicles = emergency.assignedVehicles?.length
     ? emergency.assignedVehicles
     : emergency.vehicleCodes.map((code, i) => ({
@@ -190,9 +194,12 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
             <div className="mt-3 flex flex-wrap gap-1.5">
               {assignedVehicles.map((av, i) => {
                 const meta = vehicleStatusMeta(av.operationalStatus);
+                const req = pendingRequests?.find(r =>
+                  r.emergency_id === emergency.id &&
+                  (av.evId ? r.emergency_vehicle_id === av.evId : r.vehicle_id === av.vehicleId));
                 return (
+                  <Fragment key={av.evId || av.vehicleId || `${av.code}-${i}`}>
                   <span
-                    key={av.evId ?? av.vehicleId ?? `${av.code}-${i}`}
                     className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-mono ${meta.chip}`}
                   >
                     {av.evId ? (
@@ -253,6 +260,35 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
                       </button>
                     )}
                   </span>
+                  {req && (
+                    <span
+                      title={`Operix Móvil: ${av.code} reporta ${req.requested_status} a las ${new Date(req.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+                      className="flex animate-pulse items-center gap-1 rounded border border-warning/60 bg-warning/15 px-1.5 py-0.5 text-[11px] font-mono text-warning"
+                    >
+                      <Smartphone className="h-3 w-3" />
+                      <span className="font-semibold">{req.requested_status}</span>
+                      <span className="opacity-80">{new Date(req.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <button
+                        type="button"
+                        title="Aceptar clave del móvil"
+                        disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: req, accept: true, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-success hover:bg-success/20"
+                      >
+                        <Check className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Descartar"
+                        disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: req, accept: false, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-destructive hover:bg-destructive/20"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  </Fragment>
                 );
               })}
             </div>

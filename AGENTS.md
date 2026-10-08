@@ -7,3 +7,4 @@
 - Territory coverage (src/lib/territoryLookup.ts, TerritoryStatus) is a single informative ray-casting check on the exact KML polygons fed by the final emergency coordinate; boundary and overlaps are reported, never auto-resolved, and it never assigns resources.
 - Vehicle assignability comes only from src/lib/vehicleAvailability.ts (open emergency_vehicles + 6-9/10-9); reassignment closes the previous participation with released_at and logs both emergencies — never deletes history.
 - /pantalla-mapa renders OperativeMap in screen mode; never fork a second map implementation.
+- Mobile operational keys (6-3/6-8/6-9/6-10) arrive as pending rows in vehicle_operational_requests via operix-movil; only the console applies them (accept uses the mobile's reported time) and any manual console key change supersedes pending requests — the console always has priority.
