@@ -57,6 +57,13 @@
       "when": 1790807658784,
       "tag": "0007_equipment_company_admin_volunteer_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791464795591,
+      "tag": "0008_vehicle_operational_requests",
+      "breakpoints": true
     }
   ]
 }
