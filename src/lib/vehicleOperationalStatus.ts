@@ -8,6 +8,7 @@ export type VehicleOperationalStatus =
   | 'despachado'
   | 'en_lugar'
   | 'controlada'
+  | 'disponible_lugar'
   | 'retirandose'
   | 'en_cuartel';
 
@@ -19,7 +20,7 @@ export interface VehicleStatusMeta {
   description: string;
   /** Clases Tailwind con tokens semánticos del tema. */
   chip: string;
-  timestampField: 'assigned_at' | 'on_scene_at' | 'controlled_at' | 'withdrawing_at' | 'released_at';
+  timestampField: 'assigned_at' | 'status_updated_at' | 'on_scene_at' | 'controlled_at' | 'withdrawing_at' | 'released_at';
 }
 
 export const VEHICLE_STATUS_META: Record<VehicleOperationalStatus, VehicleStatusMeta> = {
@@ -47,6 +48,14 @@ export const VEHICLE_STATUS_META: Record<VehicleOperationalStatus, VehicleStatus
     chip: 'border-info/60 bg-info/20 text-info',
     timestampField: 'controlled_at',
   },
+  disponible_lugar: {
+    key: 'disponible_lugar',
+    code: '6-8',
+    label: 'Disponible',
+    description: 'Material mayor disponible en el lugar',
+    chip: 'border-info/50 bg-info/10 text-info',
+    timestampField: 'status_updated_at',
+  },
   retirandose: {
     key: 'retirandose',
     code: '6-9',
@@ -70,6 +79,7 @@ export const SELECTABLE_VEHICLE_STATUSES: VehicleOperationalStatus[] = [
   'despachado',
   'en_lugar',
   'controlada',
+  'disponible_lugar',
   'retirandose',
 ];
 
@@ -77,3 +87,11 @@ export function vehicleStatusMeta(status?: string | null): VehicleStatusMeta {
   return VEHICLE_STATUS_META[(status as VehicleOperationalStatus) ?? 'despachado']
     ?? VEHICLE_STATUS_META.despachado;
 }
+
+/** Clave radial reportada por Operix Móvil → estado operativo de la consola. */
+export const MOBILE_KEY_TO_STATUS: Record<string, VehicleOperationalStatus> = {
+  '6-3': 'en_lugar',
+  '6-8': 'disponible_lugar',
+  '6-9': 'retirandose',
+  '6-10': 'en_cuartel',
+};
