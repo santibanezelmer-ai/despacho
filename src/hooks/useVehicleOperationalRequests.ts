@@ -65,15 +65,26 @@ export function useResolveOperationalRequest() {
         return { accepted: true, code: '6-10', needsRelease: true };
       }
       if (status && request.emergency_vehicle_id) {
-        await changeStatus.mutateAsync({
-          evId: request.emergency_vehicle_id,
-          emergencyId: request.emergency_id,
-          vehicleCode,
-          status,
-          at: request.reported_at,
-          logSuffix: ' (reportado por Operix Móvil, confirmado por Central)',
-          silent: true,
-        });
+        try {
+          await changeStatus.mutateAsync({
+            evId: request.emergency_vehicle_id,
+            emergencyId: request.emergency_id,
+            vehicleCode,
+            status,
+            at: request.reported_at,
+            logSuffix: ' (reportado por Operix Móvil, confirmado por Central)',
+            silent: true,
+          });
+        } catch (e) {
+          // La clave no se pudo aplicar: devolver la solicitud a pendiente
+          // para que no se pierda y el operador pueda reintentarla.
+          await supabase
+            .from('vehicle_operational_requests')
+            .update({ status: 'pendiente', resolved_at: null, resolved_by: null })
+            .eq('id', request.id)
+            .eq('status', 'aceptada');
+          throw e;
+        }
       }
       return { accepted: true, code: request.requested_status };
     },

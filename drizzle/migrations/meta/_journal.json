@@ -64,6 +64,13 @@
       "when": 1791464795591,
       "tag": "0008_vehicle_operational_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791548293508,
+      "tag": "0009_allow_disponible_lugar_status",
+      "breakpoints": true
     }
   ]
 }
