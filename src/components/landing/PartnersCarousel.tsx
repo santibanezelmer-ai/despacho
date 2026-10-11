@@ -20,9 +20,9 @@ const PARTNERS: Partner[] = [
 function PartnerItem({ p }: { p: Partner }) {
   return (
     <div className="flex shrink-0 items-center gap-3 px-6 sm:px-10">
-      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-emergency/25 bg-emergency/10">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-emergency/25 bg-emergency/10">
         {p.logo ? (
-          <img src={p.logo} alt={p.name} className="h-full w-full object-contain" loading="lazy" />
+          <img src={p.logo} alt={p.name} className="h-full w-full object-contain p-0.5" loading="lazy" />
         ) : (
           <Shield className="h-7 w-7 text-emergency" aria-hidden />
         )}
