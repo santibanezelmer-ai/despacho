@@ -1,5 +1,7 @@
 import { Shield } from 'lucide-react';
 import escudoEntreLagos from '@/assets/escudo-entre-lagos.png.asset.json';
+import escudoPrimera from '@/assets/escudo-primera-compania.png.asset.json';
+import escudoSegunda from '@/assets/escudo-segunda-compania.png.asset.json';
 
 interface Partner {
   name: string;
@@ -11,8 +13,8 @@ interface Partner {
 // Instituciones que trabajan con Operix Dispatch. Agregar nuevas aquí.
 const PARTNERS: Partner[] = [
   { name: 'Cuerpo de Bomberos Entre Lagos', subtitle: 'Puyehue', logo: escudoEntreLagos.url },
-  { name: '1ª Compañía', subtitle: 'Bomberos Entre Lagos' },
-  { name: '2ª Compañía', subtitle: 'Bomberos Entre Lagos' },
+  { name: '1ª Compañía', subtitle: 'Federico Schulze · Entre Lagos', logo: escudoPrimera.url },
+  { name: '2ª Compañía', subtitle: 'Bomberos Entre Lagos', logo: escudoSegunda.url },
 ];
 
 function PartnerItem({ p }: { p: Partner }) {
