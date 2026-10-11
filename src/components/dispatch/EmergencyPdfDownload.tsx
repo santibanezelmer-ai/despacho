@@ -128,7 +128,7 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
       // Fetch personnel
       const { data: epData } = await supabase
         .from('emergency_personnel')
-        .select('*, volunteers(name, code, rut, phone, companies(name), ranks(name)), emergency_vehicles(vehicles(code))')
+        .select('*, volunteers(name, code, rut, phone, companies(id, name, number, logo_url), ranks(name)), emergency_vehicles(vehicles(code))')
         .eq('emergency_id', emergencyId);
 
       // Bitácora (claves marcadas por cada móvil)
@@ -139,21 +139,8 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         .order('created_at', { ascending: true });
       const logs = logData ?? [];
 
-      // Resolve org logo + logos of every attending company, ordered 1ª, 2ª, ...
+      // Encabezado de la primera hoja: solo el logo del cuerpo.
       const orgLogo = await logoToDataUrl(orgRow?.logo_url);
-      const companyMap = new Map<string, { number: number; logo_url: string }>();
-      for (const ev of evData ?? []) {
-        const c = (ev as any).vehicles?.companies;
-        if (c?.id && c?.logo_url && !companyMap.has(c.id)) {
-          companyMap.set(c.id, { number: c.number ?? 999, logo_url: c.logo_url });
-        }
-      }
-      const sortedCompanies = [...companyMap.values()].sort((a, b) => a.number - b.number);
-      const companyLogos: string[] = [];
-      for (const c of sortedCompanies) {
-        const l = await logoToDataUrl(c.logo_url);
-        if (l) companyLogos.push(l);
-      }
 
       const ek = emg.emergency_keys as any;
       const doc = new jsPDF({ unit: 'mm', format: 'letter' });
@@ -162,16 +149,10 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
       const margin = 14;
       const contentW = pageW - margin * 2;
 
-      // ---- Header: logos + centered title ----
+      // ---- Header: logo del cuerpo + título centrado ----
       if (orgLogo) {
         try { doc.addImage(orgLogo, 'PNG', margin, 10, 16, 16); } catch { /* ignore */ }
       }
-      // Company logos at right, left-to-right in ascending company order
-      const logoSize = 16, logoGap = 2;
-      const startX = pageW - margin - companyLogos.length * logoSize - (companyLogos.length - 1) * logoGap;
-      companyLogos.forEach((l, i) => {
-        try { doc.addImage(l, 'PNG', startX + i * (logoSize + logoGap), 10, logoSize, logoSize); } catch { /* ignore */ }
-      });
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.text('SALIDA DE MOVIL 2026.', pageW / 2, 20, { align: 'center' });
@@ -326,21 +307,43 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
       doc.rect(margin, chunkStart, contentW, y - chunkStart + 2);
       y += 8;
 
-      // ---- Personnel by company ----
-      const byCompany = new Map<string, any[]>();
+      // ---- Personnel by company (siempre 1ª → última, sin importar orden de despacho) ----
+      const byCompany = new Map<string, { name: string; number: number; logo_url: string | null; list: any[] }>();
       personnel.forEach((ep: any) => {
-        const cname = ep.volunteers?.companies?.name ?? 'SIN COMPAÑÍA';
-        if (!byCompany.has(cname)) byCompany.set(cname, []);
-        byCompany.get(cname)!.push(ep);
+        const c = ep.volunteers?.companies;
+        const key = c?.id ?? 'sin';
+        if (!byCompany.has(key)) {
+          byCompany.set(key, { name: c?.name ?? 'SIN COMPAÑÍA', number: c?.number ?? 9999, logo_url: c?.logo_url ?? null, list: [] });
+        }
+        byCompany.get(key)!.list.push(ep);
       });
+      const companyGroups = [...byCompany.values()].sort((a, b) => a.number - b.number);
+      const logoCache = new Map<string, string | null>();
+      for (const g of companyGroups) {
+        if (g.logo_url && !logoCache.has(g.logo_url)) logoCache.set(g.logo_url, await logoToDataUrl(g.logo_url));
+      }
 
-      for (const [companyName, list] of byCompany) {
+      for (const { name: companyName, logo_url, list } of companyGroups) {
         if (y > pageH - 90) { doc.addPage(); y = 20; }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
-        doc.text(`OFICIALES Y VOLUNTARIOS ${companyName.toUpperCase()}.`, pageW / 2, y + 4, { align: 'center' });
-        y += 9;
+        const title = `OFICIALES Y VOLUNTARIOS ${companyName.toUpperCase()}.`;
+        const logo = logo_url ? logoCache.get(logo_url) : null;
+        const logoSize = 16;
+        if (logo) {
+          const tw = doc.getTextWidth(title);
+          const gap = 4;
+          const leftX = Math.max(margin, pageW / 2 - tw / 2 - gap - logoSize);
+          const rightX = Math.min(pageW - margin - logoSize, pageW / 2 + tw / 2 + gap);
+          try { doc.addImage(logo, 'PNG', leftX, y, logoSize, logoSize); } catch { /* ignore */ }
+          try { doc.addImage(logo, 'PNG', rightX, y, logoSize, logoSize); } catch { /* ignore */ }
+          doc.text(title, pageW / 2, y + logoSize / 2 + 1.5, { align: 'center' });
+          y += logoSize + 3;
+        } else {
+          doc.text(title, pageW / 2, y + 4, { align: 'center' });
+          y += 9;
+        }
 
         // 3 column-pairs: NOMBRES | FIRMA ×3
         const pairW = contentW / 3;
