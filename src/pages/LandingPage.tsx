@@ -13,6 +13,7 @@ const ModulesSection = lazy(() => import('@/components/landing/ModulesSection'))
 const ShowcaseSection = lazy(() => import('@/components/landing/ShowcaseSection'));
 const WhyOperixSection = lazy(() => import('@/components/landing/WhyOperixSection'));
 const StepsSection = lazy(() => import('@/components/landing/StepsSection'));
+const RadioComplementSection = lazy(() => import('@/components/landing/RadioComplementSection'));
 const PricingSection = lazy(() => import('@/components/landing/PricingSection'));
 const FAQSection = lazy(() => import('@/components/landing/FAQSection'));
 const SecuritySection = lazy(() => import('@/components/landing/SecuritySection'));
@@ -34,6 +35,7 @@ export default function LandingPage() {
       <Suspense fallback={<LazyFallback />}>
         <ProblemSolutionSection />
         <WhyOperixSection />
+        <RadioComplementSection />
         <ComparisonSection />
         <ModulesSection />
         <ShowcaseSection />

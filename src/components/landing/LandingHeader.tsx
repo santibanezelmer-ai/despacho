@@ -17,19 +17,18 @@ export default function LandingHeader() {
         </div>
         <div className="flex items-center gap-2.5">
           <Link to="/login">
-            <Button variant="ghost" size="sm" className="text-xs hidden sm:inline-flex hover:bg-secondary/80">
-              Iniciar Sesión
+            <Button variant="ghost" size="sm" className="text-xs hover:bg-secondary/80 px-2 sm:px-3">
+              Iniciar sesión
             </Button>
           </Link>
-          <Link to="/register">
+          <a href="#contacto">
             <Button
               size="sm"
               className="bg-emergency text-emergency-foreground hover:bg-emergency/90 text-xs font-semibold shadow-[0_0_15px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_25px_hsl(0_85%_55%/0.35)] transition-all"
             >
-              <span className="hidden sm:inline">Registrar Organización</span>
-              <span className="sm:hidden">Registrar</span>
+              Probar demo gratis
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
     </motion.header>

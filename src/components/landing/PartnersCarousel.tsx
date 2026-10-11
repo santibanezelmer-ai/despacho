@@ -13,8 +13,8 @@ interface Partner {
 // Instituciones que trabajan con Operix Dispatch. Agregar nuevas aquí.
 const PARTNERS: Partner[] = [
   { name: 'Cuerpo de Bomberos Entre Lagos', subtitle: 'Puyehue', logo: escudoEntreLagos.url },
-  { name: '1ª Compañía', subtitle: 'Federico Schulze · Entre Lagos', logo: escudoPrimera.url },
-  { name: '2ª Compañía', subtitle: 'Bomberos Entre Lagos', logo: escudoSegunda.url },
+  { name: 'Primera Compañía', subtitle: 'Federico Schulze · Entre Lagos', logo: escudoPrimera.url },
+  { name: 'Segunda Compañía', subtitle: 'Bomberos Entre Lagos', logo: escudoSegunda.url },
 ];
 
 function PartnerItem({ p }: { p: Partner }) {
@@ -32,6 +32,10 @@ function PartnerItem({ p }: { p: Partner }) {
         {p.subtitle && (
           <p className="whitespace-nowrap text-sm text-muted-foreground">{p.subtitle}</p>
         )}
+        <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-0.5 text-[11px] font-semibold text-success">
+          <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />
+          En operación activa
+        </span>
       </div>
     </div>
   );
@@ -41,10 +45,13 @@ export default function PartnersCarousel() {
   // Repeat enough to fill wide screens, then duplicate for a seamless loop.
   const base = Array.from({ length: Math.max(1, Math.ceil(8 / PARTNERS.length)) }, () => PARTNERS).flat();
   return (
-    <section aria-label="Instituciones que confían en Operix Dispatch" className="border-y border-border/50 bg-card/40 pt-10 pb-24 sm:pb-28">
-      <p className="mb-8 text-center text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:text-base">
-        Cuerpos de Bomberos y Compañías que confían en Operix Dispatch
-      </p>
+    <section aria-label="Operix en operaciones reales" className="border-y border-border/50 bg-card/40 pt-10 pb-24 sm:pb-28">
+      <div className="mb-8 px-4 text-center">
+        <h2 className="text-xl font-bold sm:text-3xl">Operix en operaciones reales</h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+          Cuerpo de Bomberos de Entre Lagos y sus compañías usan Operix Dispatch en su operación diaria.
+        </p>
+      </div>
       <div className="group relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
         <div className="flex w-max animate-partners-marquee group-hover:[animation-play-state:paused]">
           {[...base, ...base].map((p, i) => (
