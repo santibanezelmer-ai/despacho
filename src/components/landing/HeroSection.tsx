@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Zap, Shield, Wifi } from 'lucide-react';
+import { ArrowRight, PhoneCall, CheckCircle2, Zap, Shield, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -132,24 +132,35 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 0.65 }}
           className="mt-8 sm:mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
         >
-          <a href="#demo" className="w-full sm:w-auto">
+          <a href="#contacto" className="w-full sm:w-auto">
             <Button
               size="lg"
               className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2.5 w-full sm:w-auto text-base sm:text-lg px-10 sm:px-12 h-12 sm:h-14 font-bold shadow-[0_0_40px_hsl(0_85%_55%/0.45),0_4px_20px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_60px_hsl(0_85%_55%/0.55),0_6px_30px_hsl(0_85%_55%/0.35)] transition-all duration-300 hover:scale-[1.03]"
             >
-              Solicitar una demo <ArrowRight className="h-5 w-5" />
+              Probar demo gratis <ArrowRight className="h-5 w-5" />
             </Button>
           </a>
-          <Link to="/login" className="w-full sm:w-auto">
+          <a
+            href="mailto:contacto@operixdispatch.com?subject=Agendar%20llamada%20guiada%20-%20Operix%20Dispatch"
+            className="w-full sm:w-auto"
+          >
             <Button
               size="lg"
               variant="outline"
-              className="border-border/60 hover:border-emergency/40 hover:bg-emergency/5 w-full sm:w-auto text-sm sm:text-base transition-all h-12 sm:h-14 px-8"
+              className="border-border/60 hover:border-emergency/40 hover:bg-emergency/5 gap-2 w-full sm:w-auto text-sm sm:text-base transition-all h-12 sm:h-14 px-8"
             >
-              Ya tengo cuenta
+              <PhoneCall className="h-4 w-4" /> Agendar llamada guiada
             </Button>
-          </Link>
+          </a>
         </motion.div>
+
+        <p className="mx-auto mt-5 max-w-xl text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
+          El acceso de prueba se habilita con coordinación previa y una demostración guiada para tu institución.{' '}
+          ¿Ya tienes cuenta?{' '}
+          <Link to="/login" className="font-semibold text-emergency underline-offset-4 hover:underline">
+            Iniciar sesión
+          </Link>
+        </p>
 
         {/* Micro-benefits */}
         <motion.div

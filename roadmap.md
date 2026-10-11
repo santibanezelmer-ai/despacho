@@ -26,3 +26,4 @@
 - [x] Zoom con la rueda del mouse sobre el mapa de la ventana de despacho.
 - [x] Claves de estado por móvil (6-3, 6-7, 6-9, 6-10) controladas individualmente en la consola.
 - [x] Mantener en app móvil y voluntarios solo despachada / en trabajo / controlada / finalizada.
+- [ ] Landing: CTA demo/llamada, "Operix en operaciones reales", tarjeta radio VHF/UHF, FAQ offline/radio/demo, Plan Global Institucional, footer Comercial Hels SpA.

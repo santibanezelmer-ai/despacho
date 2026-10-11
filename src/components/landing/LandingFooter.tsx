@@ -61,6 +61,9 @@ export default function LandingFooter() {
             </p>
           </div>
         </div>
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Operix Dispatch es una plataforma desarrollada y comercializada por Comercial Hels SpA.
+        </p>
       </div>
     </footer>
   );
