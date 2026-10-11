@@ -39,7 +39,7 @@ export default function PartnersCarousel() {
   // Repeat enough to fill wide screens, then duplicate for a seamless loop.
   const base = Array.from({ length: Math.max(1, Math.ceil(8 / PARTNERS.length)) }, () => PARTNERS).flat();
   return (
-    <section aria-label="Instituciones que confían en Operix Dispatch" className="border-y border-border/50 bg-card/40 py-8">
+    <section aria-label="Instituciones que confían en Operix Dispatch" className="border-y border-border/50 bg-card/40 pt-8 pb-20 sm:pb-24">
       <p className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
         Cuerpos de Bomberos y Compañías que confían en Operix Dispatch
       </p>
