@@ -5,33 +5,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { LANDING_FAQS } from './faqData';
 
-const faqs = [
-  {
-    q: '¿Cuánto tarda la implementación?',
-    a: 'Operix puede estar operativo en menos de 48 horas. Incluimos configuración guiada, carga de datos iniciales y capacitación para tu equipo de despacho.',
-  },
-  {
-    q: '¿Funciona sin conexión a internet?',
-    a: 'La app móvil mantiene la información de la emergencia activa en caché. Para despacho en tiempo real se requiere conexión, pero los datos se sincronizan automáticamente al reconectarse.',
-  },
-  {
-    q: '¿Es necesario instalar software?',
-    a: 'No. Operix es 100% web y se accede desde cualquier navegador. La app móvil está disponible para Android e iOS sin configuraciones complejas.',
-  },
-  {
-    q: '¿Cómo se protegen los datos de mi organización?',
-    a: 'Cada organización tiene aislamiento total de datos con políticas de seguridad a nivel de fila. Toda la comunicación está cifrada y los accesos se controlan por roles.',
-  },
-  {
-    q: '¿Puedo gestionar múltiples compañías o cuarteles?',
-    a: 'Sí. Operix soporta estructura multi-compañía dentro de una misma organización, con vehículos, personal y recursos independientes por cada unidad.',
-  },
-  {
-    q: '¿Incluye capacitación?',
-    a: 'Todos los planes incluyen capacitación inicial para operadores y administradores. El plan Institucional añade sesiones de entrenamiento continuo y soporte técnico según condiciones del plan.',
-  },
-];
+const faqs = LANDING_FAQS;
 
 const container = {
   hidden: {},
@@ -45,7 +21,7 @@ const item = {
 
 export default function FAQSection() {
   return (
-    <section className="px-4 sm:px-6 py-16 sm:py-24">
+    <section id="preguntas" className="px-4 sm:px-6 py-16 sm:py-24 scroll-mt-24">
       <div className="mx-auto max-w-3xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
