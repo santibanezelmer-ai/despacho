@@ -229,6 +229,19 @@ export default function VehicleDevicesAdmin() {
                       </span>
                     )}
                   </div>
+                  {d.activation_codes?.[0]?.code && (
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <span>
+                        Código de activación:{' '}
+                        <span className="font-mono font-bold tracking-widest text-foreground">{d.activation_codes[0].code}</span>
+                        {d.activation_codes[0].is_permanent ? ' (permanente)' : ''}
+                        {' · '}activado {new Date(d.activated_at).toLocaleString('es-CL')}
+                      </span>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copy(d.activation_codes![0].code)} title="Copiar">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 {d.status === 'active' && (
                   <Button size="sm" variant="outline" onClick={() => setToRevoke(d.id)}>
