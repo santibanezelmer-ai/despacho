@@ -102,3 +102,6 @@ Respuesta: `{ ok, request: { id, requested_status, reported_at, status }, messag
 
 ## POST /operational-key-status
 Devuelve las últimas 5 solicitudes del móvil con su estado (`pendiente`, `aceptada`, `rechazada`, `reemplazada`).
+
+## Códigos permanentes por móvil
+`vehicle_device_codes.is_permanent = true` + `vehicle_id`: no expiran ni se consumen. `/activate` con un código permanente crea un dispositivo ya asociado al móvil (respuesta incluye `vehicle`), revoca la tablet activa anterior de ese móvil y registra `last_used_at`. Regenerar marca el código anterior con `revoked_at`. Los códigos temporales (un solo uso) siguen igual.
