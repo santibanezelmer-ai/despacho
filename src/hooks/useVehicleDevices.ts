@@ -41,7 +41,7 @@ export function useVehicleDevices() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('vehicle_devices')
-        .select('*, vehicles(id, code, status), activation_codes:vehicle_device_codes!vehicle_device_codes_used_by_device_id_fkey(code, is_permanent)')
+        .select('*, vehicles(id, code, status), activation_codes:vehicle_device_codes!vehicle_device_codes_device_fk(code, is_permanent)')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
       if (error) throw error;
