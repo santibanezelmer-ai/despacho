@@ -1722,11 +1722,15 @@ export type Database = {
           created_by: string | null
           expires_at: string
           id: string
+          is_permanent: boolean
           label: string | null
+          last_used_at: string | null
           organization_id: string
+          revoked_at: string | null
           updated_at: string
           used_at: string | null
           used_by_device_id: string | null
+          vehicle_id: string | null
         }
         Insert: {
           code: string
@@ -1734,11 +1738,15 @@ export type Database = {
           created_by?: string | null
           expires_at?: string
           id?: string
+          is_permanent?: boolean
           label?: string | null
+          last_used_at?: string | null
           organization_id: string
+          revoked_at?: string | null
           updated_at?: string
           used_at?: string | null
           used_by_device_id?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           code?: string
@@ -1746,11 +1754,15 @@ export type Database = {
           created_by?: string | null
           expires_at?: string
           id?: string
+          is_permanent?: boolean
           label?: string | null
+          last_used_at?: string | null
           organization_id?: string
+          revoked_at?: string | null
           updated_at?: string
           used_at?: string | null
           used_by_device_id?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -1765,6 +1777,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_device_codes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
