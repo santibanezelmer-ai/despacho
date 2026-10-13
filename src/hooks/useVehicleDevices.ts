@@ -14,6 +14,7 @@ export type VehicleDevice = {
   last_seen_at: string | null;
   vehicle_changed_at: string | null;
   vehicles: { id: string; code: string; status: string } | null;
+  activation_codes?: { code: string; is_permanent: boolean }[] | null;
 };
 
 export type DeviceCode = {
@@ -40,7 +41,7 @@ export function useVehicleDevices() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('vehicle_devices')
-        .select('*, vehicles(id, code, status)')
+        .select('*, vehicles(id, code, status), activation_codes:vehicle_device_codes!vehicle_device_codes_device_fk(code, is_permanent)')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
       if (error) throw error;
