@@ -62,6 +62,7 @@ export function useVehicleDeviceCodes() {
         .select('id, code, label, expires_at, used_at, created_at')
         .eq('organization_id', orgId)
         .is('used_at', null)
+        .eq('is_permanent', false)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
       if (error) throw error;
