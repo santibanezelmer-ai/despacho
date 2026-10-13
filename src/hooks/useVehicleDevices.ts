@@ -126,5 +126,65 @@ export function useVehicleDeviceActions() {
     onSuccess: invalidate,
   });
 
-  return { generateCode, revokeDevice, cancelCode };
+  /** Crea (o regenera) el código permanente de un móvil; anula el anterior. */
+  const generatePermanentCode = useMutation({
+    mutationFn: async ({ vehicleId, vehicleCode }: { vehicleId: string; vehicleCode: string }) => {
+      const now = new Date().toISOString();
+      const { error: revErr } = await (supabase as any)
+        .from('vehicle_device_codes')
+        .update({ revoked_at: now })
+        .eq('organization_id', orgId)
+        .eq('vehicle_id', vehicleId)
+        .eq('is_permanent', true)
+        .is('revoked_at', null);
+      if (revErr) throw revErr;
+      const prefix = vehicleCode.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+      const code = `${prefix}-${randomCode(6)}`;
+      const { data, error } = await (supabase as any)
+        .from('vehicle_device_codes')
+        .insert({
+          organization_id: orgId,
+          vehicle_id: vehicleId,
+          is_permanent: true,
+          code,
+          label: vehicleCode,
+          created_by: user?.id,
+          expires_at: '2999-12-31T23:59:59Z',
+        })
+        .select('id, code')
+        .single();
+      if (error) throw error;
+      return data as { id: string; code: string };
+    },
+    onSuccess: invalidate,
+  });
+
+  return { generateCode, revokeDevice, cancelCode, generatePermanentCode };
+}
+
+export type PermanentCode = {
+  id: string;
+  code: string;
+  vehicle_id: string;
+  last_used_at: string | null;
+  created_at: string;
+};
+
+export function usePermanentDeviceCodes() {
+  const { orgId } = useOrganization();
+  return useQuery({
+    queryKey: ['vehicle-device-codes', orgId, 'permanent'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('vehicle_device_codes')
+        .select('id, code, vehicle_id, last_used_at, created_at')
+        .eq('organization_id', orgId)
+        .eq('is_permanent', true)
+        .is('revoked_at', null);
+      if (error) throw error;
+      return (data ?? []) as PermanentCode[];
+    },
+    enabled: !!orgId,
+    refetchInterval: 30000,
+  });
 }
