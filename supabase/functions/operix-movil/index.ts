@@ -149,12 +149,12 @@ Deno.serve(async (req) => {
 
       const { data: codeRow } = await supabase
         .from('vehicle_device_codes')
-        .select('id, organization_id, label, expires_at, used_at, used_by_device_id')
+        .select('id, organization_id, label, expires_at, used_at, used_by_device_id, is_permanent, vehicle_id, revoked_at')
         .eq('code', code)
         .maybeSingle();
 
-      if (!codeRow) return json({ error: 'Código no válido' }, 410);
-      if (new Date(codeRow.expires_at).getTime() < Date.now()) {
+      if (!codeRow || codeRow.revoked_at) return json({ error: 'Código no válido' }, 410);
+      if (!codeRow.is_permanent && new Date(codeRow.expires_at).getTime() < Date.now()) {
         return json({ error: 'El código ha expirado' }, 410);
       }
 
@@ -162,6 +162,52 @@ Deno.serve(async (req) => {
       const platform = String(body?.platform ?? 'unknown').slice(0, 40);
       const token = newDeviceToken();
       const tokenHash = await sha256(token);
+
+      // ---- Código permanente de móvil: reutilizable, asocia el móvil ----
+      if (codeRow.is_permanent && codeRow.vehicle_id) {
+        const now = new Date().toISOString();
+        // Revoca dispositivos anteriores de ese móvil (una sola tablet activa por móvil).
+        await supabase
+          .from('vehicle_devices')
+          .update({ status: 'revoked', revoked_at: now, vehicle_id: null })
+          .eq('organization_id', codeRow.organization_id)
+          .eq('vehicle_id', codeRow.vehicle_id)
+          .eq('status', 'active');
+
+        const { data: device, error } = await supabase
+          .from('vehicle_devices')
+          .insert({
+            organization_id: codeRow.organization_id,
+            vehicle_id: codeRow.vehicle_id,
+            vehicle_changed_at: now,
+            name: deviceName,
+            platform,
+            token_hash: tokenHash,
+          })
+          .select('id')
+          .single();
+        if (error || !device) return json({ error: error?.message ?? 'No se pudo crear el dispositivo' }, 400);
+
+        await supabase
+          .from('vehicle_device_codes')
+          .update({ last_used_at: now, used_by_device_id: device.id })
+          .eq('id', codeRow.id);
+
+        const [{ data: org }, { data: vehicle }] = await Promise.all([
+          supabase.from('organizations').select('id, name, time_format').eq('id', codeRow.organization_id).maybeSingle(),
+          supabase.from('vehicles').select('id, code, type, status').eq('id', codeRow.vehicle_id).maybeSingle(),
+        ]);
+
+        return json({
+          device_id: device.id,
+          device_token: token,
+          device_name: deviceName,
+          organization: org,
+          vehicle,
+          vehicles: await vehiclesOfOrg(codeRow.organization_id),
+        });
+      }
+
 
       // Reserva atómica del código: solo un intento puede pasar de aquí.
       const { data: claimed } = await supabase
