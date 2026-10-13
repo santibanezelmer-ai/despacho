@@ -27,7 +27,7 @@ export default function VehicleDevicesAdmin() {
   const { data: devices = [] } = useVehicleDevices();
   const { data: codes = [] } = useVehicleDeviceCodes();
   const { data: permCodes = [] } = usePermanentDeviceCodes();
-  const { vehicles = [] } = useVehicles() as any;
+  const { data: vehicles = [] } = useVehicles() as { data?: any[] };
   const { data: positions = [] } = useVehicleLastPositions({ refetchInterval: 10000 });
   const { generateCode, revokeDevice, cancelCode, generatePermanentCode } = useVehicleDeviceActions();
 
@@ -241,6 +241,29 @@ export default function VehicleDevicesAdmin() {
           })
         )}
       </div>
+
+      <AlertDialog open={!!toRegen} onOpenChange={(o) => !o && setToRegen(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Regenerar código de {toRegen?.code}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El código actual dejará de funcionar para nuevas activaciones. La tablet ya vinculada
+              sigue operando hasta que se active otra con el nuevo código.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toRegen) handlePermanent(toRegen.id, toRegen.code);
+                setToRegen(null);
+              }}
+            >
+              Regenerar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!toRevoke} onOpenChange={(o) => !o && setToRevoke(null)}>
         <AlertDialogContent>
