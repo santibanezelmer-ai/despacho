@@ -48,7 +48,7 @@ export default function DispatchConsole() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right mr-2">
-            <SystemClock />
+            <SystemClock className="text-3xl font-mono font-bold tabular-nums leading-none text-foreground sm:text-4xl" />
           </div>
           <button
             onClick={toggleTheme}
