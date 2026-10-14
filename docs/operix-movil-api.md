@@ -105,3 +105,12 @@ Devuelve las últimas 5 solicitudes del móvil con su estado (`pendiente`, `acep
 
 ## Códigos permanentes por móvil
 `vehicle_device_codes.is_permanent = true` + `vehicle_id`: no expiran ni se consumen. `/activate` con un código permanente crea un dispositivo ya asociado al móvil (respuesta incluye `vehicle`), revoca la tablet activa anterior de ese móvil y registra `last_used_at`. Regenerar marca el código anterior con `revoked_at`. Los códigos temporales (un solo uso) siguen igual.
+
+## Pre-informe desde Operix Móvil
+
+`POST /operational-key` acepta un texto opcional `message` (máx. 4000 caracteres):
+
+- Solo pre-informe: `{ "key": "PRE-INFORME", "message": "..." }` (o `key: null` con `message`).
+- Clave + pre-informe: `{ "key": "6-10", "message": "..." }` — crea dos avisos separados.
+
+En la consola aparece un aviso amarillo con el texto. Aceptar lo **agrega** (nunca reemplaza) al pre-informe oficial con el prefijo `[MÓVIL HH:MM]` y deja registro en la bitácora. Varios pre-informes pendientes se acumulan; no se reemplazan entre sí.

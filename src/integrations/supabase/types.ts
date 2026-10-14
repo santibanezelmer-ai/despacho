@@ -2057,6 +2057,7 @@ export type Database = {
           id: string
           latitude: number | null
           longitude: number | null
+          message: string | null
           odometer_end: number | null
           organization_id: string
           reported_at: string
@@ -2074,6 +2075,7 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          message?: string | null
           odometer_end?: number | null
           organization_id: string
           reported_at?: string
@@ -2091,6 +2093,7 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          message?: string | null
           odometer_end?: number | null
           organization_id?: string
           reported_at?: string

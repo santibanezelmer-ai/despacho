@@ -427,9 +427,15 @@ Deno.serve(async (req) => {
     // ---------- 5. Claves operativas (solicitud; la consola confirma) ----------
     if (action === 'operational-key') {
       if (!device.vehicle_id) return json({ error: 'El dispositivo no tiene un móvil asociado' }, 409);
-      const key = String(body?.key ?? body?.status ?? '').trim();
-      const ALLOWED = ['6-3', '6-8', '6-9', '6-10'];
+      const rawKey = body?.key ?? body?.status;
+      const rawMsg = typeof body?.message === 'string' ? body.message.trim().slice(0, 4000)
+        : typeof body?.pre_report === 'string' ? body.pre_report.trim().slice(0, 4000) : '';
+      const message = rawMsg.length > 0 ? rawMsg : null;
+      let key = rawKey == null ? '' : String(rawKey).trim().toUpperCase();
+      if (key === 'PREINFORME' || (!key && message)) key = 'PRE-INFORME';
+      const ALLOWED = ['6-3', '6-8', '6-9', '6-10', 'PRE-INFORME'];
       if (!ALLOWED.includes(key)) return json({ error: 'Clave no válida', allowed: ALLOWED }, 400);
+      if (key === 'PRE-INFORME' && !message) return json({ error: 'El pre-informe requiere un mensaje' }, 400);
 
       const { data: link } = await supabase
         .from('emergency_vehicles')
@@ -451,32 +457,49 @@ Deno.serve(async (req) => {
       const lng = num(body?.longitude);
       const odo = num(body?.odometer_end ?? body?.odometer);
 
-      // Una sola solicitud pendiente por móvil: la anterior queda reemplazada.
-      await supabase
-        .from('vehicle_operational_requests')
-        .update({ status: 'reemplazada', resolved_at: new Date().toISOString() })
-        .eq('emergency_vehicle_id', link.id)
-        .eq('status', 'pendiente');
+      const base = {
+        organization_id: device.organization_id,
+        emergency_id: link.emergency_id,
+        emergency_vehicle_id: link.id,
+        vehicle_id: device.vehicle_id,
+        device_id: device.id,
+        reported_at: reportedAt,
+        latitude: lat !== null && Math.abs(lat) <= 90 ? lat : null,
+        longitude: lng !== null && Math.abs(lng) <= 180 ? lng : null,
+      };
+      const created: unknown[] = [];
 
-      const { data: reqRow, error } = await supabase
-        .from('vehicle_operational_requests')
-        .insert({
-          organization_id: device.organization_id,
-          emergency_id: link.emergency_id,
-          emergency_vehicle_id: link.id,
-          vehicle_id: device.vehicle_id,
-          device_id: device.id,
-          requested_status: key,
-          reported_at: reportedAt,
-          latitude: lat !== null && Math.abs(lat) <= 90 ? lat : null,
-          longitude: lng !== null && Math.abs(lng) <= 180 ? lng : null,
-          odometer_end: odo !== null && odo >= 0 ? Math.round(odo) : null,
-        })
-        .select('id, requested_status, reported_at, status')
-        .single();
-      if (error) return json({ error: error.message }, 400);
+      // Clave operativa: una sola pendiente por móvil (la anterior queda reemplazada).
+      if (key !== 'PRE-INFORME') {
+        await supabase
+          .from('vehicle_operational_requests')
+          .update({ status: 'reemplazada', resolved_at: new Date().toISOString() })
+          .eq('emergency_vehicle_id', link.id)
+          .eq('status', 'pendiente')
+          .neq('requested_status', 'PRE-INFORME');
+        const { data, error } = await supabase
+          .from('vehicle_operational_requests')
+          .insert({ ...base, requested_status: key, odometer_end: odo !== null && odo >= 0 ? Math.round(odo) : null })
+          .select('id, requested_status, reported_at, status')
+          .single();
+        if (error) return json({ error: error.message }, 400);
+        created.push(data);
+      }
+
+      // Pre-informe (solo o adjunto a una clave): ticket independiente, se acumulan.
+      if (message) {
+        const { data, error } = await supabase
+          .from('vehicle_operational_requests')
+          .insert({ ...base, requested_status: 'PRE-INFORME', message })
+          .select('id, requested_status, reported_at, status')
+          .single();
+        if (error) return json({ error: error.message }, 400);
+        created.push(data);
+      }
+
       await touchDevice(device);
-      return json({ ok: true, request: reqRow, message: `${key} enviado a Central · Pendiente de confirmación` });
+      const label = key === 'PRE-INFORME' ? 'Pre-informe' : message ? `${key} + pre-informe` : key;
+      return json({ ok: true, request: created[0], requests: created, message: `${label} enviado a Central · Pendiente de confirmación` });
     }
 
     if (action === 'operational-key-status') {
