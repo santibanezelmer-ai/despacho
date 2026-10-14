@@ -8,3 +8,4 @@
 - Vehicle assignability comes only from src/lib/vehicleAvailability.ts (open emergency_vehicles + 6-9/10-9); reassignment closes the previous participation with released_at and logs both emergencies — never deletes history.
 - /pantalla-mapa renders OperativeMap in screen mode; never fork a second map implementation.
 - Mobile operational keys (6-3/6-7/6-8/6-9/6-10) arrive as pending rows in vehicle_operational_requests via operix-movil; only the console applies them (accept uses the mobile's reported time) and any manual console key change supersedes pending requests — the console always has priority.
+- Remote screens (/tv) never use user sessions: they pair by 6-digit PIN through the screen-display function and read org data with their own secret, read-only and without personal contact data — TVs in stations have no accounts.
