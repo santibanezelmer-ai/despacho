@@ -52,9 +52,12 @@ Deno.serve(async (req) => {
       const orgId = String(body.organizationId ?? '');
       const view = VIEWS.includes(body.view) ? body.view : 'central';
       const name = String(body.name ?? '').slice(0, 60) || 'Pantalla';
-      const { data: m } = await admin.from('organization_members').select('role')
-        .eq('user_id', u.user.id).eq('organization_id', orgId).eq('status', 'active').maybeSingle();
-      if (!m || m.role === 'voluntario') return json({ error: 'Sin permiso en esta organización' }, 403);
+      const [{ data: m }, { data: sa }] = await Promise.all([
+        admin.from('organization_members').select('role')
+          .eq('user_id', u.user.id).eq('organization_id', orgId).eq('status', 'active').maybeSingle(),
+        admin.from('superadmins').select('id').eq('user_id', u.user.id).maybeSingle(),
+      ]);
+      if (!sa && (!m || m.role === 'voluntario')) return json({ error: 'Sin permiso en esta organización' }, 403);
       const { data: row } = await admin.from('screen_pairings').select('id, pin_expires_at')
         .eq('pin', pin).is('organization_id', null).maybeSingle();
       if (!row || new Date(row.pin_expires_at).getTime() < Date.now()) return json({ error: 'Código inválido o vencido' }, 404);

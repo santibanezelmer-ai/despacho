@@ -48,7 +48,12 @@ export default function ScreenLauncherDialog({ open, onOpenChange }: { open: boo
       body: { action: 'pair', pin, organizationId: orgId, view, name: name || 'Pantalla' },
     });
     setBusy(false);
-    if (error || data?.error) { toast.error(data?.error ?? 'Código inválido o vencido'); return; }
+    if (error || data?.error) {
+      let msg = data?.error as string | undefined;
+      try { if (!msg && (error as any)?.context?.json) msg = (await (error as any).context.json())?.error; } catch { /* ignore */ }
+      toast.error(msg ?? 'No se pudo vincular la pantalla');
+      return;
+    }
     toast.success('Pantalla vinculada');
     setPin(''); setName('');
     qc.invalidateQueries({ queryKey: ['screen-pairings'] });
