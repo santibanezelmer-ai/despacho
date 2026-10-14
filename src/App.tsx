@@ -26,6 +26,7 @@ import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const OperativeMap = lazy(() => import("@/pages/OperativeMap"));
+const TvScreen = lazy(() => import("@/pages/TvScreen"));
 const EquipmentPage = lazy(() => import("@/pages/Equipment"));
 const CentralScreen = lazy(() => import("@/pages/CentralScreen"));
 const MapScreen = lazy(() => import("@/pages/MapScreen"));
@@ -281,6 +282,7 @@ const App = () => (
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/invite/:token" element={<AcceptInvitation />} />
                 <Route path="/location/:token" element={<SharedLocationPage />} />
+                <Route path="/tv" element={<Suspense fallback={<PageFallback />}><TvScreen /></Suspense>} />
                 <Route path="/terminos" element={<TermsPage />} />
                 <Route path="/privacidad" element={<PrivacyPage />} />
                 <Route path="/voluntario/*" element={<VoluntarioApp />} />
