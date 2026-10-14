@@ -1400,6 +1400,59 @@ export type Database = {
           },
         ]
       }
+      screen_pairings: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          name: string | null
+          organization_id: string | null
+          paired_at: string | null
+          paired_by: string | null
+          pin: string
+          pin_expires_at: string
+          revoked_at: string | null
+          secret_hash: string
+          view: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          paired_at?: string | null
+          paired_by?: string | null
+          pin: string
+          pin_expires_at?: string
+          revoked_at?: string | null
+          secret_hash: string
+          view?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          paired_at?: string | null
+          paired_by?: string | null
+          pin?: string
+          pin_expires_at?: string
+          revoked_at?: string | null
+          secret_hash?: string
+          view?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screen_pairings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_hydrants: {
         Row: {
           active: boolean
