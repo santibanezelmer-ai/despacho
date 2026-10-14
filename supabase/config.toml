@@ -15,3 +15,5 @@ project_id = "ratbcyvzdlokcqyxdvvg"
     verify_jwt = false
   [functions.support-ai-assist]
     verify_jwt = false
+  [functions.screen-display]
+    verify_jwt = false
