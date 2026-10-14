@@ -92,6 +92,13 @@
       "when": 1791978861075,
       "tag": "0012_allow_6_7_operational_request",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791981533866,
+      "tag": "0013_radio_glossary_keys",
+      "breakpoints": true
     }
   ]
 }
