@@ -44,8 +44,17 @@ export default function ScreenLauncherDialog({ open, onOpenChange }: { open: boo
 
   const pair = async () => {
     setBusy(true);
+    // Renueva la sesión si expiró y envía el token explícitamente.
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) {
+      setBusy(false);
+      toast.error('Tu sesión expiró. Vuelve a iniciar sesión.');
+      return;
+    }
     const { data, error } = await supabase.functions.invoke('screen-display', {
       body: { action: 'pair', pin, organizationId: orgId, view, name: name || 'Pantalla' },
+      headers: { Authorization: `Bearer ${token}` },
     });
     setBusy(false);
     if (error || data?.error) {
