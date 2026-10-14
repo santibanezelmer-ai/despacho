@@ -44,18 +44,27 @@ export default function ScreenLauncherDialog({ open, onOpenChange }: { open: boo
 
   const pair = async () => {
     setBusy(true);
-    // Renueva la sesión si expiró y envía el token explícitamente.
+    // Envía el token explícitamente; si el servidor lo rechaza, renueva y reintenta una vez.
+    const send = (token: string) => supabase.functions.invoke('screen-display', {
+      body: { action: 'pair', pin, organizationId: orgId, view, name: name || 'Pantalla' },
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const { data: sess } = await supabase.auth.getSession();
-    const token = sess.session?.access_token;
+    let token = sess.session?.access_token;
+    if (!token) {
+      const { data: r } = await supabase.auth.refreshSession();
+      token = r.session?.access_token;
+    }
     if (!token) {
       setBusy(false);
       toast.error('Tu sesión expiró. Vuelve a iniciar sesión.');
       return;
     }
-    const { data, error } = await supabase.functions.invoke('screen-display', {
-      body: { action: 'pair', pin, organizationId: orgId, view, name: name || 'Pantalla' },
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    let { data, error } = await send(token);
+    if ((error as any)?.context?.status === 401) {
+      const { data: r } = await supabase.auth.refreshSession();
+      if (r.session?.access_token) ({ data, error } = await send(r.session.access_token));
+    }
     setBusy(false);
     if (error || data?.error) {
       let msg = data?.error as string | undefined;

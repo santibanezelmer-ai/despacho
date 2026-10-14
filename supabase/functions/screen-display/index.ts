@@ -43,11 +43,20 @@ Deno.serve(async (req) => {
 
     if (action === 'pair') {
       const auth = req.headers.get('Authorization') ?? '';
+      const jwt = auth.replace(/^Bearer\s+/i, '').trim();
+      if (!jwt) return json({ error: 'Sesión requerida' }, 401);
       const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-        global: { headers: { Authorization: auth } },
+        auth: { persistSession: false, autoRefreshToken: false },
       });
-      const { data: u } = await userClient.auth.getUser();
-      if (!u?.user) return json({ error: 'Sesión requerida' }, 401);
+      // Verifica la firma del token (igual que las políticas de la base de datos),
+      // sin depender de que la sesión siga registrada en el servidor.
+      const { data: claims, error: claimsErr } = await userClient.auth.getClaims(jwt);
+      const userId = claims?.claims?.sub as string | undefined;
+      if (claimsErr || !userId) {
+        console.warn('pair: token inválido', claimsErr?.message);
+        return json({ error: 'Sesión requerida' }, 401);
+      }
+      const u = { user: { id: userId } };
       const pin = String(body.pin ?? '').replace(/\D/g, '');
       const orgId = String(body.organizationId ?? '');
       const view = VIEWS.includes(body.view) ? body.view : 'central';
