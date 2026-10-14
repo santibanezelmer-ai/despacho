@@ -14,6 +14,7 @@ export interface VehicleOperationalRequest {
   requested_status: string;
   reported_at: string;
   odometer_end: number | null;
+  message: string | null;
 }
 
 /** Solicitudes de clave enviadas por Operix Móvil y aún sin confirmar (polling 5 s). */
@@ -26,7 +27,7 @@ export function usePendingOperationalRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vehicle_operational_requests')
-        .select('id, emergency_id, emergency_vehicle_id, vehicle_id, requested_status, reported_at, odometer_end')
+        .select('id, emergency_id, emergency_vehicle_id, vehicle_id, requested_status, reported_at, odometer_end, message')
         .eq('organization_id', orgId!)
         .eq('status', 'pendiente')
         .order('created_at', { ascending: false });
@@ -58,6 +59,34 @@ export function useResolveOperationalRequest() {
       if (error) throw error;
       if (!claimed) throw new Error('La solicitud ya fue resuelta por otro operador');
       if (!accept) return { accepted: false, code: request.requested_status };
+
+      if (request.requested_status === 'PRE-INFORME') {
+        try {
+          const { data: em, error: e1 } = await supabase
+            .from('emergencies').select('pre_report, organization_id').eq('id', request.emergency_id).single();
+          if (e1) throw e1;
+          const hhmm = new Date(request.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+          const entry = `[${vehicleCode} ${hhmm}] ${request.message ?? ''}`.trim();
+          const prev = (em.pre_report ?? '').trim();
+          const { error: e2 } = await supabase.from('emergencies')
+            .update({ pre_report: prev ? `${prev}\n\n${entry}` : entry }).eq('id', request.emergency_id);
+          if (e2) throw e2;
+          await supabase.from('emergency_log').insert({
+            emergency_id: request.emergency_id,
+            organization_id: em.organization_id,
+            message: `Pre-informe de ${vehicleCode} (Operix Móvil) incorporado por Central`,
+            created_by: user?.id ?? null,
+          });
+        } catch (e) {
+          await supabase.from('vehicle_operational_requests')
+            .update({ status: 'pendiente', resolved_at: null, resolved_by: null })
+            .eq('id', request.id).eq('status', 'aceptada');
+          throw e;
+        }
+        qc.invalidateQueries({ queryKey: ['emergencies'] });
+        qc.invalidateQueries({ queryKey: ['active-emergencies'] });
+        return { accepted: true, code: 'Pre-informe' };
+      }
 
       const status = MOBILE_KEY_TO_STATUS[request.requested_status];
       if (status === 'en_cuartel') {
