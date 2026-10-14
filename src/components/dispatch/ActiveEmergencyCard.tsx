@@ -194,9 +194,11 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
             <div className="mt-3 flex flex-wrap gap-1.5">
               {assignedVehicles.map((av, i) => {
                 const meta = vehicleStatusMeta(av.operationalStatus);
-                const req = pendingRequests?.find(r =>
+                const mine = (pendingRequests ?? []).filter(r =>
                   r.emergency_id === emergency.id &&
                   (av.evId ? r.emergency_vehicle_id === av.evId : r.vehicle_id === av.vehicleId));
+                const req = mine.find(r => r.requested_status !== 'PRE-INFORME');
+                const preReqs = mine.filter(r => r.requested_status === 'PRE-INFORME');
                 return (
                   <Fragment key={av.evId || av.vehicleId || `${av.code}-${i}`}>
                   <span
@@ -288,6 +290,25 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
                       </button>
                     </span>
                   )}
+                  {preReqs.map(pr => (
+                    <span
+                      key={pr.id}
+                      title={pr.message ?? ''}
+                      className="flex w-full items-start gap-1.5 rounded border border-warning/60 bg-warning/15 px-1.5 py-1 text-[11px] text-warning"
+                    >
+                      <Smartphone className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span className="flex-1 min-w-0">
+                        <span className="font-mono font-semibold">{av.code} · Pre-informe {new Date(pr.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="block whitespace-pre-wrap break-words text-foreground/90 line-clamp-3">{pr.message}</span>
+                      </span>
+                      <button type="button" title="Agregar al pre-informe de la emergencia" disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: pr, accept: true, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-success hover:bg-success/20"><Check className="h-3 w-3" /></button>
+                      <button type="button" title="Descartar" disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: pr, accept: false, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-destructive hover:bg-destructive/20"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
                   </Fragment>
                 );
               })}
