@@ -27,3 +27,4 @@
 - [x] Claves de estado por móvil (6-3, 6-7, 6-9, 6-10) controladas individualmente en la consola.
 - [x] Mantener en app móvil y voluntarios solo despachada / en trabajo / controlada / finalizada.
 - [x] Landing: CTA demo/llamada, "Operix en operaciones reales", tarjeta radio VHF/UHF, FAQ offline/radio/demo, Plan Global Institucional, footer Comercial Hels SpA.
+- [x] Pantalla Central: selector de vistas y pantallas remotas por código sin inicio de sesión (/tv).
