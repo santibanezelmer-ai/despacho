@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 import OfflineDispatchBanner from '@/components/dispatch/OfflineDispatchBanner';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
+import ScreenLauncherDialog from '@/components/screens/ScreenLauncherDialog';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
@@ -65,6 +66,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return window.location.pathname === '/';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [screensOpen, setScreensOpen] = useState(false);
   const location = useLocation();
   const { theme: dispatchTheme } = useScreenTheme('operix.despacho.theme');
   const isDispatchConsole = location.pathname === '/';
@@ -172,7 +174,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <button
                       key={item.path}
                       onClick={() => {
-                        window.open('/pantalla-central', 'central-screen', 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
+                        setScreensOpen(true);
                         if (isMobile) setMobileOpen(false);
                       }}
                       className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -244,6 +246,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <DispatchFormProvider>
+    <ScreenLauncherDialog open={screensOpen} onOpenChange={setScreensOpen} />
     <div data-theme={isDispatchConsole ? dispatchTheme : undefined} className={`flex h-screen overflow-hidden bg-background ${isDispatchConsole ? 'theme-screen dispatch-shell' : ''}`}>
       {/* Desktop sidebar */}
       <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
