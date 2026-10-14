@@ -433,7 +433,7 @@ Deno.serve(async (req) => {
       const message = rawMsg.length > 0 ? rawMsg : null;
       let key = rawKey == null ? '' : String(rawKey).trim().toUpperCase();
       if (key === 'PREINFORME' || (!key && message)) key = 'PRE-INFORME';
-      const ALLOWED = ['6-3', '6-8', '6-9', '6-10', 'PRE-INFORME'];
+      const ALLOWED = ['6-3', '6-7', '6-8', '6-9', '6-10', 'PRE-INFORME'];
       if (!ALLOWED.includes(key)) return json({ error: 'Clave no válida', allowed: ALLOWED }, 400);
       if (key === 'PRE-INFORME' && !message) return json({ error: 'El pre-informe requiere un mensaje' }, 400);
 

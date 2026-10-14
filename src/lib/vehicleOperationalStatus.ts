@@ -91,6 +91,7 @@ export function vehicleStatusMeta(status?: string | null): VehicleStatusMeta {
 /** Clave radial reportada por Operix Móvil → estado operativo de la consola. */
 export const MOBILE_KEY_TO_STATUS: Record<string, VehicleOperationalStatus> = {
   '6-3': 'en_lugar',
+  '6-7': 'controlada',
   '6-8': 'disponible_lugar',
   '6-9': 'retirandose',
   '6-10': 'en_cuartel',

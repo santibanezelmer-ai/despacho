@@ -85,6 +85,13 @@
       "when": 1791940303904,
       "tag": "0011_operational_requests_pre_report",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791978861075,
+      "tag": "0012_allow_6_7_operational_request",
+      "breakpoints": true
     }
   ]
 }
