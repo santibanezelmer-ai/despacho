@@ -1,11 +1,10 @@
 import { Fragment, memo, useEffect, useState } from 'react';
 import { Check, Smartphone } from 'lucide-react';
 import { usePendingOperationalRequests, useResolveOperationalRequest } from '@/hooks/useVehicleOperationalRequests';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
-import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
 import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
 import {
   SELECTABLE_VEHICLE_STATUSES,
@@ -13,16 +12,6 @@ import {
   vehicleStatusMeta,
 } from '@/lib/vehicleOperationalStatus';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -91,8 +80,6 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const canMarkControlled = currentIdx >= 0 && currentIdx < STATUS_ORDER.indexOf('controlada');
   const [showActions, setShowActions] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
-  const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
-  const unassign = useUnassignVehicle();
   const statusMutation = useVehicleOperationalStatus();
   const { data: pendingRequests } = usePendingOperationalRequests();
   const resolveRequest = useResolveOperationalRequest();
@@ -252,16 +239,6 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
                     ) : (
                       <span className="font-semibold">{av.code}</span>
                     )}
-                    {av.vehicleId && (
-                      <button
-                        type="button"
-                        title={`Quitar móvil ${av.code} de la emergencia`}
-                        className="text-destructive/70 hover:text-destructive"
-                        onClick={() => setUnassignTarget({ vehicleId: av.vehicleId, code: av.code })}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
                   </span>
                   {req && (
                     <span
@@ -370,36 +347,6 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
         />
       )}
 
-      <AlertDialog open={!!unassignTarget} onOpenChange={open => { if (!open) setUnassignTarget(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar asignación del móvil {unassignTarget?.code}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se quitará el móvil {unassignTarget?.code} de la emergencia {emergency.folio} junto con el personal
-              asignado a él. El móvil volverá a estado disponible y la acción quedará registrada en la bitácora de la
-              emergencia. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={unassign.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={unassign.isPending}
-              onClick={e => {
-                e.preventDefault();
-                if (!unassignTarget) return;
-                unassign.mutate(
-                  { emergencyId: emergency.id, ...unassignTarget },
-                  { onSuccess: () => setUnassignTarget(null) },
-                );
-              }}
-            >
-              {unassign.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Eliminar asignación
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
     </>
   );
