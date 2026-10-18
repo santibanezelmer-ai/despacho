@@ -12,3 +12,4 @@
 - /pantalla-mapa renders OperativeMap in screen mode; never fork a second map implementation.
 - Mobile operational keys (6-3/6-7/6-8/6-9/6-10) arrive as pending rows in vehicle_operational_requests via operix-movil; only the console applies them (accept uses the mobile's reported time) and any manual console key change supersedes pending requests — the console always has priority.
 - Remote screens (/tv) never use user sessions: they pair by 6-digit PIN through the screen-display function and read org data with their own secret, read-only and without personal contact data — TVs in stations have no accounts.
+- Grant Operix Voluntario access via src/lib/volunteerAccess.ts (any active org member, active org prioritized); feature permissions stay in rolePermissions/RLS — one account must work in console and volunteer app.
