@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import VehicleFormDialog from '@/components/vehicles/VehicleFormDialog';
 import VehicleProfileDialog, { VEHICLE_STATUS_META } from '@/components/vehicles/VehicleProfileDialog';
 import { expiryLevel, maintenanceAlert } from '@/hooks/useVehicleProfile';
@@ -81,11 +82,14 @@ export default function Vehicles() {
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
           <Truck className="h-5 w-5 text-info" /> Móviles
         </h1>
+        <div className="flex items-center gap-2">
+        <Button asChild size="sm" variant="outline" className="text-xs"><Link to="/equipamiento">Equipamiento</Link></Button>
         {canWrite && (
           <Button size="sm" onClick={() => { setEditingVehicle(null); setDialogOpen(true); }} className="bg-emergency text-emergency-foreground hover:bg-emergency/90 text-xs">
             <Plus className="mr-1.5 h-3.5 w-3.5" /> Nuevo Móvil
           </Button>
         )}
+        </div>
       </div>
 
       <div className="relative max-w-sm">
