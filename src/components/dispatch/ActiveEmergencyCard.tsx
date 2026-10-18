@@ -84,10 +84,11 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const ek = emergency.emergency_keys;
   const status = statusConfig[emergency.status] ?? statusConfig.despacho;
   const currentIdx = STATUS_ORDER.indexOf(emergency.status);
-  // en_cuartel is auto-managed by VehicleReturnManager, don't show advance button for it
-  const nextStatus = currentIdx < STATUS_ORDER.length - 1 && STATUS_ORDER[currentIdx + 1] !== 'en_cuartel'
-    ? STATUS_ORDER[currentIdx + 1]
-    : null;
+  // En Ruta / En Trabajo / Controlada se sincronizan solos con las claves de los móviles.
+  // El operador solo cierra la emergencia (o marca Controlada si aún no lo hizo un móvil).
+  const finIdx = STATUS_ORDER.indexOf('finalizada');
+  const nextStatus = currentIdx >= 0 && currentIdx < finIdx ? 'finalizada' : null;
+  const canMarkControlled = currentIdx >= 0 && currentIdx < STATUS_ORDER.indexOf('controlada');
   const [showActions, setShowActions] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
   const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);

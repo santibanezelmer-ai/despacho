@@ -5,6 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
   VEHICLE_STATUS_META,
+  EMERGENCY_STATUS_LABEL,
+  EMERGENCY_STATUS_TIMESTAMP,
+  emergencyStatusFromVehicle,
   type VehicleOperationalStatus,
 } from '@/lib/vehicleOperationalStatus';
 
@@ -63,6 +66,24 @@ export function useVehicleOperationalStatus() {
           message: `Móvil ${vehicleCode} marcó clave ${meta.code} — ${meta.description}${logSuffix ?? ''}`,
           created_by: user?.id ?? null,
         });
+      }
+
+      // Sincroniza el estado general de la emergencia (solo avanza, nunca finaliza).
+      const { data: em } = await supabase
+        .from('emergencies').select('status').eq('id', emergencyId).maybeSingle();
+      const next = em ? emergencyStatusFromVehicle(em.status, status) : null;
+      if (next) {
+        const emUpdate: Record<string, any> = { status: next, [EMERGENCY_STATUS_TIMESTAMP[next]]: now };
+        const { error: e2 } = await supabase
+          .from('emergencies').update(emUpdate).eq('id', emergencyId).eq('status', em!.status);
+        if (!e2 && orgId) {
+          await supabase.from('emergency_log').insert({
+            emergency_id: emergencyId,
+            organization_id: orgId,
+            message: `Emergencia pasó a ${EMERGENCY_STATUS_LABEL[next]} por clave ${meta.code} de ${vehicleCode}`,
+            created_by: user?.id ?? null,
+          });
+        }
       }
 
       return meta;
