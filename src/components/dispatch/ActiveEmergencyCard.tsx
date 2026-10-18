@@ -329,19 +329,20 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
             {/* PDF download */}
             <EmergencyPdfDownload emergencyId={emergency.id} folio={emergency.folio} />
 
-            {/* Advance status */}
+            {canMarkControlled && onAdvanceStatus && (
+              <button
+                onClick={() => onAdvanceStatus(emergency.id, 'controlada')}
+                className="flex-1 rounded-md border border-info/50 py-1.5 text-xs font-medium text-info hover:bg-info/10 transition-colors"
+              >
+                Controlada
+              </button>
+            )}
             {nextStatus && onAdvanceStatus && (
               <button
-                onClick={() => {
-                  if (nextStatus === 'finalizada') {
-                    setShowFinalize(true);
-                    return;
-                  }
-                  onAdvanceStatus(emergency.id, nextStatus);
-                }}
-                className="flex-1 rounded-md border border-border py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+                onClick={() => setShowFinalize(true)}
+                className="flex-1 rounded-md border border-success/50 py-1.5 text-xs font-medium text-success hover:bg-success/10 transition-colors"
               >
-                → {statusConfig[nextStatus]?.label}
+                Finalizar
               </button>
             )}
           </div>
