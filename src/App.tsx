@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,11 +45,6 @@ import SuperadminSupport from "@/pages/superadmin/SuperadminSupport";
 import SuperadminHealth from "@/pages/superadmin/SuperadminHealth";
 import SupportPage from "@/pages/SupportPage";
 import NotFound from "./pages/NotFound";
-import MobileLayout from "@/components/mobile/MobileLayout";
-import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
-import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
-import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
-const MobileMapPage = lazy(() => import("@/pages/mobile/MobileMapPage"));
 import OnboardingPage from "@/pages/admin/OnboardingPage";
 import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import SharedLocationPage from "@/pages/SharedLocationPage";
@@ -81,14 +76,22 @@ function PageFallback() {
   );
 }
 
+function NativePushRegistration() {
+  // Shared by AppRoutes and /voluntario/*, including native notification links.
+  usePushNotifications();
+  return null;
+}
+
+function LegacyMobileEmergencyRedirect() {
+  const { id } = useParams();
+  return <Navigate to={id ? `/voluntario/emergencia/${id}` : "/voluntario"} replace />;
+}
+
 function AppRoutes() {
   const { user, loading: authLoading, isSuperadmin } = useAuth();
   const orgCtx = useOrganizationOptional();
   const location = useLocation();
   const isNativeMobile = useIsNativeMobile();
-
-  // Init push notifications for any authenticated native user
-  usePushNotifications();
 
   // Fallback: if OrganizationProvider isn't mounted yet (or this tree was
   // rendered outside it), show a loading screen instead of throwing.
@@ -113,7 +116,7 @@ function AppRoutes() {
   if (!user) {
     // On native/mobile, skip landing and go straight to login
     if (isNativeMobile && location.pathname === '/') {
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/voluntario/login" replace />;
     }
     return (
       <Routes>
@@ -127,9 +130,9 @@ function AppRoutes() {
     );
   }
 
-  // Authenticated user on native/mobile hitting a non-mobile route → redirect to mobile feed
-  if (isNativeMobile && !location.pathname.startsWith('/mobile') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
-    return <Navigate to="/mobile/feed" replace />;
+  // Native users use the existing volunteer app; keep special screens accessible.
+  if (isNativeMobile && !location.pathname.startsWith('/voluntario') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
+    return <Navigate to="/voluntario" replace />;
   }
 
   if (location.pathname === '/pantalla-central') {
@@ -205,24 +208,6 @@ function AppRoutes() {
     );
   }
 
-  // Mobile routes
-  if (location.pathname.startsWith('/mobile')) {
-    return (
-      <MobileLayout>
-        <Suspense fallback={<PageFallback />}>
-        <Routes>
-          <Route path="/mobile" element={<MobileFeedPage />} />
-          <Route path="/mobile/feed" element={<MobileFeedPage />} />
-          <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
-          <Route path="/mobile/profile" element={<MobileProfilePage />} />
-          <Route path="/mobile/map" element={<MobileMapPage />} />
-          <Route path="*" element={<Navigate to="/mobile/feed" replace />} />
-        </Routes>
-        </Suspense>
-      </MobileLayout>
-    );
-  }
-
   // Restricciones por rol (admin de compañía / operador)
   const accessCtx = {
     orgRole: orgCtx.orgRole,
@@ -276,6 +261,7 @@ const App = () => (
         <RouteErrorBoundary>
           <AuthProvider>
             <OrganizationProvider>
+              <NativePushRegistration />
               <SecurityGuard />
               <UserWatermark />
               <Routes>
@@ -286,6 +272,12 @@ const App = () => (
                 <Route path="/terminos" element={<TermsPage />} />
                 <Route path="/privacidad" element={<PrivacyPage />} />
                 <Route path="/voluntario/*" element={<VoluntarioApp />} />
+                <Route path="/mobile" element={<Navigate to="/voluntario" replace />} />
+                <Route path="/mobile/feed" element={<Navigate to="/voluntario" replace />} />
+                <Route path="/mobile/map" element={<Navigate to="/voluntario/mapa" replace />} />
+                <Route path="/mobile/profile" element={<Navigate to="/voluntario/perfil" replace />} />
+                <Route path="/mobile/emergency/:id" element={<LegacyMobileEmergencyRedirect />} />
+                <Route path="/mobile/*" element={<Navigate to="/voluntario" replace />} />
                 <Route path="*" element={<AppRoutes />} />
               </Routes>
             </OrganizationProvider>

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Sustituir rutas móviles antiguas por Voluntarios, conservar push y validar redirecciones y consola.
+
 - [x] Mostrar la confirmación de cierre por encima del personal y oscurecer el fondo.
 - [x] Incluir nombre e ID de la emergencia en la ficha PDF descargable.
 - [x] Equilibrar el tema blanco de Consola de Despacho: menú lateral, bordes y controles en la misma paleta.
