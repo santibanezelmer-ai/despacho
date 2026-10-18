@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import TrainingPage from '@/pages/TrainingPage';
+import { lazy, Suspense } from 'react';
+const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Users, Search, Plus, Pencil, Trash2, Mail, Shield, ShieldOff, Loader2, IdCard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -264,7 +265,11 @@ export default function Volunteers() {
         </TabsList>
       </div>
       <TabsContent value="lista" className="mt-0"><VolunteersList /></TabsContent>
-      <TabsContent value="capacitaciones" className="mt-0 p-4 lg:p-6"><TrainingPage /></TabsContent>
+      <TabsContent value="capacitaciones" className="mt-0 p-4 lg:p-6">
+        <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+          <TrainingPage />
+        </Suspense>
+      </TabsContent>
     </Tabs>
   );
 }
