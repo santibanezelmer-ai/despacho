@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 import OfflineDispatchBanner from '@/components/dispatch/OfflineDispatchBanner';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
+import { useOnboardingChecklist } from '@/hooks/useOnboardingChecklist';
 import ScreenLauncherDialog from '@/components/screens/ScreenLauncherDialog';
 
 const navItems = [
@@ -29,16 +30,11 @@ const navItems = [
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
   { path: '/moviles', label: 'Móviles', icon: Truck, section: 'Recursos' },
   { path: '/companias', label: 'Compañías', icon: ClipboardList, section: 'Recursos' },
-  { path: '/equipamiento', label: 'Equipamiento', icon: Wrench, section: 'Recursos' },
-  { path: '/capacitaciones', label: 'Capacitaciones', icon: GraduationCap, section: 'Recursos' },
   { path: '/dashboard', label: 'Dashboard', icon: BarChart3, section: 'Análisis' },
   { path: '/auditoria', label: 'Auditoría', icon: Shield, section: 'Análisis' },
   { path: '/exportaciones', label: 'Exportaciones', icon: FileDown, section: 'Análisis' },
-  { path: '/pantalla-central', label: 'Pantalla Central', icon: Monitor, section: 'Sistema' },
-  { path: '/simulacion', label: 'Simulación', icon: Play, section: 'Sistema' },
-  { path: '/alertas', label: 'Alertas', icon: Bell, section: 'Sistema' },
+  { path: '/pantalla-central', label: 'Pantallas / TV', icon: Monitor, section: 'Sistema' },
   { path: '/claves', label: 'Claves', icon: Siren, section: 'Sistema' },
-  { path: '/notificaciones', label: 'Notificaciones', icon: Bell, section: 'Sistema' },
   { path: '/admin', label: 'Administración', icon: Settings, section: 'Sistema' },
   { path: '/admin/onboarding', label: 'Configuración inicial', icon: ClipboardList, section: 'Sistema' },
   { path: '/soporte', label: 'Soporte', icon: LifeBuoy, section: 'Ayuda' },
@@ -81,7 +77,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut, isSuperadmin } = useAuth();
   const { currentOrg, orgRole, memberships, setCurrentOrgId, isCompanyAdmin } = useOrganization();
   const accessCtx = { orgRole, isCompanyAdmin, isSuperadmin };
-  const visibleNavItems = navItems.filter((item) => canAccessPath(item.path, accessCtx));
+  const { data: checklist } = useOnboardingChecklist();
+  const onboardingPending = !!checklist && checklist.some((c) => !c.completed);
+  const visibleNavItems = navItems.filter((item) =>
+    canAccessPath(item.path, accessCtx) && (item.path !== '/admin/onboarding' || onboardingPending));
   const { isOnline } = useOnlineStatus();
 
   useEffect(() => { startAutoSync(); }, []);
@@ -231,6 +230,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
               {!collapsed && <span className="text-[11px]">Minimizar</span>}
             </button>
+          )}
+          {canAccessPath('/alertas', accessCtx) && (
+            <Link to="/alertas" title="Alertas operativas" onClick={() => isMobile && setMobileOpen(false)} className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-warning transition-colors">
+              <Bell className="h-4 w-4" />
+            </Link>
           )}
           <button
             onClick={signOut}

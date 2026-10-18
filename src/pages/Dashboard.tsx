@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import AlertsPage from '@/pages/AlertsPage';
 
 export default function Dashboard() {
   const { data: stats } = useQuery({
@@ -123,6 +124,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <div className="console-panel -mx-4 lg:-mx-6"><AlertsPage /></div>
     </div>
   );
 }
