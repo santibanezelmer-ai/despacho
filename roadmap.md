@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Sustituir rutas móviles antiguas por Voluntarios, conservar push y validar redirecciones y consola.
+- [x] Sustituir rutas móviles antiguas por Voluntarios y conservar push; 15 pruebas de rutas aprobadas, compilación automática correcta y acceso sin sesión verificado.
+- [ ] Verificar navegación de Voluntarios con sesión real en dispositivo nativo: requiere iniciar sesión en la vista previa y disponer del dispositivo.
 
 - [x] Mostrar la confirmación de cierre por encima del personal y oscurecer el fondo.
 - [x] Incluir nombre e ID de la emergencia en la ficha PDF descargable.
