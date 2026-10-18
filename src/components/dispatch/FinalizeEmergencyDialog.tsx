@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, Users, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ interface Props {
   emergencyId: string;
   emergencyStatus: string;
   folio: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -22,6 +23,7 @@ interface Props {
 export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, folio, onConfirm, onClose }: Props) {
   const { data: vehicles, isLoading } = useEmergencyReturnVehicles(emergencyId);
   const { data: crew, isLoading: crewLoading } = useEmergencyCrewRoles(emergencyId);
+  const [saving, setSaving] = useState(false);
 
   const pending = (vehicles ?? []).filter(v => !v.released_at);
 
@@ -106,8 +108,16 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
             <Button variant="outline" size="sm" onClick={onClose}>
               Cancelar
             </Button>
-            <Button size="sm" disabled={!canFinalize} onClick={onConfirm}>
-              <CheckCircle2 className="mr-1 h-4 w-4" /> Finalizar emergencia
+            <Button
+              size="sm"
+              disabled={!canFinalize || saving}
+              onClick={async () => {
+                setSaving(true);
+                try { await onConfirm(); } finally { setSaving(false); }
+              }}
+            >
+              {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
+              Finalizar emergencia
             </Button>
           </div>
         </div>
