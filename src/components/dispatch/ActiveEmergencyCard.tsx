@@ -63,7 +63,7 @@ interface EmergencyCardProps {
     personnelCount: number;
     _offline?: boolean;
   };
-  onAdvanceStatus?: (id: string, newStatus: string) => void;
+  onAdvanceStatus?: (id: string, newStatus: string) => Promise<boolean> | void;
 }
 
 const STATUS_ORDER = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada', 'en_cuartel'];
@@ -80,6 +80,17 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const canMarkControlled = currentIdx >= 0 && currentIdx < STATUS_ORDER.indexOf('controlada');
   const [showActions, setShowActions] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  /** Un solo envío a la vez; devuelve true solo si el servidor confirmó. */
+  const advance = async (next: string): Promise<boolean> => {
+    if (advancing || !onAdvanceStatus) return false;
+    setAdvancing(true);
+    try {
+      return (await onAdvanceStatus(emergency.id, next)) === true;
+    } finally {
+      setAdvancing(false);
+    }
+  };
   const statusMutation = useVehicleOperationalStatus();
   const { data: pendingRequests } = usePendingOperationalRequests();
   const resolveRequest = useResolveOperationalRequest();
@@ -294,34 +305,40 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
           )}
 
 
-          <div className="mt-3 flex gap-2">
-            {/* Actions button */}
+          {/* Área 2: estado general y acciones rápidas */}
+          {onAdvanceStatus && (canMarkControlled || nextStatus) && (
+            <div className="mt-3 flex gap-2">
+              {canMarkControlled && (
+                <button
+                  disabled={advancing}
+                  onClick={() => advance('controlada')}
+                  className="flex-1 rounded-md border border-info/50 py-1.5 text-xs font-medium text-info hover:bg-info/10 transition-colors disabled:opacity-50"
+                >
+                  {advancing ? 'Guardando…' : 'Controlada (6-7)'}
+                </button>
+              )}
+              {nextStatus && (
+                <button
+                  disabled={advancing}
+                  onClick={() => setShowFinalize(true)}
+                  className="flex-1 rounded-md border border-success/50 py-1.5 text-xs font-medium text-success hover:bg-success/10 transition-colors disabled:opacity-50"
+                >
+                  Finalizar
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Acciones avanzadas */}
+          <div className="mt-2 flex gap-2">
             <button
               onClick={() => setShowActions(true)}
+              title="Reasignar o quitar móviles, personal, preinforme, ubicación y GPS compartido"
               className="flex-1 rounded-md border border-border py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-center gap-1.5"
             >
-              <Settings className="h-3.5 w-3.5" /> Acciones
+              <Settings className="h-3.5 w-3.5" /> Más acciones
             </button>
-
-            {/* PDF download */}
             <EmergencyPdfDownload emergencyId={emergency.id} folio={emergency.folio} />
-
-            {canMarkControlled && onAdvanceStatus && (
-              <button
-                onClick={() => onAdvanceStatus(emergency.id, 'controlada')}
-                className="flex-1 rounded-md border border-info/50 py-1.5 text-xs font-medium text-info hover:bg-info/10 transition-colors"
-              >
-                Controlada
-              </button>
-            )}
-            {nextStatus && onAdvanceStatus && (
-              <button
-                onClick={() => setShowFinalize(true)}
-                className="flex-1 rounded-md border border-success/50 py-1.5 text-xs font-medium text-success hover:bg-success/10 transition-colors"
-              >
-                Finalizar
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -340,9 +357,9 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
           emergencyStatus={emergency.status}
           folio={emergency.folio}
           onClose={() => setShowFinalize(false)}
-          onConfirm={() => {
-            setShowFinalize(false);
-            onAdvanceStatus?.(emergency.id, 'finalizada');
+          onConfirm={async () => {
+            const ok = await advance('finalizada');
+            if (ok) setShowFinalize(false);
           }}
         />
       )}

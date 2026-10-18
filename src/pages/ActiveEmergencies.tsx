@@ -22,9 +22,10 @@ export default function ActiveEmergencies() {
   const { isOnline } = useOnlineStatus();
   const queryClient = useQueryClient();
 
-  const handleAdvanceStatus = async (emergencyId: string, newStatus: string) => {
+  /** Devuelve true solo si el cambio quedó guardado (o en cola offline). */
+  const handleAdvanceStatus = async (emergencyId: string, newStatus: string): Promise<boolean> => {
     // en_cuartel is auto-managed by VehicleReturnManager
-    if (newStatus === 'en_cuartel') return;
+    if (newStatus === 'en_cuartel') return false;
 
     const timestampField: Record<string, string> = {
       en_ruta: 'en_route_at',
@@ -42,20 +43,31 @@ export default function ActiveEmergencies() {
       try {
         await updateOfflineEmergency(emergencyId, update);
         queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+        toast.info('Cambio guardado sin conexión; se enviará al reconectar');
+        return true;
       } catch (e) {
         toast.error('No se pudo guardar el cambio offline');
+        return false;
       }
-      return;
     }
 
-    const { error } = await supabase.from('emergencies').update(update).eq('id', emergencyId);
+    // Solo avanza desde estados anteriores: evita retrocesos y dobles cierres simultáneos.
+    const order = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada', 'en_cuartel'];
+    const earlier = order.slice(0, Math.max(0, order.indexOf(newStatus))) as any[];
+    const { data, error } = await supabase
+      .from('emergencies').update(update).eq('id', emergencyId).in('status', earlier).select('id');
+    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
     if (error) {
       toast.error('Error al actualizar estado');
-    } else {
-      toast.success(`Estado actualizado`);
-      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      return false;
     }
+    if (!data?.length) {
+      toast.warning('La emergencia ya estaba en ese estado o más avanzada');
+      return false;
+    }
+    toast.success('Estado actualizado');
+    queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    return true;
   };
 
   return (
