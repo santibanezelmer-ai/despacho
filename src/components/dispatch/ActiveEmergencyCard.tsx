@@ -1,7 +1,7 @@
 import { Fragment, memo, useEffect, useState } from 'react';
 import { Check, Smartphone } from 'lucide-react';
 import { usePendingOperationalRequests, useResolveOperationalRequest } from '@/hooks/useVehicleOperationalRequests';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
@@ -239,7 +239,6 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
                     ) : (
                       <span className="font-semibold">{av.code}</span>
                     )}
-                    {av.vehicleId && null}
                   </span>
                   {req && (
                     <span
