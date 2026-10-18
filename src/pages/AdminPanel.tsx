@@ -52,7 +52,7 @@ function toUiRole(dbRole: string, companyId: string | null): UiRole {
 
 export default function AdminPanel() {
   const { user } = useAuth();
-  const { orgId, isOrgAdmin, currentOrg } = useOrganization();
+  const { orgId, isOrgAdmin, currentOrg, isCompanyAdmin } = useOrganization();
   const queryClient = useQueryClient();
   const { data: companies } = useCompanies();
   const [search, setSearch] = useState('');
@@ -190,8 +190,8 @@ export default function AdminPanel() {
           <TabsTrigger value="dispositivos" className="text-sm md:text-base">Dispositivos</TabsTrigger>
           <TabsTrigger value="sonidos" className="text-sm md:text-base">Sonidos</TabsTrigger>
           <TabsTrigger value="demo" className="text-sm md:text-base">Demo</TabsTrigger>
-          <TabsTrigger value="notificaciones" className="text-sm md:text-base">Registro de notificaciones</TabsTrigger>
-          <TabsTrigger value="simulacion" className="text-sm md:text-base">Simulación</TabsTrigger>
+          {!isCompanyAdmin && <TabsTrigger value="notificaciones" className="text-sm md:text-base">Registro de notificaciones</TabsTrigger>}
+          {!isCompanyAdmin && <TabsTrigger value="simulacion" className="text-sm md:text-base">Simulación</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="miembros" className="space-y-3">
@@ -344,8 +344,8 @@ export default function AdminPanel() {
         <TabsContent value="dispositivos"><VehicleDevicesAdmin /></TabsContent>
         <TabsContent value="sonidos"><SystemSoundsAdmin /></TabsContent>
         <TabsContent value="demo"><DemoSettingsAdmin /></TabsContent>
-        <TabsContent value="notificaciones"><NotificationsPage /></TabsContent>
-        <TabsContent value="simulacion"><SimulationPage /></TabsContent>
+        {!isCompanyAdmin && <TabsContent value="notificaciones"><NotificationsPage /></TabsContent>}
+        {!isCompanyAdmin && <TabsContent value="simulacion"><SimulationPage /></TabsContent>}
       </Tabs>
     </div>
   );

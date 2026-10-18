@@ -12,6 +12,8 @@ export type EmergencyRow = Tables<'emergencies'> & {
   emergency_keys: { code: string; name: string; color: string } | null;
 };
 
+export const ACTIVE_EMERGENCIES_POLL_MS = 5000;
+
 export function useActiveEmergencies() {
   const { orgId } = useOrganization();
   const { isOnline } = useOnlineStatus();
@@ -95,8 +97,10 @@ export function useActiveEmergencies() {
       }
     },
     enabled: !!orgId,
-    // Realtime es el mecanismo principal; el polling queda como reconciliación.
-    refetchInterval: isOnline ? 20000 : false,
+    // Realtime es el mecanismo principal; el polling (5s, deduplicado por queryKey
+    // entre todas las vistas montadas) queda como reconciliación operativa.
+    refetchInterval: isOnline ? ACTIVE_EMERGENCIES_POLL_MS : false,
+    refetchIntervalInBackground: false,
     retry: isOnline ? 3 : 0,
   });
 
