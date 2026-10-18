@@ -31,3 +31,4 @@
 - [x] Mantener en app móvil y voluntarios solo despachada / en trabajo / controlada / finalizada.
 - [x] Landing: CTA demo/llamada, "Operix en operaciones reales", tarjeta radio VHF/UHF, FAQ offline/radio/demo, Plan Global Institucional, footer Comercial Hels SpA.
 - [x] Pantalla Central: selector de vistas y pantallas remotas por código sin inicio de sesión (/tv).
+- [x] Acceso multirrol a Operix Voluntario (admin/operador/oficial/voluntario/visor)

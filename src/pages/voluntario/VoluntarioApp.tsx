@@ -14,6 +14,7 @@ import VoluntarioMap from './VoluntarioMap';
 import { ensureVolunteerServiceWorker, listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
 import { playDefaultDispatchTone } from '@/services/defaultDispatchTone';
 import { toast } from 'sonner';
+import { NO_ORG_MESSAGE, pickVolunteerMembership, volunteerRecordBlock } from '@/lib/volunteerAccess';
 
 interface VolunteerMembership {
   organization_id: string;
