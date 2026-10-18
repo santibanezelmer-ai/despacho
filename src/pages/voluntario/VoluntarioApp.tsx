@@ -14,6 +14,7 @@ import VoluntarioMap from './VoluntarioMap';
 import { ensureVolunteerServiceWorker, listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
 import { playDefaultDispatchTone } from '@/services/defaultDispatchTone';
 import { toast } from 'sonner';
+import { NO_ORG_MESSAGE, pickVolunteerMembership, volunteerRecordBlock } from '@/lib/volunteerAccess';
 
 interface VolunteerMembership {
   organization_id: string;
@@ -47,17 +48,16 @@ export default function VoluntarioApp() {
         .from('organization_members')
         .select('organization_id, role, status, organizations(id, name, status, logo_url)')
         .eq('user_id', user.id)
-        .eq('status', 'active')
-        .in('role', ['voluntario', 'visor']);
+        .eq('status', 'active');
 
       if (err) { setError(err.message); setChecking(false); return; }
-      if (!data?.length) {
-        setError('Esta cuenta no tiene acceso de voluntario. Pídele a tu administrador que te invite.');
+      const m = pickVolunteerMembership(data);
+      if (!m) {
+        setError(NO_ORG_MESSAGE);
         setChecking(false);
         return;
       }
 
-      const m = data[0];
       const { data: vol } = await (supabase as any)
         .from('volunteers')
         .select('pwa_enabled, status')
@@ -65,8 +65,9 @@ export default function VoluntarioApp() {
         .eq('organization_id', m.organization_id)
         .maybeSingle();
 
-      if (vol && (vol.pwa_enabled === false || vol.status !== 'activo')) {
-        setError('Tu acceso a la app está deshabilitado. Contacta a tu administrador.');
+      const block = volunteerRecordBlock(m.role, vol);
+      if (block) {
+        setError(block);
         setChecking(false);
         return;
       }
