@@ -95,7 +95,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus, for
 
   const handleSingle = (v: (typeof pending)[number]) => {
     const check = parseReturnOdometer(odometerInputs[v.id], v.odometer_start);
-    if (!check.ok) { toast.error(check.error); return; }
+    if (check.ok === false) { toast.error(check.error); return; }
     void execute([{ ev: v, code: v.vehicles?.code ?? 'Móvil', check }]);
   };
 
@@ -200,7 +200,7 @@ export default function VehicleReturnManager({ emergencyId, emergencyStatus, for
               <ul className="space-y-1 text-xs font-mono">
                 {chosen.map(c => (
                   <li key={c.ev.id} className={c.check.ok ? 'text-foreground' : 'text-destructive'}>
-                    {c.code}: {c.check.ok ? `km ${c.check.value}` : c.check.error}
+                    {c.code}: {c.check.ok === true ? `km ${c.check.value}` : c.check.error}
                   </li>
                 ))}
               </ul>
