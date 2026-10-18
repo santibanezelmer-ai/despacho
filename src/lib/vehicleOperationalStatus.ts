@@ -96,3 +96,34 @@ export const MOBILE_KEY_TO_STATUS: Record<string, VehicleOperationalStatus> = {
   '6-9': 'retirandose',
   '6-10': 'en_cuartel',
 };
+
+const EMERGENCY_ORDER = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada', 'en_cuartel'];
+const VEHICLE_TO_EMERGENCY: Partial<Record<VehicleOperationalStatus, string>> = {
+  despachado: 'en_ruta',
+  en_lugar: 'en_trabajo',
+  controlada: 'controlada',
+};
+
+/**
+ * Estado general al que debe avanzar la emergencia cuando un móvil marca una clave.
+ * Solo avanza (nunca retrocede) y nunca finaliza: el cierre sigue siendo manual.
+ */
+export function emergencyStatusFromVehicle(current: string, vehicle: VehicleOperationalStatus): string | null {
+  const target = VEHICLE_TO_EMERGENCY[vehicle];
+  if (!target) return null;
+  const ci = EMERGENCY_ORDER.indexOf(current);
+  if (ci < 0 || ci >= EMERGENCY_ORDER.indexOf('finalizada')) return null;
+  return EMERGENCY_ORDER.indexOf(target) > ci ? target : null;
+}
+
+export const EMERGENCY_STATUS_TIMESTAMP: Record<string, string> = {
+  en_ruta: 'en_route_at',
+  en_trabajo: 'working_at',
+  controlada: 'controlled_at',
+};
+
+export const EMERGENCY_STATUS_LABEL: Record<string, string> = {
+  en_ruta: 'En Ruta',
+  en_trabajo: 'En Trabajo',
+  controlada: 'Controlada',
+};
