@@ -43,12 +43,13 @@ export async function returnVehicleToQuarters(i: ReturnInput): Promise<void> {
     .from('vehicles').update({ status: 'disponible', odometer: i.odometerEnd }).eq('id', i.vehicleId);
   if (vErr) throw new Error(`6-10 guardado, pero no se actualizó el móvil: ${vErr.message}`);
 
-  // La consola manda: sugerencias pendientes del móvil quedan reemplazadas.
+  // El retorno reemplaza claves pendientes, no los pre-informes independientes.
   await supabase
     .from('vehicle_operational_requests')
     .update({ status: 'reemplazada', resolved_at: now, resolved_by: i.userId })
     .eq('emergency_vehicle_id', i.evId)
-    .eq('status', 'pendiente');
+    .eq('status', 'pendiente')
+    .neq('requested_status', 'PRE-INFORME');
 
   await supabase.from('emergency_log').insert({
     emergency_id: i.emergencyId,
