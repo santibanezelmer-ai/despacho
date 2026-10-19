@@ -52,12 +52,13 @@ export function useVehicleOperationalStatus() {
         .eq('id', evId);
       if (error) throw error;
 
-      // La consola manda: cualquier sugerencia pendiente del móvil queda reemplazada.
+      // La consola reemplaza claves pendientes, no los pre-informes independientes.
       await supabase
         .from('vehicle_operational_requests')
         .update({ status: 'reemplazada', resolved_at: new Date().toISOString(), resolved_by: user?.id ?? null })
         .eq('emergency_vehicle_id', evId)
-        .eq('status', 'pendiente');
+        .eq('status', 'pendiente')
+        .neq('requested_status', 'PRE-INFORME');
 
       if (orgId) {
         await supabase.from('emergency_log').insert({
