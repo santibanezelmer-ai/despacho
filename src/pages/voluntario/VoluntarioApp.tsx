@@ -83,7 +83,7 @@ export default function VoluntarioApp() {
       setError(null);
       setChecking(false);
     })();
-  }, [user, loading]);
+  }, [user?.id, loading]);
 
   // Auto-register push when membership loads
   useEffect(() => {
