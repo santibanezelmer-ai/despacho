@@ -49,12 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // user nuevo del mismo usuario: conservarlo evita recargar toda la app.
       const nextUser = session?.user ?? null;
       setUser(prev => (prev && nextUser && prev.id === nextUser.id ? prev : nextUser));
+      // Persistir siempre (incluido TOKEN_REFRESHED): el refresh token rota y el
+      // respaldo nativo debe tener el vigente para poder restaurar la sesión.
+      if (session) {
+        void persistNativeAuthSession(session);
+      }
+
       if (event === 'TOKEN_REFRESHED' && authBootstrappedRef.current) {
         return;
       }
 
       if (session) {
-        void persistNativeAuthSession(session);
+        // ya persistida arriba
       } else if (event === 'SIGNED_OUT') {
         // No borrar el respaldo nativo aquí: este evento también puede llegar
         // por un refresh fallido (p. ej. sin conexión). El respaldo solo se
