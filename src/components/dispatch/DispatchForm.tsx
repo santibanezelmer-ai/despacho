@@ -9,7 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useOrganizationLandmarks } from '@/hooks/useOrganizationLandmarks';
+import { autoGeocode } from '@/lib/autoGeocode';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { getPlayableToneSrc } from '@/services/toneCache';
@@ -158,6 +160,16 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [callerPhone, setCallerPhone] = useState(draft.callerPhone ?? '');
   const [observations, setObservations] = useState(draft.observations ?? '');
   const [submitting, setSubmitting] = useState(false);
+  const { data: localLandmarks = [] } = useOrganizationLandmarks();
+  const { data: orgGeo } = useQuery({
+    queryKey: ['org-geo-context', orgId],
+    enabled: !!orgId,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('organizations').select('commune, latitude, longitude').eq('id', orgId!).maybeSingle();
+      return data;
+    },
+  });
   // Id estable por ventana: reintentar no crea una emergencia duplicada
   const [dispatchId] = useState(() => crypto.randomUUID());
   const [playingTones, setPlayingTones] = useState(false);
