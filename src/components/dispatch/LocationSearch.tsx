@@ -15,6 +15,8 @@ interface Props {
   query: string;
   /** Se llama al elegir una sugerencia; el operador luego guarda con el flujo existente. */
   onSelect: (candidate: LocationCandidate) => void;
+  /** Cambia cada vez que el operador enfoca el campo: busca el texto actual sin editarlo. */
+  searchSignal?: number;
 }
 
 const CONF_META: Record<LocationConfidence, { label: string; cls: string }> = {
@@ -29,7 +31,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 /** Buscador central de ubicaciones (Location Resolver) para la consola web. */
-export default function LocationSearch({ query, onSelect }: Props) {
+export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Props) {
   const { orgId } = useOrganization();
   const initialRef = useRef(query);
   const [loading, setLoading] = useState(false);
@@ -153,6 +155,14 @@ export default function LocationSearch({ query, onSelect }: Props) {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
+
+  // Al hacer clic en el campo: mostrar opciones del texto actual sin tener que editarlo.
+  useEffect(() => {
+    if (!searchSignal) return;
+    if (loading || results || googleResults || routeResult) return;
+    void handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchSignal]);
 
   return (
     <div className="space-y-2 empty:hidden">
