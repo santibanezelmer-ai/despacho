@@ -149,7 +149,7 @@ export default function LocationSearch({ query, onSelect }: Props) {
   useEffect(() => {
     if (query === initialRef.current) return;
     initialRef.current = '\u0000';
-    const t = setTimeout(() => { void handleSearch(); }, 900);
+    const t = setTimeout(() => { void handleSearch(); }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
@@ -188,6 +188,43 @@ export default function LocationSearch({ query, onSelect }: Props) {
             La Ruta {routeResult.routeCode} va del km {routeResult.minKm} al km {routeResult.maxKm.toFixed(1)} según Vialidad/MOP. No se marcó ningún punto.
           </p>
         </div>
+      )}
+
+      {googleResults && googleResults.length === 0 && !loading && (
+        <div className="rounded-md border border-warning/50 bg-warning/10 p-2 text-xs" role="status">
+          <p className="font-semibold text-foreground">Google Maps no encontró coincidencias</p>
+          <p className="text-muted-foreground">Prueba con otro nombre, agrega la comuna o marca el punto en el mapa.</p>
+        </div>
+      )}
+
+      {googleResults && googleResults.length > 0 && (
+        <ul className="max-h-56 space-y-1 overflow-y-auto" role="listbox" aria-label="Sugerencias de Google Maps">
+          {googleResults.map(s => {
+            const active = selectedGoogleId === s.placeId;
+            return (
+              <li key={s.placeId}>
+                <button
+                  type="button"
+                  disabled={!!resolvingId}
+                  onClick={() => void chooseGoogle(s)}
+                  className={`flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left transition-colors disabled:opacity-60 ${active ? 'border-primary bg-primary/10' : 'border-border bg-background/60 hover:border-primary/60'}`}
+                >
+                  {resolvingId === s.placeId
+                    ? <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin" />
+                    : <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emergency" />}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium text-foreground">{s.main}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">{s.secondary}</span>
+                  </span>
+                  {s.distanceMeters != null && (
+                    <span className="shrink-0 text-[10px] text-muted-foreground">{(s.distanceMeters / 1000).toFixed(1)} km</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+          <li className="px-1 text-right text-[9px] text-muted-foreground">Resultados de Google Maps</li>
+        </ul>
       )}
 
       {results && results.length === 0 && !loading && (
