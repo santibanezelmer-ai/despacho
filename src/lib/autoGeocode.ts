@@ -56,7 +56,11 @@ export async function autoGeocodeDetailed(
 
   try {
     const session = newPlacesSession();
-    const sugg = await placesAutocomplete(q, session, opts.near);
+    const raw = await placesAutocomplete(q, session, opts.near);
+    // Prefiere la sugerencia que menciona la comuna de la organización (Google ordena por relevancia, no por cercanía).
+    const ctx = (opts.defaultContext ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const inCtx = (t: string) => !!ctx && t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(ctx);
+    const sugg = [...raw].sort((a, b) => Number(inCtx(b.secondary)) - Number(inCtx(a.secondary)));
     if (sugg[0]) {
       const c = await placeDetails(sugg[0], session);
       if (Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
