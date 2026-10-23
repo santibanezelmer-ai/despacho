@@ -1117,6 +1117,56 @@ export type Database = {
           },
         ]
       }
+      organization_landmarks: {
+        Row: {
+          aliases: string[]
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          notes: string | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_landmarks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           company_id: string | null
