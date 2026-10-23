@@ -8,6 +8,7 @@ import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult, parseRouteCrossi
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLocation, type LocationCandidate, type LocationConfidence } from '@/lib/locationResolver';
+import { placesAutocomplete, placeDetails, newPlacesSession, type PlaceSuggestion } from '@/lib/googlePlaces';
 
 interface Props {
   /** Texto de la dirección (controlado por el campo Dirección). La búsqueda es automática al escribir. */
@@ -38,6 +39,10 @@ export default function LocationSearch({ query, onSelect }: Props) {
   const [routeResult, setRouteResult] = useState<RouteKmResult | null>(null);
   const [routeSelected, setRouteSelected] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const sessionRef = useRef<string>(newPlacesSession());
+  const [googleResults, setGoogleResults] = useState<PlaceSuggestion[] | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [selectedGoogleId, setSelectedGoogleId] = useState<string | null>(null);
 
   const { data: org } = useQuery({
     queryKey: ['org-geo-context', orgId],
@@ -55,6 +60,7 @@ export default function LocationSearch({ query, onSelect }: Props) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setLoading(true); setError(null); setSelected(null); setResults(null); setRouteResult(null); setRouteSelected(false);
+    setGoogleResults(null); setSelectedGoogleId(null);
     try {
       // Prioridad 0: cruce entre dos rutas locales (ej. "Ruta 215 con U-475").
       const cq = parseRouteCrossingQuery(query);
@@ -86,20 +92,38 @@ export default function LocationSearch({ query, onSelect }: Props) {
           return;
         }
       }
-      const list = await resolveLocation(query, {
-        defaultContext: org?.commune ?? null,
-        near: org?.latitude != null && org?.longitude != null ? { lat: org.latitude, lng: org.longitude } : null,
-        signal: ctrl.signal,
-      });
+      const near = org?.latitude != null && org?.longitude != null ? { lat: org.latitude, lng: org.longitude } : null;
+      // Prioridad 2: Google Maps (calles, esquinas, comercios, instituciones).
+      try {
+        const sugg = await placesAutocomplete(query.trim(), sessionRef.current, near);
+        if (ctrl.signal.aborted) return;
+        setGoogleResults(sugg);
+        return;
+      } catch (ge) {
+        console.warn('Google Places no disponible, usando respaldo', ge);
+      }
+      // Respaldo: si Google no responde, no dejar al operador sin búsqueda.
+      const list = await resolveLocation(query, { defaultContext: org?.commune ?? null, near, signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
       setResults(list);
-      // Reconocimiento automático: solo se aplica una coincidencia Alta inequívoca.
-      const highs = list.filter(c => c.confidence === 'high');
-      if (highs.length >= 1 && list[0].confidence === 'high') choose(list[0]);
     } catch (e: any) {
       if (e?.name !== 'AbortError') setError('No se pudo consultar el buscador de mapas. Usa el mapa o las coordenadas manuales.');
     } finally {
       if (abortRef.current === ctrl) setLoading(false);
+    }
+  };
+
+  const chooseGoogle = async (s: PlaceSuggestion) => {
+    setResolvingId(s.placeId); setError(null);
+    try {
+      const c = await placeDetails(s, sessionRef.current);
+      sessionRef.current = newPlacesSession();
+      setSelectedGoogleId(s.placeId);
+      choose(c);
+    } catch {
+      setError('No se pudo obtener la ubicación de ese lugar. Intenta con otra sugerencia o marca el punto en el mapa.');
+    } finally {
+      setResolvingId(null);
     }
   };
 
@@ -125,7 +149,7 @@ export default function LocationSearch({ query, onSelect }: Props) {
   useEffect(() => {
     if (query === initialRef.current) return;
     initialRef.current = '\u0000';
-    const t = setTimeout(() => { void handleSearch(); }, 900);
+    const t = setTimeout(() => { void handleSearch(); }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
@@ -164,6 +188,43 @@ export default function LocationSearch({ query, onSelect }: Props) {
             La Ruta {routeResult.routeCode} va del km {routeResult.minKm} al km {routeResult.maxKm.toFixed(1)} según Vialidad/MOP. No se marcó ningún punto.
           </p>
         </div>
+      )}
+
+      {googleResults && googleResults.length === 0 && !loading && (
+        <div className="rounded-md border border-warning/50 bg-warning/10 p-2 text-xs" role="status">
+          <p className="font-semibold text-foreground">Google Maps no encontró coincidencias</p>
+          <p className="text-muted-foreground">Prueba con otro nombre, agrega la comuna o marca el punto en el mapa.</p>
+        </div>
+      )}
+
+      {googleResults && googleResults.length > 0 && (
+        <ul className="max-h-56 space-y-1 overflow-y-auto" role="listbox" aria-label="Sugerencias de Google Maps">
+          {googleResults.map(s => {
+            const active = selectedGoogleId === s.placeId;
+            return (
+              <li key={s.placeId}>
+                <button
+                  type="button"
+                  disabled={!!resolvingId}
+                  onClick={() => void chooseGoogle(s)}
+                  className={`flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left transition-colors disabled:opacity-60 ${active ? 'border-primary bg-primary/10' : 'border-border bg-background/60 hover:border-primary/60'}`}
+                >
+                  {resolvingId === s.placeId
+                    ? <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin" />
+                    : <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emergency" />}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium text-foreground">{s.main}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">{s.secondary}</span>
+                  </span>
+                  {s.distanceMeters != null && (
+                    <span className="shrink-0 text-[10px] text-muted-foreground">{(s.distanceMeters / 1000).toFixed(1)} km</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+          <li className="px-1 text-right text-[9px] text-muted-foreground">Resultados de Google Maps</li>
+        </ul>
       )}
 
       {results && results.length === 0 && !loading && (
