@@ -88,7 +88,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const sidebarContent = (isMobile: boolean) => (
     <>
       {/* Logo + Org name */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-3">
+      <div className={`flex items-center gap-2 border-b border-border py-3 ${collapsed && !isMobile ? 'justify-center px-0' : 'px-3'}`}>
         <img
           src="/favicon.png"
           alt="Operix"
@@ -128,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Live indicator */}
-      <div className={`flex items-center gap-2 border-b border-border px-3 py-2 ${!isOnline ? 'bg-destructive/5' : ''}`}>
+      <div className={`flex items-center gap-2 border-b border-border py-2 ${collapsed && !isMobile ? 'justify-center px-0' : 'px-3'} ${!isOnline ? 'bg-destructive/5' : ''}`}>
         {isOnline ? (
           <span className="pulse-live h-2 w-2 rounded-full bg-success" />
         ) : (
@@ -176,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         setScreensOpen(true);
                         if (isMobile) setMobileOpen(false);
                       }}
-                      className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${collapsed && !isMobile ? 'justify-center' : ''}`}
+                      className={`mb-0.5 flex items-center gap-2.5 rounded-md py-2 text-sm transition-colors text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${collapsed && !isMobile ? 'mx-auto h-9 w-10 justify-center px-0' : 'mx-1.5 w-[calc(100%-0.75rem)] px-2.5'}`}
                       title={collapsed && !isMobile ? item.label : undefined}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -190,7 +190,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => isMobile && setMobileOpen(false)}
-                    className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-200 ${collapsed && !isMobile ? 'justify-center' : ''} ${
+                    className={`mb-0.5 flex items-center gap-2.5 rounded-md py-2 text-sm transition-all duration-200 ${collapsed && !isMobile ? 'mx-auto h-9 w-10 justify-center px-0' : 'mx-1.5 px-2.5'} ${
                       isActive
                         ? 'bg-gradient-to-r from-emergency/20 to-emergency/5 text-emergency font-medium shadow-sm border border-emergency/20'
                         : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground '
@@ -220,25 +220,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
           </div>
         )}
-        <div className={`flex items-center gap-1 ${collapsed && !isMobile ? 'flex-col' : ''}`}>
+        <div className={`flex items-center gap-1 ${collapsed && !isMobile ? 'flex-col justify-center' : ''}`}>
           {!isMobile && (
             <button
               onClick={toggleCollapsed}
               title={collapsed ? 'Expandir menú' : 'Minimizar menú'}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className={`flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${collapsed ? 'h-9 w-10' : 'flex-1'}`}
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
               {!collapsed && <span className="text-[11px]">Minimizar</span>}
             </button>
           )}
           {canAccessPath('/alertas', accessCtx) && (
-            <Link to="/alertas" title="Alertas operativas" onClick={() => isMobile && setMobileOpen(false)} className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-warning transition-colors">
+            <Link to="/alertas" title="Alertas operativas" onClick={() => isMobile && setMobileOpen(false)} className={`flex items-center justify-center rounded-md text-muted-foreground hover:text-warning transition-colors ${collapsed && !isMobile ? "h-9 w-10" : "py-1.5 px-2"}`}>
               <Bell className="h-4 w-4" />
             </Link>
           )}
           <button
             onClick={signOut}
-            className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-emergency transition-colors"
+            className={`flex items-center justify-center rounded-md text-muted-foreground hover:text-emergency transition-colors ${collapsed && !isMobile ? "h-9 w-10" : "py-1.5 px-2"}`}
             title="Cerrar sesión"
           >
             <LogOut className="h-4 w-4" />
