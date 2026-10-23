@@ -9,7 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useOrganizationLandmarks } from '@/hooks/useOrganizationLandmarks';
+import { autoGeocode } from '@/lib/autoGeocode';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { getPlayableToneSrc } from '@/services/toneCache';
@@ -158,6 +160,16 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [callerPhone, setCallerPhone] = useState(draft.callerPhone ?? '');
   const [observations, setObservations] = useState(draft.observations ?? '');
   const [submitting, setSubmitting] = useState(false);
+  const { data: localLandmarks = [] } = useOrganizationLandmarks();
+  const { data: orgGeo } = useQuery({
+    queryKey: ['org-geo-context', orgId],
+    enabled: !!orgId,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('organizations').select('commune, latitude, longitude').eq('id', orgId!).maybeSingle();
+      return data;
+    },
+  });
   // Id estable por ventana: reintentar no crea una emergencia duplicada
   const [dispatchId] = useState(() => crypto.randomUUID());
   const [playingTones, setPlayingTones] = useState(false);
@@ -290,6 +302,25 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     }
 
     setSubmitting(true);
+
+    // Sin ubicación marcada: reconoce la dirección automáticamente (sin mostrar opciones).
+    let coords: { latitude: number; longitude: number } | null =
+      locationFix ? { latitude: locationFix.latitude, longitude: locationFix.longitude } : null;
+    if (!coords && navigator.onLine) {
+      const near = orgGeo?.latitude != null && orgGeo?.longitude != null
+        ? { lat: Number(orgGeo.latitude), lng: Number(orgGeo.longitude) } : null;
+      const found = await Promise.race([
+        autoGeocode(address, { landmarks: localLandmarks, near, defaultContext: orgGeo?.commune ?? null }),
+        new Promise<null>(r => setTimeout(() => r(null), 6000)),
+      ]).catch(() => null);
+      if (found && isValidLatLng(found.latitude, found.longitude)) {
+        coords = { latitude: found.latitude, longitude: found.longitude };
+        toast.success(`Dirección ubicada automáticamente (${found.source}).`);
+      } else {
+        toast.warning('No se pudo ubicar la dirección en el mapa. Se despacha sin marcador; ajústalo desde Acciones → Ubicación.', { duration: 8000 });
+      }
+    }
+
     const payload: PendingDispatch = {
       clientId: dispatchId,
       orgId: orgId!,
@@ -302,8 +333,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       callerName: callerName.trim() || null,
       callerPhone: callerPhone.trim() || null,
       observations: observations.trim() || null,
-      latitude: locationFix?.latitude ?? null,
-      longitude: locationFix?.longitude ?? null,
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
       locationRequestId,
       vehicleIds: selectedVehicleIds,
       vehicleLabels: selectedVehicleIds.map(id => (allVehicles ?? []).find(v => v.id === id)?.code ?? '').filter(Boolean),
