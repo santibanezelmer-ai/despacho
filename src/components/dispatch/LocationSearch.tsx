@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useOrganizationLandmarks } from '@/hooks/useOrganizationLandmarks';
+import { matchLocalLandmarks, type LocalLandmark } from '@/lib/localLandmarks';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -55,6 +57,8 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
       return data;
     },
   });
+  const { data: localLandmarks = [] } = useOrganizationLandmarks();
+  const localMatches = useMemo(() => matchLocalLandmarks(query, localLandmarks), [query, localLandmarks]);
 
   const handleSearch = async () => {
     if (query.trim().length < 3) { setResults(null); setRouteResult(null); setError(null); return; }
@@ -134,6 +138,16 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
     onSelect(c);
   };
 
+  const chooseLocal = (l: LocalLandmark) => {
+    setSelectedGoogleId(null);
+    choose({
+      id: `local-${l.id}`, label: l.name, secondary: l.notes ?? l.category ?? '',
+      latitude: l.latitude, longitude: l.longitude,
+      type: 'desconocido', street: null, locality: null, commune: null, region: null,
+      confidence: 'high', reason: 'Punto local registrado por tu Cuerpo de Bomberos.', source: 'landmark',
+    } as LocationCandidate);
+  };
+
   const applyRoute = (r: RouteKmResult) => {
     if (r.status !== 'found') return;
     setRouteSelected(true);
@@ -166,10 +180,30 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
 
   return (
     <div className="space-y-2 empty:hidden">
+      {localMatches.length > 0 && (
+        <ul className="space-y-1" aria-label="Puntos locales">
+          {localMatches.map(l => (
+            <li key={l.id}>
+              <button
+                type="button"
+                onClick={() => chooseLocal(l)}
+                className={`flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left transition-colors ${selected?.id === `local-${l.id}` ? 'border-primary bg-primary/10' : 'border-warning/50 bg-warning/10 hover:border-primary/60'}`}
+              >
+                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-medium text-foreground">{l.name}</span>
+                  <span className="block truncate text-[10px] text-muted-foreground">Punto local{l.category ? ` · ${l.category}` : ''}{l.notes ? ` · ${l.notes}` : ''}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {loading && (
         <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Reconociendo dirección…</p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
+
 
       {routeResult && routeResult.status === 'found' && (
         <button
