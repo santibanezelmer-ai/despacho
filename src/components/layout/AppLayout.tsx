@@ -232,13 +232,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           )}
           {canAccessPath('/alertas', accessCtx) && (
-            <Link to="/alertas" title="Alertas operativas" onClick={() => isMobile && setMobileOpen(false)} className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-warning transition-colors">
+            <Link to="/alertas" title="Alertas operativas" onClick={() => isMobile && setMobileOpen(false)} className={`flex items-center justify-center rounded-md text-muted-foreground hover:text-warning transition-colors ${collapsed && !isMobile ? "h-9 w-10" : "py-1.5 px-2"}`}>
               <Bell className="h-4 w-4" />
             </Link>
           )}
           <button
             onClick={signOut}
-            className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-emergency transition-colors"
+            className={`flex items-center justify-center rounded-md text-muted-foreground hover:text-emergency transition-colors ${collapsed && !isMobile ? "h-9 w-10" : "py-1.5 px-2"}`}
             title="Cerrar sesión"
           >
             <LogOut className="h-4 w-4" />
