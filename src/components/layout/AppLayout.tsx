@@ -176,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         setScreensOpen(true);
                         if (isMobile) setMobileOpen(false);
                       }}
-                      className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${collapsed && !isMobile ? 'justify-center' : ''}`}
                       title={collapsed && !isMobile ? item.label : undefined}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
