@@ -225,7 +225,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <button
               onClick={toggleCollapsed}
               title={collapsed ? 'Expandir menú' : 'Minimizar menú'}
-              className={`flex items-center justify-center gap-1.5 rounded-md border ${collapsed ? 'h-9 w-10' : 'flex-1'}`} data-x="1" data-c="1" data-cls=" border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className={`flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${collapsed ? 'h-9 w-10' : 'flex-1'}`}
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
               {!collapsed && <span className="text-[11px]">Minimizar</span>}
