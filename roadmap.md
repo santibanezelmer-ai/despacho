@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Compartir lectura de grifos entre organizaciones sin ampliar permisos de modificación; verificar consulta y mapa con sesión.
+
 - [x] Sustituir rutas móviles antiguas por Voluntarios y conservar push; 15 pruebas de rutas aprobadas, compilación automática correcta y acceso sin sesión verificado.
 - [ ] Verificar navegación de Voluntarios con sesión real en dispositivo nativo: requiere iniciar sesión en la vista previa y disponer del dispositivo.
 

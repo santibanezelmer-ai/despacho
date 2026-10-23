@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Hydrant SELECT is shared across authenticated organization members; preserve owner-scoped write RLS and derive map ownership from organization_id, never from which table supplied the record.
+
 - Mount native push registration inside the shared authenticated-provider/router tree, not only AppRoutes, so volunteer routes and legacy mobile deep-link redirects keep the existing native registration lifecycle.
 - Route legacy `/mobile/*` links to the existing volunteer application before desktop/native guards; use the same volunteer views rather than maintaining a second mobile interface.
 

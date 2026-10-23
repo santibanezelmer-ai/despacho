@@ -21,7 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { TERRITORIAL_LAYERS, type TerritorialLayerId } from '@/lib/territorialLayers';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
-import { isHydrantStatus, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
+import { isHydrantStatus, isOwnHydrant, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 
 
@@ -33,6 +34,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function OperativeMap({ screen = false }: { screen?: boolean }) {
+  const { orgId } = useOrganization();
   const { formatClock } = useTimeFormat();
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -191,6 +193,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
       return;
     }
     if (action === 'delete') {
+      if (!hydrant.isOwn) return;
       if (!confirm('¿Eliminar este grifo?')) return;
       const { error } = await supabase.from('hydrants').delete().eq('id', hydrant.id);
       if (error) { toast.error(error.message); return; }
@@ -229,7 +232,8 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
       name: h.name ?? 'Grifo',
       type: h.type,
       description: h.description,
-      isOwn: true,
+      isOwn: isOwnHydrant(h.organization_id, orgId),
+      organizationId: h.organization_id,
       number: h.hydrant_number,
       status: isHydrantStatus(h.status) ? h.status : 'sin_informacion',
       outlets: parseHydrantOutlets(h.outlets),
@@ -261,7 +265,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
       year: h.anio ?? null,
     }));
     return [...orgHydrants, ...nationalHydrants];
-  }, [hydrants, sharedHydrants]);
+  }, [hydrants, sharedHydrants, orgId]);
 
   const hydrantDiameters = useMemo(() => Array.from(new Set(mapHydrants.flatMap((hydrant) => hydrant.outlets.map((outlet) => outlet.diameterMm)))).sort((a, b) => a - b), [mapHydrants]);
   const filteredHydrants = useMemo(() => mapHydrants.filter((hydrant) => {

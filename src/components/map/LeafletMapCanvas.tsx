@@ -38,6 +38,7 @@ export type MapHydrant = {
   type: string | null;
   description: string | null;
   isOwn?: boolean;
+  organizationId?: string;
   number: string | null;
   status: HydrantStatus;
   outlets: HydrantOutlet[];

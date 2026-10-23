@@ -8,7 +8,7 @@ export type MapBounds = {
   west: number;
 };
 
-/** Org-owned hydrants (uses org RLS). */
+/** Organization-contributed hydrants shared with authenticated organization members. */
 export function useHydrants() {
   return useQuery({
     queryKey: ['hydrants'],
