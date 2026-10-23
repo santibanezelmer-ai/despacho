@@ -142,7 +142,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2">
         {isSuperadmin && (!collapsed || isMobile) && (
           <div className="mb-1">
             <Link
@@ -176,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         setScreensOpen(true);
                         if (isMobile) setMobileOpen(false);
                       }}
-                      className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       title={collapsed && !isMobile ? item.label : undefined}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -190,10 +190,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => isMobile && setMobileOpen(false)}
-                    className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-200 ${
+                    className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-200 ${collapsed && !isMobile ? 'justify-center' : ''} ${
                       isActive
                         ? 'bg-gradient-to-r from-emergency/20 to-emergency/5 text-emergency font-medium shadow-sm border border-emergency/20'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground '
                     }`}
                     title={collapsed && !isMobile ? item.label : undefined}
                   >
@@ -207,7 +207,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* User info */}
-      <div className="border-t border-border px-3 py-2">
+      <div className={`border-t border-border py-2 ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {(!collapsed || isMobile) && user && (
           <div className="mb-1">
             <Link to="/perfil" onClick={() => isMobile && setMobileOpen(false)} className="flex items-center gap-1.5 hover:text-info transition-colors">
@@ -220,7 +220,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
           </div>
         )}
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center gap-1 ${collapsed && !isMobile ? 'flex-col' : ''}`}>
           {!isMobile && (
             <button
               onClick={toggleCollapsed}
@@ -253,7 +253,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ScreenLauncherDialog open={screensOpen} onOpenChange={setScreensOpen} />
     <div data-theme={isDispatchConsole ? dispatchTheme : undefined} className={`flex h-screen overflow-hidden bg-background ${isDispatchConsole ? 'theme-screen dispatch-shell' : ''}`}>
       {/* Desktop sidebar */}
-      <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
+      <aside className={`hidden md:flex flex-col overflow-x-hidden border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
         {sidebarContent(false)}
       </aside>
 
