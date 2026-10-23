@@ -176,7 +176,7 @@ export default function LocationSearch({ query, onSelect }: Props) {
             {' '}· {routeResult.latitude.toFixed(5)}, {routeResult.longitude.toFixed(5)}
           </p>
           {routeSelected && (
-            <p className="mt-1 text-[10px] text-muted-foreground">Revisa el marcador (puedes arrastrarlo) y presiona <b>Guardar ubicación</b>.</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">Presiona <b>Guardar ubicación</b> para confirmar.</p>
           )}
         </button>
       )}
@@ -276,9 +276,7 @@ export default function LocationSearch({ query, onSelect }: Props) {
             </p>
           )}
           <p className="text-muted-foreground">{selected.reason}</p>
-          <p className="mt-1 text-muted-foreground">
-            Revisa el marcador en el mapa (puedes arrastrarlo) y presiona <b>Guardar ubicación</b> para confirmar.
-          </p>
+            <p className="mt-1 text-muted-foreground">Presiona <b>Guardar ubicación</b> para confirmar.</p>
         </div>
       )}
     </div>
