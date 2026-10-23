@@ -1,3 +1,4 @@
+import { evaluateLocation } from '@/lib/geoJurisdiction';
 /**
  * Location Resolver (Fase 2) — solo Consola Web.
  * Interpreta calles, avenidas, pasajes, caminos, rutas y sectores con contexto
@@ -292,5 +293,11 @@ export async function resolveLocation(query: string, opts: ResolveOptions = {}):
 
   // Sin coincidencia de la vía: no se ofrece el centro de la comuna como ubicación seleccionable.
 
-  return results.sort((a, b) => RANK[a.confidence] - RANK[b.confidence]).slice(0, 8);
+  // Cinturón de seguridad: se descartan resultados fuera del radio de la central.
+  const near = opts.near;
+  const safe = near
+    ? results.filter(r => evaluateLocation({ latitude: r.latitude, longitude: r.longitude, trusted: true }, near).status !== 'outside')
+    : results;
+
+  return safe.sort((a, b) => RANK[a.confidence] - RANK[b.confidence]).slice(0, 8);
 }

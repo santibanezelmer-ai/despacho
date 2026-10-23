@@ -10,13 +10,15 @@ import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult, parseRouteCrossi
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLocation, type LocationCandidate, type LocationConfidence } from '@/lib/locationResolver';
+import { toast } from 'sonner';
+import { evaluateLocation, canAutoAccept, type GeoCheck } from '@/lib/geoJurisdiction';
 import { placesAutocomplete, placeDetails, newPlacesSession, type PlaceSuggestion } from '@/lib/googlePlaces';
 
 interface Props {
   /** Texto de la dirección (controlado por el campo Dirección). La búsqueda es automática al escribir. */
   query: string;
   /** Se llama al elegir una sugerencia; el operador luego guarda con el flujo existente. */
-  onSelect: (candidate: LocationCandidate) => void;
+  onSelect: (candidate: LocationCandidate, check?: GeoCheck) => void;
   /** Cambia cada vez que el operador enfoca el campo: busca el texto actual sin editarlo. */
   searchSignal?: number;
 }
@@ -53,7 +55,7 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
     enabled: !!orgId,
     staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase.from('organizations').select('commune, latitude, longitude').eq('id', orgId!).maybeSingle();
+      const { data } = await supabase.from('organizations').select('commune, region, latitude, longitude').eq('id', orgId!).maybeSingle();
       return data;
     },
   });
@@ -133,9 +135,18 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
     }
   };
 
+  const origin = org?.latitude != null && org?.longitude != null
+    ? { lat: Number(org.latitude), lng: Number(org.longitude), commune: org.commune, region: (org as any).region ?? null } : null;
+  const [selectedCheck, setSelectedCheck] = useState<GeoCheck | null>(null);
   const choose = (c: LocationCandidate) => {
+    const trusted = c.source === 'landmark' || c.source === 'vialidad';
+    const check = evaluateLocation({ latitude: c.latitude, longitude: c.longitude, commune: c.commune, region: c.region, trusted }, origin);
     setSelected(c);
-    onSelect(c);
+    setSelectedCheck(check);
+    if (!canAutoAccept(check) && check.status !== 'unknown') {
+      toast.warning(`Revisa la ubicación: ${check.reasons.join(' ')}`, { duration: 9000 });
+    }
+    onSelect(c, check);
   };
 
   const chooseLocal = (l: LocalLandmark) => {
@@ -180,6 +191,15 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
 
   return (
     <div className="space-y-2 empty:hidden">
+      {selected && selectedCheck && selectedCheck.status !== 'unknown' && (
+        <p
+          role="status"
+          className={`rounded-md border px-2 py-1 text-[11px] ${selectedCheck.status === 'ok' ? 'border-success/40 text-success' : 'border-destructive/50 bg-destructive/10 text-destructive'}`}
+        >
+          {selectedCheck.distanceKm != null && `A ${selectedCheck.distanceKm.toFixed(1)} km de la central. `}
+          {selectedCheck.status === 'ok' ? 'Dentro del área de seguridad.' : `Requiere revisión: ${selectedCheck.reasons.join(' ')}`}
+        </p>
+      )}
       {localMatches.length > 0 && (
         <ul className="space-y-1" aria-label="Puntos locales">
           {localMatches.map(l => (

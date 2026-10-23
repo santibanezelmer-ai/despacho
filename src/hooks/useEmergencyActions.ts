@@ -52,7 +52,7 @@ export function useUpdateLocation() {
   const { user } = useAuth();
   const { orgId } = useOrganization();
   return useMutation({
-    mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: number; longitude: number }) => {
+    mutationFn: async ({ id, latitude, longitude, exception }: { id: string; latitude: number; longitude: number; exception?: string }) => {
       // Bloquea coordenadas fuera de rango (ej. longitud -344.6 al arrastrar
       // el marcador con el mapa muy alejado). No corrige: solo impide guardar.
       if (!isValidLatLng(latitude, longitude)) {
@@ -82,7 +82,8 @@ export function useUpdateLocation() {
         `Ubicación corregida por operador: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}` +
           (before?.latitude != null && before?.longitude != null
             ? ` (anterior ${Number(before.latitude).toFixed(5)}, ${Number(before.longitude).toFixed(5)} — origen ${before.location_source ?? 'sin definir'})`
-            : ''),
+            : '') +
+          (exception ? ` — EXCEPCIÓN OPERACIONAL autorizada: ${exception}` : ''),
       );
 
       if (orgId) {
@@ -96,7 +97,7 @@ export function useUpdateLocation() {
             longitude: before?.longitude ?? null,
             location_source: before?.location_source ?? null,
           } as any,
-          _new_data: { latitude, longitude, location_source: 'operador' } as any,
+          _new_data: { latitude, longitude, location_source: 'operador', geo_exception: exception ?? null } as any,
         });
       }
     },
