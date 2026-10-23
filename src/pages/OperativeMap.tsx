@@ -10,6 +10,9 @@ import { Button } from '@/components/ui/button';
 import LeafletMapCanvas, { type MapEmergency, type MapHydrant, type MapVehicle } from '@/components/map/LeafletMapCanvas';
 import { useVehicleLastPositions, formatPositionAge, isPositionStale } from '@/hooks/useVehiclePositions';
 import HydrantFormDialog from '@/components/map/HydrantFormDialog';
+import LandmarkFormDialog from '@/components/map/LandmarkFormDialog';
+import { useOrganizationLandmarks } from '@/hooks/useOrganizationLandmarks';
+import type { LocalLandmark } from '@/lib/localLandmarks';
 import { useHydrants, useSharedHydrants } from '@/hooks/useHydrantsData';
 import { useStations } from '@/hooks/useStations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -55,6 +58,11 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
 
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   const [clickMode, setClickMode] = useState(false);
+  const [clickTarget, setClickTarget] = useState<'hydrant' | 'landmark'>('hydrant');
+  const [landmarkDialogOpen, setLandmarkDialogOpen] = useState(false);
+  const [landmarkCoords, setLandmarkCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [editingLandmark, setEditingLandmark] = useState<LocalLandmark | null>(null);
+  const { data: localLandmarks = [] } = useOrganizationLandmarks();
   const [hydrantDialogOpen, setHydrantDialogOpen] = useState(false);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [editingHydrant, setEditingHydrant] = useState<{
@@ -135,9 +143,21 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
   }, []);
 
   const handleMapClick = useCallback((latlng: { lat: number; lng: number }) => {
-    setClickedCoords(latlng);
     setClickMode(false);
+    if (clickTarget === 'landmark') {
+      setEditingLandmark(null);
+      setLandmarkCoords(latlng);
+      setLandmarkDialogOpen(true);
+      return;
+    }
+    setClickedCoords(latlng);
     setHydrantDialogOpen(true);
+  }, [clickTarget]);
+
+  const handleLandmarkEdit = useCallback((l: LocalLandmark) => {
+    setEditingLandmark(l);
+    setLandmarkCoords(null);
+    setLandmarkDialogOpen(true);
   }, []);
 
   const handleAddManual = () => {
@@ -369,15 +389,23 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           {!screen && <div className="flex items-center gap-1">
             <Button
               size="sm"
-              variant={clickMode ? 'default' : 'outline'}
+              variant={clickMode && clickTarget === 'hydrant' ? 'default' : 'outline'}
               className="h-7 text-xs gap-1"
-              onClick={() => setClickMode(!clickMode)}
+              onClick={() => { setClickTarget('hydrant'); setClickMode(!(clickMode && clickTarget === 'hydrant')); }}
             >
               <MousePointer2 className="h-3 w-3" />
-              {clickMode ? 'Cancelar' : 'Colocar en mapa'}
+              {clickMode && clickTarget === 'hydrant' ? 'Cancelar' : 'Colocar en mapa'}
             </Button>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAddManual}>
               <Plus className="h-3 w-3" /> Agregar grifo
+            </Button>
+            <Button
+              size="sm"
+              variant={clickMode && clickTarget === 'landmark' ? 'default' : 'outline'}
+              className="h-7 text-xs gap-1"
+              onClick={() => { setClickTarget('landmark'); setClickMode(!(clickMode && clickTarget === 'landmark')); }}
+            >
+              <Plus className="h-3 w-3" /> {clickMode && clickTarget === 'landmark' ? 'Cancelar' : 'Punto local'}
             </Button>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleLocate} disabled={locating}>
               <LocateFixed className={`h-3 w-3 ${locating ? 'animate-pulse' : ''}`} /> Mi ubicación
@@ -406,11 +434,13 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           onLocateResult={handleLocateResult}
           liveLocation={liveLocation}
           territorialLayers={territorialLayers}
+          landmarks={localLandmarks}
+          onLandmarkEdit={screen ? undefined : handleLandmarkEdit}
         />
 
         {clickMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-md border border-primary bg-primary/90 px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg">
-            Haz clic en el mapa para colocar un grifo
+            {clickTarget === 'landmark' ? 'Haz clic en el mapa para guardar un punto local' : 'Haz clic en el mapa para colocar un grifo'}
           </div>
         )}
 
@@ -472,6 +502,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
         editingHydrant={editingHydrant}
       />
       <HydrantDetailSheet hydrant={selectedHydrant} open={hydrantDetailOpen} onOpenChange={setHydrantDetailOpen} onEdit={editHydrant} />
+      <LandmarkFormDialog open={landmarkDialogOpen} onOpenChange={setLandmarkDialogOpen} landmark={editingLandmark} position={landmarkCoords} />
     </div>
   );
 }
