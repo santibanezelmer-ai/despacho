@@ -293,8 +293,8 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
 
   return (
     <div className={screen ? 'flex h-screen w-screen flex-col bg-background' : 'flex w-full flex-col h-full'} style={screen ? undefined : { width: '100%' }}>
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2.5">
-        <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-card px-4 py-2">
+        <h1 className="text-lg font-bold text-foreground flex items-center gap-2 shrink-0">
           <Map className="h-5 w-5 text-info" /> Mapa Operativo
           {screen && (
             <>
@@ -305,8 +305,39 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
             </>
           )}
         </h1>
-        {showHydrants && (
-          <span className="text-xs tabular-nums text-muted-foreground">{filteredHydrants.length} grifos visibles</span>
+
+        <div className="flex items-center gap-1.5" role="group" aria-label="Capas">
+          {[
+            { key: 'e', on: showEmergencies, set: setShowEmergencies, icon: <Flame className="h-3.5 w-3.5 text-emergency" />, label: 'Emergencias' },
+            { key: 'h', on: showHydrants, set: setShowHydrants, icon: <Droplets className="h-3.5 w-3.5 text-info" />, label: showHydrants ? `Grifos ${filteredHydrants.length}` : 'Grifos' },
+            { key: 's', on: showStations, set: setShowStations, icon: <Building2 className="h-3.5 w-3.5 text-warning" />, label: 'Cuarteles' },
+            { key: 'v', on: showVehicles, set: setShowVehicles, icon: <Truck className="h-3.5 w-3.5 text-success" />, label: 'Móviles' },
+          ].map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              aria-pressed={c.on}
+              onClick={() => c.set(!c.on)}
+              className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium tabular-nums transition-colors ${c.on ? 'border-primary/60 bg-primary/15 text-foreground' : 'border-border bg-transparent text-muted-foreground opacity-60 hover:opacity-100'}`}
+            >
+              {c.icon}{c.label}
+            </button>
+          ))}
+        </div>
+
+        {!screen && (
+          <div className="ml-auto flex items-center gap-1.5" role="group" aria-label="Agregar">
+            <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Agregar</span>
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => { setClickTarget('hydrant'); setClickMode(true); }}>
+              <MousePointer2 className="h-3.5 w-3.5" /> Grifo
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={handleAddManual} title="Grifo por coordenadas">
+              <Droplets className="h-3.5 w-3.5" /> Coordenadas
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => { setClickTarget('landmark'); setClickMode(true); }}>
+              <Plus className="h-3.5 w-3.5" /> Punto local
+            </Button>
+          </div>
         )}
       </div>
 
@@ -339,28 +370,12 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           <Popover>
             <PopoverTrigger asChild>
               <Button size="sm" variant="secondary" className="h-9 gap-2 shadow-lg border border-border">
-                <Layers className="h-4 w-4" /> Capas
+                <SlidersHorizontal className="h-4 w-4" /> Más capas
                 {territorialLayers.length > 0 && <span className="tabular-nums text-xs">+{territorialLayers.length}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 z-[1100] p-3 space-y-3">
-              <div>
-                <p className="mb-2 text-xs font-semibold text-foreground">Mostrar en el mapa</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'show-emergencies', checked: showEmergencies, set: setShowEmergencies, icon: <Flame className="h-3.5 w-3.5 text-emergency" />, label: 'Emergencias' },
-                    { id: 'show-hydrants', checked: showHydrants, set: setShowHydrants, icon: <Droplets className="h-3.5 w-3.5 text-info" />, label: 'Grifos' },
-                    { id: 'show-stations', checked: showStations, set: setShowStations, icon: <Building2 className="h-3.5 w-3.5 text-warning" />, label: 'Cuarteles' },
-                    { id: 'show-vehicles', checked: showVehicles, set: setShowVehicles, icon: <Truck className="h-3.5 w-3.5 text-success" />, label: 'Móviles GPS' },
-                  ].map((t) => (
-                    <div key={t.id} className="flex items-center justify-between rounded-md border border-border px-2 py-1.5">
-                      <Label htmlFor={t.id} className="text-xs flex items-center gap-1.5">{t.icon}{t.label}</Label>
-                      <Switch checked={t.checked} onCheckedChange={t.set} id={t.id} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+              {!showHydrants && <p className="text-xs text-muted-foreground">Activa Grifos para filtrarlos.</p>}
               {showHydrants && (
                 <div className="border-t border-border pt-3">
                   <p className="mb-2 text-xs font-semibold text-foreground flex items-center gap-1">
@@ -415,24 +430,6 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
 
           {!screen && (
             <>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button size="sm" className="h-9 gap-2 shadow-lg">
-                    <Plus className="h-4 w-4" /> Agregar
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-56 z-[1100] p-1.5">
-                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs" onClick={() => { setClickTarget('hydrant'); setClickMode(true); }}>
-                    <MousePointer2 className="h-3.5 w-3.5" /> Grifo en el mapa
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs" onClick={handleAddManual}>
-                    <Droplets className="h-3.5 w-3.5" /> Grifo por coordenadas
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs" onClick={() => { setClickTarget('landmark'); setClickMode(true); }}>
-                    <Plus className="h-3.5 w-3.5" /> Punto local
-                  </Button>
-                </PopoverContent>
-              </Popover>
               <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg border border-border" onClick={handleLocate} disabled={locating} title="Mi ubicación" aria-label="Mi ubicación">
                 <LocateFixed className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} />
               </Button>
