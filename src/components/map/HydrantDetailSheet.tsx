@@ -35,7 +35,7 @@ export default function HydrantDetailSheet({ hydrant, open, onOpenChange, onEdit
             </div>
             <div className="min-w-0">
               <SheetTitle className="truncate">Grifo {hydrant.number || hydrant.name}</SheetTitle>
-              <SheetDescription>{hydrant.isOwn ? 'Registro de la organización' : 'Registro nacional compartido'}</SheetDescription>
+              <SheetDescription>{hydrant.isOwn ? 'Registro de la organización' : hydrant.organizationId ? 'Registro compartido de otra organización' : 'Registro nacional compartido'}</SheetDescription>
             </div>
           </div>
           <Badge className={`mt-3 w-fit ${status.className}`}>{status.label}</Badge>

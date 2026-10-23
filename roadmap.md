@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Compartir lectura de grifos entre organizaciones sin ampliar permisos de modificación; políticas verificadas, 3 pruebas aprobadas y consulta autenticada de 36 registros de otra organización comprobada en el mapa.
+
 - [x] Sustituir rutas móviles antiguas por Voluntarios y conservar push; 15 pruebas de rutas aprobadas, compilación automática correcta y acceso sin sesión verificado.
 - [ ] Verificar navegación de Voluntarios con sesión real en dispositivo nativo: requiere iniciar sesión en la vista previa y disponer del dispositivo.
 
