@@ -191,6 +191,15 @@ export default function LocationSearch({ query, onSelect, searchSignal = 0 }: Pr
 
   return (
     <div className="space-y-2 empty:hidden">
+      {selected && selectedCheck && selectedCheck.status !== 'unknown' && (
+        <p
+          role="status"
+          className={`rounded-md border px-2 py-1 text-[11px] ${selectedCheck.status === 'ok' ? 'border-success/40 text-success' : 'border-destructive/50 bg-destructive/10 text-destructive'}`}
+        >
+          {selectedCheck.distanceKm != null && `A ${selectedCheck.distanceKm.toFixed(1)} km de la central. `}
+          {selectedCheck.status === 'ok' ? 'Dentro del área de seguridad.' : `Requiere revisión: ${selectedCheck.reasons.join(' ')}`}
+        </p>
+      )}
       {localMatches.length > 0 && (
         <ul className="space-y-1" aria-label="Puntos locales">
           {localMatches.map(l => (
