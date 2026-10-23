@@ -11,7 +11,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useOrganizationLandmarks } from '@/hooks/useOrganizationLandmarks';
-import { autoGeocode } from '@/lib/autoGeocode';
+import { autoGeocodeDetailed } from '@/lib/autoGeocode';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { getPlayableToneSrc } from '@/services/toneCache';
@@ -309,13 +309,18 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     if (!coords && navigator.onLine) {
       const near = orgGeo?.latitude != null && orgGeo?.longitude != null
         ? { lat: Number(orgGeo.latitude), lng: Number(orgGeo.longitude) } : null;
-      const found = await Promise.race([
-        autoGeocode(address, { landmarks: localLandmarks, near, defaultContext: orgGeo?.commune ?? null }),
+      const origin = near ? { ...near, commune: orgGeo?.commune ?? null, region: (orgGeo as any)?.region ?? null } : null;
+      const outcome = await Promise.race([
+        autoGeocodeDetailed(address, { landmarks: localLandmarks, near, defaultContext: orgGeo?.commune ?? null, origin }),
         new Promise<null>(r => setTimeout(() => r(null), 6000)),
       ]).catch(() => null);
+      const found = outcome?.result ?? null;
       if (found && isValidLatLng(found.latitude, found.longitude)) {
         coords = { latitude: found.latitude, longitude: found.longitude };
         toast.success(`Dirección ubicada automáticamente (${found.source}).`);
+      } else if (outcome?.rejected.length) {
+        // Coincidencia dudosa (otra comuna o fuera del radio): nunca se confirma en silencio.
+        toast.warning(`La dirección coincide con un lugar que requiere revisión (${outcome.rejected[0].check.reasons.join(' ')}). Se despacha sin marcador; revísalo en Acciones → Ubicación.`, { duration: 10000 });
       } else {
         toast.warning('No se pudo ubicar la dirección en el mapa. Se despacha sin marcador; ajústalo desde Acciones → Ubicación.', { duration: 8000 });
       }

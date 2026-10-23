@@ -23,6 +23,7 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
 import LocationSearch from './LocationSearch';
+import { evaluateLocation, type GeoCheck } from '@/lib/geoJurisdiction';
 import TerritoryStatus from './TerritoryStatus';
 import { useOrganizationLocation } from '@/hooks/useStations';
 import { findNearestRouteKm, formatRouteKmAddress } from '@/lib/routeKilometer';
@@ -64,6 +65,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [savingPhone, setSavingPhone] = useState(false);
   const [locRequestId, setLocRequestId] = useState<string | null>(null);
   const { data: orgLocation } = useOrganizationLocation();
+  const [lastPick, setLastPick] = useState<{ lat: number; lng: number; check: GeoCheck } | null>(null);
   const [locFix, setLocFix] = useState<LocationFix | null>(null);
   const [locationSource, setLocationSource] = useState<string | null>(null);
   const [sharedCoords, setSharedCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -309,8 +311,24 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   const handleSaveLocation = () => {
     if (!mapCoords) return;
+    const origin = orgLocation?.latitude != null && orgLocation?.longitude != null
+      ? { lat: Number(orgLocation.latitude), lng: Number(orgLocation.longitude) } : null;
+    // Distancia siempre sobre la coordenada final (incluye arrastre manual);
+    // la revisión por comuna se mantiene si el marcador no se movió desde la sugerencia.
+    const distanceCheck = evaluateLocation({ latitude: mapCoords.lat, longitude: mapCoords.lng, trusted: true }, origin);
+    const samePoint = lastPick && Math.abs(lastPick.lat - mapCoords.lat) < 1e-6 && Math.abs(lastPick.lng - mapCoords.lng) < 1e-6;
+    const reasons = [
+      ...(distanceCheck.status === 'outside' ? distanceCheck.reasons : []),
+      ...(samePoint && lastPick?.check.status === 'review' ? lastPick.check.reasons : []),
+    ];
+    let exception: string | undefined;
+    if (reasons.length) {
+      const ok = window.confirm(`Ubicación fuera de lo esperado:\n\n${reasons.join('\n')}\n\n¿Confirmas que es correcta (excepción operacional)?`);
+      if (!ok) return;
+      exception = reasons.join(' ');
+    }
     updateLocation.mutate(
-      { id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng },
+      { id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng, exception },
       { onSuccess: () => setLocationSource('operador') },
     );
   };
@@ -448,7 +466,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         <LocationSearch
                           query={editAddress}
                           searchSignal={addressFocusTick}
-                          onSelect={c => setMapCoords({ lat: c.latitude, lng: c.longitude })}
+                          onSelect={(c, check) => { setMapCoords({ lat: c.latitude, lng: c.longitude }); setLastPick(check ? { lat: c.latitude, lng: c.longitude, check } : null); }}
                         />
                       )}
                     </div>
