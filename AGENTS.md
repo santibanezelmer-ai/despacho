@@ -16,3 +16,5 @@
 - Console 6-10 returns (single or coordinated) go only through src/lib/vehicleReturn.ts: operator-selected vehicles, explicit confirmation, sequential per-vehicle results, and updates guarded by released_at IS NULL so concurrent consoles cannot double-return or show false success.
 - Address search in the dispatch window uses Google Places (New) only through the authenticated google-places edge function; local MOP route/km and crossings stay first, Nominatim resolver is only the fallback when Google fails — never call Places from the browser.
 - Organization local landmarks (organization_landmarks, src/lib/localLandmarks.ts) are matched in memory first in LocationSearch before route/km and Google, and drawn on every LeafletMapCanvas via the landmarks prop — instant, cost-free lookup of colloquial names.
+
+- Geographic acceptance of any searched/auto-geocoded coordinate goes only through src/lib/geoJurisdiction.ts (50 km safety radius + commune/region coherence); only status ok auto-accepts, anything else needs explicit operator confirmation logged as an operational exception.
