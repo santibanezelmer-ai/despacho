@@ -166,7 +166,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     enabled: !!orgId,
     staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase.from('organizations').select('commune, latitude, longitude').eq('id', orgId!).maybeSingle();
+      const { data } = await supabase.from('organizations').select('commune, region, latitude, longitude').eq('id', orgId!).maybeSingle();
       return data;
     },
   });
