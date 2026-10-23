@@ -53,6 +53,7 @@ interface Props {
 export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, onClose }: Props) {
   const [activeTab, setActiveTab] = useState('location');
   const [editAddress, setEditAddress] = useState(emergency.address);
+  const [addressFocusTick, setAddressFocusTick] = useState(0);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(
     emergency.latitude && emergency.longitude ? { lat: emergency.latitude, lng: emergency.longitude } : null
   );
@@ -430,6 +431,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         <Input
                           value={editAddress}
                           onChange={e => setEditAddress(e.target.value)}
+                          onFocus={() => setAddressFocusTick(t => t + 1)}
+                          onClick={() => setAddressFocusTick(t => t + 1)}
                           className="min-w-0 flex-1 bg-muted/50"
                           spellCheck
                           lang="es-CL"
@@ -444,6 +447,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                       {!isClosed && (
                         <LocationSearch
                           query={editAddress}
+                          searchSignal={addressFocusTick}
                           onSelect={c => setMapCoords({ lat: c.latitude, lng: c.longitude })}
                         />
                       )}
