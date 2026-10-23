@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { addBaseTileLayer, OSM_TILE_URL } from '@/lib/mapTiles';
 import { buildTerritorialLayerGroups, loadTerritorialDataset, type TerritorialLayerId } from '@/lib/territorialLayers';
 import { HYDRANT_STATUS, type HydrantOutlet, type HydrantStatus } from '@/lib/hydrants';
+import type { LocalLandmark } from '@/lib/localLandmarks';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -93,8 +94,18 @@ type LeafletMapCanvasProps = {
   liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
   /** Capas territoriales visibles (solo visualización, Fase 5) */
   territorialLayers?: TerritorialLayerId[];
+  /** Puntos locales del CB (nombres coloquiales), siempre visibles */
+  landmarks?: LocalLandmark[];
+  onLandmarkEdit?: (l: LocalLandmark) => void;
 };
 
+const EMPTY_LANDMARKS: LocalLandmark[] = [];
+const landmarkIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:22px;height:22px;transform:rotate(45deg);background:hsl(var(--warning));border:2px solid white;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
 
 const emergencyIconCache = new Map<string, L.DivIcon>();
 const getEmergencyIcon = (color: string) => {
@@ -249,6 +260,8 @@ export default function LeafletMapCanvas({
   onLocateResult,
   liveLocation,
   territorialLayers = [],
+  landmarks = EMPTY_LANDMARKS,
+  onLandmarkEdit,
 }: LeafletMapCanvasProps) {
 
   const hydrantsRef = useRef(hydrants);
@@ -417,6 +430,38 @@ export default function LeafletMapCanvas({
       initialFitDoneRef.current = true;
     }
   }, [emergencies, hydrants, stations, positions, showEmergencies, showHydrants, showStations]);
+
+  // Puntos locales del Cuerpo de Bomberos: siempre visibles.
+  const onLandmarkEditRef = useRef(onLandmarkEdit);
+  onLandmarkEditRef.current = onLandmarkEdit;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const layer = L.layerGroup().addTo(map);
+    landmarks.forEach((l) => {
+      const popup = document.createElement('div');
+      popup.style.cssText = 'font-size:13px;line-height:1.35;min-width:170px;display:flex;flex-direction:column;gap:3px;';
+      popup.innerHTML = [
+        `<div style="font-size:11px;color:hsl(var(--muted-foreground));">PUNTO LOCAL${l.category ? ' · ' + escapeHtml(l.category) : ''}</div>`,
+        `<div style="font-weight:700;font-size:15px;">${escapeHtml(l.name)}</div>`,
+        l.aliases?.length ? `<div style="font-size:12px;">También: ${escapeHtml(l.aliases.join(', '))}</div>` : '',
+        l.notes ? `<div style="font-size:12px;color:hsl(var(--muted-foreground));">${escapeHtml(l.notes)}</div>` : '',
+        `<div style="font-size:11px;font-family:monospace;">${l.latitude.toFixed(5)}, ${l.longitude.toFixed(5)}</div>`,
+      ].join('');
+      if (onLandmarkEditRef.current) {
+        const btn = document.createElement('button');
+        btn.textContent = 'Editar';
+        btn.style.cssText = 'margin-top:4px;font-size:12px;padding:4px 8px;background:hsl(var(--secondary));color:hsl(var(--secondary-foreground));border:1px solid hsl(var(--border));border-radius:4px;cursor:pointer;';
+        btn.onclick = () => { map.closePopup(); onLandmarkEditRef.current?.(l); };
+        popup.appendChild(btn);
+      }
+      L.marker([l.latitude, l.longitude], { icon: landmarkIcon })
+        .bindTooltip(escapeHtml(l.name), { direction: 'top', offset: [0, -14] })
+        .bindPopup(popup)
+        .addTo(layer);
+    });
+    return () => { layer.remove(); };
+  }, [landmarks]);
 
   // Móviles con GPS (Operix Móvil) — marcadores persistentes, actualizados en sitio
   const vehicleMarkersRef = useRef<Map<string, L.Marker>>(new Map());
