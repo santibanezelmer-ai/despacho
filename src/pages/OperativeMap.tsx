@@ -293,7 +293,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
 
   return (
     <div className={screen ? 'flex h-screen w-screen flex-col bg-background' : 'flex w-full flex-col h-full'} style={screen ? undefined : { width: '100%' }}>
-      <div className="flex flex-col gap-3 border-b border-border bg-card p-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2.5">
         <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Map className="h-5 w-5 text-info" /> Mapa Operativo
           {screen && (
@@ -305,113 +305,9 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
             </>
           )}
         </h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Switch checked={showEmergencies} onCheckedChange={setShowEmergencies} id="show-emergencies" />
-            <Label htmlFor="show-emergencies" className="text-xs flex items-center gap-1">
-              <Flame className="h-3 w-3 text-emergency" /> Emergencias
-            </Label>
-          </div>
-
-          {showHydrants && (
-            <div className="flex items-center gap-2 border-l border-border pl-3">
-              <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-              <Select value={hydrantStatusFilter} onValueChange={(value) => setHydrantStatusFilter(value as HydrantStatus | 'all')}>
-                <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="operativo">Operativos</SelectItem>
-                  <SelectItem value="observaciones">Con observaciones</SelectItem>
-                  <SelectItem value="averiado">Averiados</SelectItem>
-                  <SelectItem value="sin_informacion">Sin información</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={hydrantDiameterFilter} onValueChange={setHydrantDiameterFilter}>
-                <SelectTrigger className="h-8 w-[145px] text-xs"><SelectValue placeholder="Diámetro" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los diámetros</SelectItem>
-                  {hydrantDiameters.map((diameter) => <SelectItem key={diameter} value={String(diameter)}>{diameter} mm</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <span className="text-xs tabular-nums text-muted-foreground">{filteredHydrants.length} visibles</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Switch checked={showHydrants} onCheckedChange={setShowHydrants} id="show-hydrants" />
-            <Label htmlFor="show-hydrants" className="text-xs flex items-center gap-1">
-              <Droplets className="h-3 w-3 text-info" /> Grifos
-            </Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={showStations} onCheckedChange={setShowStations} id="show-stations" />
-            <Label htmlFor="show-stations" className="text-xs flex items-center gap-1">
-              <Building2 className="h-3 w-3 text-warning" /> Cuarteles
-            </Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={showVehicles} onCheckedChange={setShowVehicles} id="show-vehicles" />
-            <Label htmlFor="show-vehicles" className="text-xs flex items-center gap-1">
-              <Truck className="h-3 w-3 text-success" /> Móviles GPS
-            </Label>
-          </div>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="sm" variant={territorialLayers.length ? 'default' : 'outline'} className="h-7 text-xs gap-1">
-                <Layers className="h-3 w-3" /> Capas territoriales
-                {territorialLayers.length > 0 && <span className="tabular-nums">({territorialLayers.length})</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 z-[1100] p-3">
-              <p className="mb-2 text-xs font-semibold text-foreground">Capas territoriales</p>
-              <div className="space-y-2">
-                {TERRITORIAL_LAYERS.map((l) => (
-                  <label key={l.id} className="flex cursor-pointer items-center gap-2 text-xs text-foreground">
-                    <Checkbox
-                      checked={territorialLayers.includes(l.id)}
-                      onCheckedChange={(v) => toggleTerritorial(l.id, v === true)}
-                      aria-label={l.label}
-                    />
-                    <span className="h-2.5 w-2.5 rounded-full border border-border" style={{ backgroundColor: l.color }} />
-                    {l.label}
-                  </label>
-                ))}
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
-                <span className="text-[10px] text-muted-foreground">Fuente: Mapa Cobertura Territorial Prehospitalaria Prov. Osorno</span>
-                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setTerritorialLayers([])} disabled={!territorialLayers.length}>
-                  Apagar todo
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {!screen && <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant={clickMode && clickTarget === 'hydrant' ? 'default' : 'outline'}
-              className="h-7 text-xs gap-1"
-              onClick={() => { setClickTarget('hydrant'); setClickMode(!(clickMode && clickTarget === 'hydrant')); }}
-            >
-              <MousePointer2 className="h-3 w-3" />
-              {clickMode && clickTarget === 'hydrant' ? 'Cancelar' : 'Colocar en mapa'}
-            </Button>
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAddManual}>
-              <Plus className="h-3 w-3" /> Agregar grifo
-            </Button>
-            <Button
-              size="sm"
-              variant={clickMode && clickTarget === 'landmark' ? 'default' : 'outline'}
-              className="h-7 text-xs gap-1"
-              onClick={() => { setClickTarget('landmark'); setClickMode(!(clickMode && clickTarget === 'landmark')); }}
-            >
-              <Plus className="h-3 w-3" /> {clickMode && clickTarget === 'landmark' ? 'Cancelar' : 'Punto local'}
-            </Button>
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleLocate} disabled={locating}>
-              <LocateFixed className={`h-3 w-3 ${locating ? 'animate-pulse' : ''}`} /> Mi ubicación
-            </Button>
-          </div>}
-        </div>
+        {showHydrants && (
+          <span className="text-xs tabular-nums text-muted-foreground">{filteredHydrants.length} grifos visibles</span>
+        )}
       </div>
 
       <div className="relative flex-1 min-h-0" style={{ isolation: 'isolate' }}>
@@ -438,61 +334,151 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           onLandmarkEdit={screen ? undefined : handleLandmarkEdit}
         />
 
+        {/* Floating controls (top-right) */}
+        <div className="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="secondary" className="h-9 gap-2 shadow-lg border border-border">
+                <Layers className="h-4 w-4" /> Capas
+                {territorialLayers.length > 0 && <span className="tabular-nums text-xs">+{territorialLayers.length}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 z-[1100] p-3 space-y-3">
+              <div>
+                <p className="mb-2 text-xs font-semibold text-foreground">Mostrar en el mapa</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'show-emergencies', checked: showEmergencies, set: setShowEmergencies, icon: <Flame className="h-3.5 w-3.5 text-emergency" />, label: 'Emergencias' },
+                    { id: 'show-hydrants', checked: showHydrants, set: setShowHydrants, icon: <Droplets className="h-3.5 w-3.5 text-info" />, label: 'Grifos' },
+                    { id: 'show-stations', checked: showStations, set: setShowStations, icon: <Building2 className="h-3.5 w-3.5 text-warning" />, label: 'Cuarteles' },
+                    { id: 'show-vehicles', checked: showVehicles, set: setShowVehicles, icon: <Truck className="h-3.5 w-3.5 text-success" />, label: 'Móviles GPS' },
+                  ].map((t) => (
+                    <div key={t.id} className="flex items-center justify-between rounded-md border border-border px-2 py-1.5">
+                      <Label htmlFor={t.id} className="text-xs flex items-center gap-1.5">{t.icon}{t.label}</Label>
+                      <Switch checked={t.checked} onCheckedChange={t.set} id={t.id} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {showHydrants && (
+                <div className="border-t border-border pt-3">
+                  <p className="mb-2 text-xs font-semibold text-foreground flex items-center gap-1">
+                    <SlidersHorizontal className="h-3 w-3" /> Filtro de grifos
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={hydrantStatusFilter} onValueChange={(value) => setHydrantStatusFilter(value as HydrantStatus | 'all')}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent className="z-[1200]">
+                        <SelectItem value="all">Todos los estados</SelectItem>
+                        <SelectItem value="operativo">Operativos</SelectItem>
+                        <SelectItem value="observaciones">Con observaciones</SelectItem>
+                        <SelectItem value="averiado">Averiados</SelectItem>
+                        <SelectItem value="sin_informacion">Sin información</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={hydrantDiameterFilter} onValueChange={setHydrantDiameterFilter}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Diámetro" /></SelectTrigger>
+                      <SelectContent className="z-[1200]">
+                        <SelectItem value="all">Todos los diámetros</SelectItem>
+                        {hydrantDiameters.map((diameter) => <SelectItem key={diameter} value={String(diameter)}>{diameter} mm</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t border-border pt-3">
+                <p className="mb-2 text-xs font-semibold text-foreground">Capas territoriales</p>
+                <div className="space-y-2">
+                  {TERRITORIAL_LAYERS.map((l) => (
+                    <label key={l.id} className="flex cursor-pointer items-center gap-2 text-xs text-foreground">
+                      <Checkbox
+                        checked={territorialLayers.includes(l.id)}
+                        onCheckedChange={(v) => toggleTerritorial(l.id, v === true)}
+                        aria-label={l.label}
+                      />
+                      <span className="h-2.5 w-2.5 rounded-full border border-border" style={{ backgroundColor: l.color }} />
+                      {l.label}
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
+                  <span className="text-[10px] text-muted-foreground">Fuente: Mapa Cobertura Territorial Prehospitalaria Prov. Osorno</span>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setTerritorialLayers([])} disabled={!territorialLayers.length}>
+                    Apagar todo
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {!screen && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" className="h-9 gap-2 shadow-lg">
+                    <Plus className="h-4 w-4" /> Agregar
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-56 z-[1100] p-1.5">
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs" onClick={() => { setClickTarget('hydrant'); setClickMode(true); }}>
+                    <MousePointer2 className="h-3.5 w-3.5" /> Grifo en el mapa
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs" onClick={handleAddManual}>
+                    <Droplets className="h-3.5 w-3.5" /> Grifo por coordenadas
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs" onClick={() => { setClickTarget('landmark'); setClickMode(true); }}>
+                    <Plus className="h-3.5 w-3.5" /> Punto local
+                  </Button>
+                </PopoverContent>
+              </Popover>
+              <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg border border-border" onClick={handleLocate} disabled={locating} title="Mi ubicación" aria-label="Mi ubicación">
+                <LocateFixed className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} />
+              </Button>
+            </>
+          )}
+        </div>
+
         {clickMode && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-md border border-primary bg-primary/90 px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 rounded-md border border-primary bg-primary/90 px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg">
             {clickTarget === 'landmark' ? 'Haz clic en el mapa para guardar un punto local' : 'Haz clic en el mapa para colocar un grifo'}
+            <Button size="sm" variant="secondary" className="h-6 px-2 text-xs" onClick={() => setClickMode(false)}>Cancelar</Button>
           </div>
         )}
 
         {compatibilityMode && (
-          <div className="absolute top-4 right-4 z-[1000] rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+          <div className="absolute bottom-4 right-16 z-[1000] rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
             Modo compatibilidad de mapa activo
           </div>
         )}
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-card border border-border rounded-lg p-3 z-[1000] space-y-1.5">
-          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
-            <Layers className="h-3 w-3" /> Leyenda
-          </p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded-full bg-emergency border border-white" />
-            Emergencia activa
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-success border border-background" />
-            Operativo
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-warning border border-background" />
-            Con observaciones
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-destructive border border-background" />
-            Averiado / Fuera de servicio
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-foreground border border-background" />
-            Sin información
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-[#f59e0b] border border-white" />
-            Cuartel
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-[#22c55e] border border-white" />
-            Móvil con GPS
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-[#dc2626] border border-white" />
-            Móvil en emergencia
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded bg-[#6b7280] border border-white" />
-            GPS desactualizado
-          </div>
-
-        </div>
+        {/* Legend (collapsible) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="secondary" className="absolute bottom-4 left-4 z-[1000] h-8 gap-1.5 text-xs shadow-lg border border-border">
+              <Layers className="h-3.5 w-3.5" /> Leyenda
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" className="w-56 z-[1100] p-3 space-y-1.5">
+            {[
+              ['rounded-full bg-emergency', 'Emergencia activa'],
+              ['rounded bg-success', 'Grifo operativo'],
+              ['rounded bg-warning', 'Grifo con observaciones'],
+              ['rounded bg-destructive', 'Grifo averiado'],
+              ['rounded bg-foreground', 'Grifo sin información'],
+              ['rounded bg-[#f59e0b]', 'Cuartel'],
+              ['rounded bg-[#22c55e]', 'Móvil con GPS'],
+              ['rounded bg-[#dc2626]', 'Móvil en emergencia'],
+              ['rounded bg-[#6b7280]', 'GPS desactualizado'],
+            ].map(([cls, label]) => (
+              <div key={label} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className={`w-3 h-3 border border-border ${cls}`} />
+                {label}
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
 
       <HydrantFormDialog
