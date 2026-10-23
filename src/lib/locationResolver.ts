@@ -34,7 +34,7 @@ export interface LocationCandidate {
   region: string | null;
   confidence: LocationConfidence;
   reason: string;
-  source: 'nominatim' | 'vialidad' | 'landmark';
+  source: 'nominatim' | 'vialidad' | 'landmark' | 'google';
   /** Presente cuando proviene de un punto de referencia local (puente, etc.). */
   landmark?: { type: string; routeCode: string | null; kilometer: number | null; source: string };
 }
