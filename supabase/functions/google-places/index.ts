@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 
+const SAFETY_RADIUS_M = 50000;
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_maps';
 
 const json = (body: unknown, status = 200) =>
@@ -66,7 +67,8 @@ Deno.serve(async (req) => {
         includedRegionCodes: ['cl'],
       };
       if (body.near) {
-        payload.locationBias = { circle: { center: { latitude: body.near.lat, longitude: body.near.lng }, radius: 50000 } };
+        // Restricción estricta (no sesgo): Google no devuelve lugares fuera del círculo de seguridad.
+        payload.locationRestriction = { circle: { center: { latitude: body.near.lat, longitude: body.near.lng }, radius: SAFETY_RADIUS_M } };
         payload.origin = { latitude: body.near.lat, longitude: body.near.lng };
       }
       const res = await fetch(`${GATEWAY_URL}/places/v1/places:autocomplete`, {
@@ -83,6 +85,8 @@ Deno.serve(async (req) => {
       const suggestions = (data?.suggestions ?? [])
         .map((s: any) => s.placePrediction)
         .filter((p: any) => p?.placeId)
+        // Validación propia independiente del proveedor.
+        .filter((p: any) => !body.near || typeof p.distanceMeters !== 'number' || p.distanceMeters <= SAFETY_RADIUS_M)
         .slice(0, 6)
         .map((p: any) => ({
           placeId: p.placeId,
