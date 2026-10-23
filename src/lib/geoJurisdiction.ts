@@ -32,7 +32,7 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/^(region|región)\s+(de\s+)?(los\s+|la\s+)?/, '').trim();
+const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/^region\s+(de\s+)?/, '').replace(/^(los|las|la|el)\s+/, '').trim();
 
 export function evaluateLocation(
   input: GeoCheckInput,
