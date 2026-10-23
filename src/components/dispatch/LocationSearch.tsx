@@ -8,6 +8,7 @@ import { parseRouteKmQuery, resolveRouteKm, type RouteKmResult, parseRouteCrossi
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { resolveLocation, type LocationCandidate, type LocationConfidence } from '@/lib/locationResolver';
+import { placesAutocomplete, placeDetails, newPlacesSession, type PlaceSuggestion } from '@/lib/googlePlaces';
 
 interface Props {
   /** Texto de la dirección (controlado por el campo Dirección). La búsqueda es automática al escribir. */
@@ -38,6 +39,10 @@ export default function LocationSearch({ query, onSelect }: Props) {
   const [routeResult, setRouteResult] = useState<RouteKmResult | null>(null);
   const [routeSelected, setRouteSelected] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const sessionRef = useRef<string>(newPlacesSession());
+  const [googleResults, setGoogleResults] = useState<PlaceSuggestion[] | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [selectedGoogleId, setSelectedGoogleId] = useState<string | null>(null);
 
   const { data: org } = useQuery({
     queryKey: ['org-geo-context', orgId],
@@ -55,6 +60,7 @@ export default function LocationSearch({ query, onSelect }: Props) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setLoading(true); setError(null); setSelected(null); setResults(null); setRouteResult(null); setRouteSelected(false);
+    setGoogleResults(null); setSelectedGoogleId(null);
     try {
       // Prioridad 0: cruce entre dos rutas locales (ej. "Ruta 215 con U-475").
       const cq = parseRouteCrossingQuery(query);
@@ -86,20 +92,38 @@ export default function LocationSearch({ query, onSelect }: Props) {
           return;
         }
       }
-      const list = await resolveLocation(query, {
-        defaultContext: org?.commune ?? null,
-        near: org?.latitude != null && org?.longitude != null ? { lat: org.latitude, lng: org.longitude } : null,
-        signal: ctrl.signal,
-      });
+      const near = org?.latitude != null && org?.longitude != null ? { lat: org.latitude, lng: org.longitude } : null;
+      // Prioridad 2: Google Maps (calles, esquinas, comercios, instituciones).
+      try {
+        const sugg = await placesAutocomplete(query.trim(), sessionRef.current, near);
+        if (ctrl.signal.aborted) return;
+        setGoogleResults(sugg);
+        return;
+      } catch (ge) {
+        console.warn('Google Places no disponible, usando respaldo', ge);
+      }
+      // Respaldo: si Google no responde, no dejar al operador sin búsqueda.
+      const list = await resolveLocation(query, { defaultContext: org?.commune ?? null, near, signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
       setResults(list);
-      // Reconocimiento automático: solo se aplica una coincidencia Alta inequívoca.
-      const highs = list.filter(c => c.confidence === 'high');
-      if (highs.length >= 1 && list[0].confidence === 'high') choose(list[0]);
     } catch (e: any) {
       if (e?.name !== 'AbortError') setError('No se pudo consultar el buscador de mapas. Usa el mapa o las coordenadas manuales.');
     } finally {
       if (abortRef.current === ctrl) setLoading(false);
+    }
+  };
+
+  const chooseGoogle = async (s: PlaceSuggestion) => {
+    setResolvingId(s.placeId); setError(null);
+    try {
+      const c = await placeDetails(s, sessionRef.current);
+      sessionRef.current = newPlacesSession();
+      setSelectedGoogleId(s.placeId);
+      choose(c);
+    } catch {
+      setError('No se pudo obtener la ubicación de ese lugar. Intenta con otra sugerencia o marca el punto en el mapa.');
+    } finally {
+      setResolvingId(null);
     }
   };
 
