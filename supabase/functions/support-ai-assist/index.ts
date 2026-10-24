@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       }),
     });
     const gotRun = res.headers.get('X-Lovable-AIG-Run-ID') ?? runId ?? '';
-    const hdr = gotRun ? { 'X-Lovable-AIG-Run-ID': gotRun } : {};
+    const hdr: Record<string, string> = gotRun ? { 'X-Lovable-AIG-Run-ID': gotRun } : {};
 
     if (!res.ok || !res.body) {
       const t = await res.text();

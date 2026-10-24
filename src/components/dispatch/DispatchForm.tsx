@@ -234,6 +234,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   }, []);
 
   const buildToneQueue = useCallback((vehicleIds: string[]) => {
+    // 10-9 / otros servicios: salida administrativa, sin tonos en consola.
+    if (isAuthorizedServiceKey(emergencyKey)) return [];
     const companyMap = new Map<string, { tone_url: string | null; name: string; number: number }>();
     for (const vid of vehicleIds) {
       const v = (allVehicles ?? []).find(veh => veh.id === vid);
