@@ -113,6 +113,7 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
+    "yargs@<18.1.0": "18.1.0",
     "tar": "^7.5.22",
     "rollup": "^4.62.2",
     "picomatch": "^4.0.5",
@@ -127,7 +128,7 @@
     "esbuild@<0.25.0": "0.25.0",
     "fast-uri": "3.1.9",
     "@xmldom/xmldom": "0.9.12",
-    "@grpc/grpc-js": "1.13.6"
+    "@grpc/grpc-js": "^1.14.0"
   },
   "resolutions": {
     "tar": "^7.5.22",
