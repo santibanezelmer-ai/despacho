@@ -21,14 +21,9 @@ Solo se consultaron metadatos, sin datos personales. No se declara compilación 
 
 ## Diferencias con el informe anterior
 
-- Se confirma la ausencia del módulo y las entidades reutilizables.
-- El SQL ilustrativo anterior invocaba firmas incorrectas: is_org_member recibe un UUID; has_org_role recibe organización y rol; is_company_admin recibe organización y compañía.
-- Faltaban GRANT explícitos y controles por acción. FOR ALL y lectura para cualquier miembro no satisfacen el alcance por compañía.
-- Las cascadas propuestas borrarían historia; no deben aplicarse. Tampoco crear nuevas referencias a auth.users.
-- Cuatro tablas no cubren cupos por franja, postulaciones, plantillas, asistencia validada y entrega confiable.
-- UNIQUE(turno, voluntario) no resuelve solapamientos ni carreras por el último cupo.
-- Tu documento resuelve las decisiones pendientes: postulación con aprobación, Recursos → Guardias y llegada/salida manual validada por un oficial, sin GPS obligatorio.
-- No imponer mínimos universales ni asumir gestión global del administrador del Cuerpo.
+Se confirma que no existe el módulo. El SQL anterior utilizaba firmas incorrectas de autorización, omitía GRANT y controles por acción, proponía cascadas que borrarían historia y nuevas referencias a auth.users. No aplicarlo. Cuatro tablas y UNIQUE(turno, voluntario) no cubren cupos, postulaciones, asistencia validada ni concurrencia.
+
+Tu documento resuelve las decisiones pendientes: postulación con aprobación, Recursos → Guardias y llegada/salida manual validada por un oficial, sin GPS obligatorio. No imponer mínimos universales ni gestión global automática al administrador del Cuerpo.
 
 ## Qué construir
 
@@ -57,9 +52,7 @@ Solo se consultaron metadatos, sin datos personales. No se declara compilación 
 
 Todas las relaciones deben demostrar organización y compañía coherentes. La compañía de origen del voluntario y la receptora se distinguen cuando exista colaboración explícita; cerrada por defecto. Actores desde sesión, con UUID o referencia a perfiles públicos; sin FK nuevas a auth.users. FK históricas RESTRICT/NO ACTION, no eliminación operativa desde cliente.
 
-Índices por organización+compañía+fecha/estado, cupo+estado, voluntario+franja, asignación+fecha y reintentos. Unicidad parcial para solicitudes activas y claves idempotentes. Añadir índices de soporte y relaciones compuestas sin alterar datos existentes.
-
-Guardar instantes timestamptz completos, con fin mayor que inicio; intervalos [inicio, fin) permiten turnos consecutivos y medianoche. Mostrar zona de la organización, inicialmente America/Santiago para las actuales de Chile; tratar horas ambiguas/inexistentes de cambio de hora.
+Índices por organización, compañía, fecha, persona y estado; unicidad para solicitudes activas e idempotencia. Horarios completos con zona de la organización e intervalos [inicio, fin), incluyendo medianoche y cambios de hora.
 
 ### Migraciones propuestas, no ejecutadas
 
@@ -90,13 +83,9 @@ No tocar los helpers generales de despacho para conceder permisos de Guardias. N
 
 ### Archivos previstos
 
-- Modificar src/App.tsx, AppLayout.tsx, VoluntarioApp.tsx y VoluntarioLayout.tsx para rutas/navegación.
-- Crear páginas Guardias/GuardiaDetail y sus vistas de voluntario, componentes pequeños en src/components/guardias, hooks y guardiaPermissions/guardiaCoverage.
-- Fase 4: transporte privado y adaptación de consumidores push, sin romper registro nativo compartido.
-- Fase 5: CompanyGuardiaSummary en DispatchConsole; no cambiar vehicleAvailability ni volunteers.available.
-- Migraciones y tipos mediante herramientas; reglas estructurales en AGENTS.md al implementar.
+Modificar src/App.tsx, AppLayout.tsx, VoluntarioApp.tsx y VoluntarioLayout.tsx para navegación. Crear páginas Guardias/GuardiaDetail y sus vistas de voluntario, componentes en src/components/guardias, hooks y guardiaPermissions/guardiaCoverage. Fase 4: transporte privado y consumidores push; fase 5: CompanyGuardiaSummary en DispatchConsole. No cambiar vehicleAvailability ni volunteers.available. Migraciones y tipos mediante herramientas; decisiones estructurales en AGENTS.md al implementar.
 
-El informe técnico ampliado queda en docs/guardias-auditoria-diseno.md.
+Informe ampliado: docs/guardias-auditoria-diseno.md.
 
 ## Fases y comprobaciones
 
