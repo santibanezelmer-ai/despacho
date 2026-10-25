@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Guardias uses a shared read-only preparation page in Resources and the volunteer shell, with v3 RPC argument contracts and a fail-closed command boundary in companyDuty; until its SQL and real authorization are validated, never install a command transport, issue Guard queries or mutations, or infer Guard management rights from ordinary membership roles. Shift and slot creation RPCs are separate transactions, so future integration must handle partial drafts explicitly rather than claim atomic saving.
+- Guardias uses a shared read-only preparation page in Resources and the volunteer shell, with v3 RPC argument contracts and a fail-closed command boundary in companyDuty; until its SQL and real authorization are validated, never install a command transport, issue Guard queries or mutations, or infer Guard management rights from ordinary membership roles. Draft saving must use the single guard_create_draft RPC from the unapplied atomic supplement, never sequential shift/slot requests, because only the server transaction rolls back the complete draft and audit.
 
 - Hydrant SELECT is shared across authenticated organization members; preserve owner-scoped write RLS and derive map ownership from organization_id, never from which table supplied the record.
 
