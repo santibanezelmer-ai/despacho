@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Guardias uses a shared read-only preparation page in Resources and the volunteer shell; until its SQL and real authorization are validated, never issue Guard queries or mutations or infer Guard management rights from ordinary membership roles.
+
 - Hydrant SELECT is shared across authenticated organization members; preserve owner-scoped write RLS and derive map ownership from organization_id, never from which table supplied the record.
 
 - Mount native push registration inside the shared authenticated-provider/router tree, not only AppRoutes, so volunteer routes and legacy mobile deep-link redirects keep the existing native registration lifecycle.

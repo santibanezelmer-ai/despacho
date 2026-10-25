@@ -33,6 +33,7 @@ const MapScreen = lazy(() => import("@/pages/MapScreen"));
 const AlertsPage = lazy(() => import("@/pages/AlertsPage"));
 const SimulationPage = lazy(() => import("@/pages/SimulationPage"));
 const TrainingPage = lazy(() => import("@/pages/TrainingPage"));
+const CompanyDuty = lazy(() => import("@/pages/CompanyDuty"));
 const AuditPage = lazy(() => import("@/pages/AuditPage"));
 const ExportsPage = lazy(() => import("@/pages/ExportsPage"));
 import NotificationsPage from "@/pages/NotificationsPage";
@@ -230,6 +231,7 @@ function AppRoutes() {
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />
         <Route path="/companias" element={<Companies />} />
+        <Route path="/guardias" element={<CompanyDuty />} />
         <Route path="/claves" element={<EmergencyKeysAdmin />} />
         <Route path="/equipamiento" element={<EquipmentPage />} />
         <Route path="/capacitaciones" element={<TrainingPage />} />
