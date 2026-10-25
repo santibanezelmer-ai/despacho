@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Guardias, integración con contratos v3 sin modificar diseño ni destino; habilitación bloqueada hasta instalación SQL y autorización real validada.
+- [x] Guardias, contratos v3 preparados sin transporte ni cambios de diseño/destino; pruebas de integración segura nuevas ejecutadas.
+- [ ] Guardias, conectar consultas y operaciones reales: requiere instalación autorizada de SQL 01→02→03 y validación de permisos con sesiones reales en entorno aislado; tratar borradores parciales de turno/cupos.
 - [x] Guardias, fase 0: esquema y permisos reales auditados, diferencias contrastadas, diseño y pruebas preparados; 42 pruebas existentes aprobadas, sin cambios de producción.
 - [x] Guardias, revisión previa de fase 1: SQL completo y explicación de políticas/GRANT, funciones, índices, restricciones y riesgos entregados; creación y pruebas de seguridad en PostgreSQL desechable aprobadas, no equivalen a verificación real. Sin cambios en producción.
 - [x] Guardias, revisión adicional: contrato y privilegios reales revisados, cuatro carreras locales verificadas, SQL v2 e informe preparados; autodelegación prohibida por decisión de Susana, sin cambios de destino.
