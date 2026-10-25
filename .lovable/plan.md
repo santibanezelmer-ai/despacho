@@ -4,20 +4,17 @@
 
 Auditoría de solo lectura del repositorio y del esquema real completada. No se cambiaron datos, tablas, políticas, pantallas ni funciones desplegadas. Se registraron únicamente requisitos, tareas y este diseño.
 
-| Comprobación | Evidencia consultada | Resultado |
-|---|---|---|
-| Módulo previo | Catálogo real de tablas, tipos y búsqueda del repositorio | 48 tablas públicas; ninguna gestiona guardias, turnos o cupos. |
-| Entidades base | Columnas, FK, restricciones e índices reales | Reutilizar organizations, companies, volunteers y organization_members. No duplicar personas, compañías ni membresías. |
-| Autorización | Definiciones reales públicas y app_private | has_org_role y can_write_in_org exigen membresía activa sin compañía; is_company_admin exige admin activo de la compañía exacta. |
-| Integridad | FK y triggers actuales | Compañías y voluntarios tienen organización inmutable, pero las FK simples no garantizan toda la coherencia compañía–voluntario–organización. |
-| RLS y privilegios | pg_policies y privilegios efectivos | RLS habilitada; algunas lecturas actuales son organizacionales. No heredarlas como privacidad de Guardias. Privilegios amplios no significan acceso anónimo autorizado por RLS. |
-| Auditoría | audit_log e insert_audit_log reales | Actor desde auth.uid(); admin de compañía no puede leer el historial general. Llamar auditoría por separado desde la interfaz no es atómico. |
-| Asistencia actual | emergency_attendance y emergency_personnel | Participación en emergencias, no asistencia presencial de guardias. Mantenerlas intactas. |
-| Notificaciones | send-push-notification y consumidores | Transporte reutilizable, pero el envío actual por organización no sirve para asignaciones privadas. |
-| Interfaz | Rutas, AppLayout y componentes ui | Navegación, formularios, tema y selector de fechas reutilizables; falta calendario diario/semanal/mensual de turnos. |
-| Pruebas existentes | Vitest: volunteerAccess, mobileVolunteerRouting, vehicleReturn y operationalPreReports | 42/42 aprobadas en 4 archivos. No son pruebas de Guardias ni de seguridad real. |
+- Catálogo real: 48 tablas públicas, ninguna de guardias. Tipos y repositorio coinciden.
+- Reutilizar organizations, companies, volunteers y organization_members; revisar relaciones compuestas para garantizar coherencia de organización y compañía.
+- Funciones reales: has_org_role y can_write_in_org requieren membresía activa sin compañía; is_company_admin exige admin activo de la compañía exacta. No reutilizar canWrite/isOrgAdmin como autorización global.
+- RLS habilitada; algunas lecturas existentes son organizacionales. Privilegios amplios no implican acceso anónimo permitido por RLS.
+- audit_log deriva actor de auth.uid(), pero el admin de compañía no lee historial general; auditar desde navegador por separado no es atómico.
+- emergency_attendance/emergency_personnel son participación en emergencias, no llegada/salida de guardias.
+- Push actual transmite por organización: reutilizar transporte, no envío masivo para datos privados.
+- Diseño y controles reutilizables; calendario operativo de turnos no existe.
+- Vitest ejecutado en volunteerAccess, mobileVolunteerRouting, vehicleReturn y operationalPreReports: **42/42 pruebas existentes aprobadas**. No prueban Guardias ni seguridad real.
 
-Solo se consultaron metadatos, sin datos personales. No se declara compilación ni recorrido autenticado de Guardias verificado: el módulo aún no existe.
+Solo SELECT de metadatos, sin datos personales ni mutaciones. No se declara compilación ni recorrido autenticado de Guardias verificado: el módulo no existe.
 
 ## Diferencias con el informe anterior
 
