@@ -8,7 +8,12 @@ export const COMPANY_DUTY_INTEGRATION = Object.freeze({
 
 type ShiftState = 'borrador' | 'publicado' | 'en_curso' | 'finalizado' | 'cancelado';
 type ShiftMode = 'presencial' | 'domiciliaria' | 'mixta';
+export interface DutyDraftSlot {
+  role: string; mode: Exclude<ShiftMode, 'mixta'>; start: string; end: string;
+  capacity: number; critical: boolean; specialties: string[];
+}
 export type DutyCommand =
+  | { kind: 'createDraft'; companyId: string; name: string; start: string; end: string; mode: ShiftMode; slots: DutyDraftSlot[] }
   | { kind: 'createShift'; companyId: string; name: string; start: string; end: string; mode: ShiftMode }
   | { kind: 'createSlot'; shiftId: string; role: string; mode: Exclude<ShiftMode, 'mixta'>; start: string; end: string; capacity: number; critical: boolean; specialties: string[] }
   | { kind: 'publish'; shiftId: string; expected: 'borrador'; reason: string }
@@ -17,11 +22,12 @@ export type DutyCommand =
   | { kind: 'confirm'; assignmentId: string; accept: boolean; reason: string };
 
 /** Exact v3 public RPC arguments. Actor and authorization are derived by SQL, never sent by the client.
- * Creation of a shift and its slots uses separate transactions; do not claim atomic draft saving.
+ * createDraft requires the unapplied v3 atomic supplement; never chain createShift/createSlot to save a draft.
  * Timestamps must already be timezone-qualified (datetime-local values need conversion before integration).
  */
 export function dutyRpcContract(orgId: string, command: DutyCommand) {
   switch (command.kind) {
+    case 'createDraft': return { name: 'guard_create_draft', args: { _org: orgId, _company: command.companyId, _name: command.name, _start: command.start, _end: command.end, _mode: command.mode, _slots: command.slots.map(slot => ({ role: slot.role, mode: slot.mode, start: slot.start, end: slot.end, capacity: slot.capacity, critical: slot.critical, specialties: slot.specialties })) } };
     case 'createShift': return { name: 'guard_create_shift', args: { _org: orgId, _company: command.companyId, _name: command.name, _start: command.start, _end: command.end, _mode: command.mode } };
     case 'createSlot': return { name: 'guard_create_slot', args: { _org: orgId, _shift: command.shiftId, _role: command.role, _mode: command.mode, _start: command.start, _end: command.end, _capacity: command.capacity, _critical: command.critical, _specialties: command.specialties } };
     case 'publish': return { name: 'guard_transition', args: { _org: orgId, _shift: command.shiftId, _expected: command.expected, _next: 'publicado', _reason: command.reason } };
