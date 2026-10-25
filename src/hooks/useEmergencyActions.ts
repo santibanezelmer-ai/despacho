@@ -1,6 +1,7 @@
 import { prepareReassignment } from '@/lib/vehicleAvailability';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
@@ -151,7 +152,7 @@ export function useToggleFlag() {
   const log = useLog();
   return useMutation({
     mutationFn: async ({ id, field, value, label }: { id: string; field: string; value: boolean; label: string }) => {
-      const update: Record<string, any> = { [field]: value };
+      const update: TablesUpdate<'emergencies'> = { [field]: value };
       if (field === 'declared' && value) update.declared_at = new Date().toISOString();
       const { error } = await supabase.from('emergencies').update(update).eq('id', id);
       if (error) throw error;
