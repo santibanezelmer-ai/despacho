@@ -11,9 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table';
-import { dutyCompanyScope, visibleDutyCompanies, type DutyCompany } from '@/lib/companyDuty';
+import { COMPANY_DUTY_INTEGRATION, dutyCompanyScope, visibleDutyCompanies, type DutyCompany } from '@/lib/companyDuty';
 
-const pending = 'Pendiente de instalar y validar Guardias. No se guardarán cambios.';
+const pending = COMPANY_DUTY_INTEGRATION.message;
 
 export default function CompanyDuty({ personal = false }: { personal?: boolean }) {
   const { orgId, orgRole, currentOrg } = useOrganization();
