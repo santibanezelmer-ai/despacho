@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Corregir ventanas en blanco de Pantallas/TV y verificar apertura local y vinculación remota.
+- [x] Evitar fallos silenciosos de TV: solicitud con límite de tiempo, validación, aviso y reintento; recuperación a PIN real comprobada y 4 pruebas aprobadas.
+- [ ] Verificar ventanas locales y TV vinculada con la cuenta de Susana: falta iniciar sesión en la vista previa; no fue posible obtener su sesión de prueba.
 
 - [x] Compartir lectura de grifos entre organizaciones sin ampliar permisos de modificación; políticas verificadas, 3 pruebas aprobadas y consulta autenticada de 36 registros de otra organización comprobada en el mapa.
 

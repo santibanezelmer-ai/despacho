@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -38,7 +39,7 @@ export function useVehicleOperationalStatus() {
       const meta = VEHICLE_STATUS_META[status];
       const now = at ?? new Date().toISOString();
 
-      const update: Record<string, any> = {
+      const update: TablesUpdate<'emergency_vehicles'> = {
         operational_status: status,
         status_updated_at: now,
       };
@@ -73,10 +74,10 @@ export function useVehicleOperationalStatus() {
       const { data: em } = await supabase
         .from('emergencies').select('status').eq('id', emergencyId).maybeSingle();
       const next = em ? emergencyStatusFromVehicle(em.status, status) : null;
-      if (next) {
-        const emUpdate: Record<string, any> = { status: next, [EMERGENCY_STATUS_TIMESTAMP[next]]: now };
+      if (next && em) {
+        const emUpdate: TablesUpdate<'emergencies'> = { status: next, [EMERGENCY_STATUS_TIMESTAMP[next]]: now };
         const { error: e2 } = await supabase
-          .from('emergencies').update(emUpdate).eq('id', emergencyId).eq('status', em!.status);
+          .from('emergencies').update(emUpdate).eq('id', emergencyId).eq('status', em.status);
         if (!e2 && orgId) {
           await supabase.from('emergency_log').insert({
             emergency_id: emergencyId,

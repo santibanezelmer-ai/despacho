@@ -4,6 +4,7 @@ import ActiveEmergencyCard from '@/components/dispatch/ActiveEmergencyCard';
 import { Radio, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,7 +35,7 @@ export default function ActiveEmergencies() {
       finalizada: 'finished_at',
     };
 
-    const update: Record<string, any> = { status: newStatus };
+    const update: TablesUpdate<'emergencies'> = { status: newStatus as TablesUpdate<'emergencies'>['status'] };
     const field = timestampField[newStatus];
     if (field) update[field] = new Date().toISOString();
 
