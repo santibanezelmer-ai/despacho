@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Guardias, fase 0: auditar esquema y permisos reales, contrastar auditoría anterior y presentar diseño y pruebas sin cambios de producción.
+- [ ] Guardias, fases 1–5: implementar por fases después de autorización explícita; bloqueado hasta aprobación.
+
 - [x] Evitar fallos silenciosos de TV: solicitud con límite de tiempo, validación, aviso y reintento; recuperación a PIN real comprobada y 4 pruebas aprobadas.
 - [ ] Verificar ventanas locales y TV vinculada con la cuenta de Susana: falta iniciar sesión en la vista previa; no fue posible obtener su sesión de prueba.
 
