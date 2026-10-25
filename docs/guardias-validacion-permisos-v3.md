@@ -13,6 +13,15 @@ El contrato `createDraft` está preparado, sin transporte; executeDutyCommand co
 La pantalla no cambia. Nunca encadenar los RPC individuales para guardar el borrador completo.
 No se promete idempotencia: una respuesta perdida requiere reconciliar lectura antes de reintentar, no reintento automático.
 
+## Pruebas nuevas ejecutadas
+
+- PostgreSQL 17.9 desechable, socket local sin escucha TCP, fixture simplificado del paquete v3.
+- `scripts/test-guardias-atomic.ts`: **13 comprobaciones aprobadas**. Éxito completo (turno, dos cupos, tres auditorías); rollback ante segundo cupo inválido, fecha inválida, actor adicional, especialidad nula o fallo de auditoría; lote vacío/no array; denegación del nuevo RPC para Cuerpo/emisor sin manage, admin de otra compañía y voluntario; ACL e invoker verificados.
+- `src/test/companyDutyAtomic.test.ts`: **2 pruebas aprobadas**, contrato de llamada única y escritura nueva bloqueada.
+- No se repitieron suites anteriores. Las delegaciones existentes solo se utilizaron para montar el fixture local, no se contabilizan como pruebas nuevas.
+- Identidades simuladas por `auth.uid()` local: **no son sesiones autenticadas reales** ni verifican la Data API o el recorrido desde la pantalla.
+- Para reproducir: cluster local desechable en `/tmp/guardias-atomic/socket`, puerto 55441, propietario `local_guard`, base vacía `atomic_validation`; roles locales anon/authenticated/service_role/sandbox_exec; cargar fixture del paquete, 01→02→03 y complemento 05, después ejecutar `bun scripts/test-guardias-atomic.ts`. Requiere base nueva; nunca usar el destino.
+
 ## Sesiones reales: matriz preparada, NO ejecutada
 
 En entorno aislado autorizado, organización O con compañías A/B y otra organización X.
