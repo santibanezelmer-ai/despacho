@@ -75,7 +75,7 @@ export function useVehicleOperationalStatus() {
         .from('emergencies').select('status').eq('id', emergencyId).maybeSingle();
       const next = em ? emergencyStatusFromVehicle(em.status, status) : null;
       if (next && em) {
-        const emUpdate: TablesUpdate<'emergencies'> = { status: next, [EMERGENCY_STATUS_TIMESTAMP[next]]: now };
+        const emUpdate: TablesUpdate<'emergencies'> = { status: next as TablesUpdate<'emergencies'>['status'], [EMERGENCY_STATUS_TIMESTAMP[next]]: now };
         const { error: e2 } = await supabase
           .from('emergencies').update(emUpdate).eq('id', emergencyId).eq('status', em.status);
         if (!e2 && orgId) {
