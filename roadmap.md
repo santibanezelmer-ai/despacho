@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Guardias, cierre acotado: complemento atómico turno/cupos y matriz concreta de permisos, pruebas nuevas locales; sin aplicar SQL ni habilitar escrituras.
 - [x] Guardias, contratos v3 preparados sin transporte ni cambios de diseño/destino; pruebas de integración segura nuevas ejecutadas.
 - [ ] Guardias, conectar consultas y operaciones reales: requiere instalación autorizada de SQL 01→02→03 y validación de permisos con sesiones reales en entorno aislado; tratar borradores parciales de turno/cupos.
 - [x] Guardias, fase 0: esquema y permisos reales auditados, diferencias contrastadas, diseño y pruebas preparados; 42 pruebas existentes aprobadas, sin cambios de producción.
