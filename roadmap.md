@@ -1,6 +1,7 @@
 # Roadmap
 
 - [x] Guardias, fase 0: esquema y permisos reales auditados, diferencias contrastadas, diseño y pruebas preparados; 42 pruebas existentes aprobadas, sin cambios de producción.
+- [x] Guardias, revisión previa de fase 1: SQL completo y explicación de políticas/GRANT, funciones, índices, restricciones y riesgos entregados; creación y pruebas de seguridad en PostgreSQL desechable aprobadas, no equivalen a verificación real. Sin cambios en producción.
 - [ ] Guardias, fases 1–5: implementar por fases después de autorización explícita; bloqueado hasta aprobación.
 
 - [x] Evitar fallos silenciosos de TV: solicitud con límite de tiempo, validación, aviso y reintento; recuperación a PIN real comprobada y 4 pruebas aprobadas.
