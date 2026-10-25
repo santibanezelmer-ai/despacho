@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Monitor, Radio, Shield, Truck } from 'lucide-react';
 import LeafletMapCanvas, { type MapEmergency, type MapVehicle } from '@/components/map/LeafletMapCanvas';
+import { Button } from '@/components/ui/button';
+import { requestScreenDisplay as call } from '@/lib/screenDisplay';
 
 /**
  * Pantalla remota sin inicio de sesión (Smart TV / monitor en la misma red).
  * Muestra un PIN; un operador la vincula desde Pantalla Central y elige qué ver.
  * Solo lectura: los datos llegan desde la función screen-display con el secreto local.
  */
-const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/screen-display`;
 const STORAGE_KEY = 'operix.tv.secret';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -17,15 +18,6 @@ const VEH_STATUS: Record<string, string> = {
   disponible: 'Disponible', en_servicio: 'En servicio', mantencion: 'Mantención', fuera_servicio: 'Fuera de servicio',
 };
 
-async function call(body: Record<string, unknown>) {
-  const res = await fetch(FN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
-
 function elapsed(from: string | null, now: number) {
   if (!from) return '';
   const s = Math.max(0, Math.floor((now - new Date(from).getTime()) / 1000));
@@ -34,40 +26,58 @@ function elapsed(from: string | null, now: number) {
 }
 
 export default function TvScreen() {
-  const [secret, setSecret] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
+  const [secret, setSecret] = useState<string | null>(() => {
+    try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+  });
   const [pin, setPin] = useState<string | null>(null);
   const [state, setState] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
+  const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
 
   // Crea un PIN nuevo si no hay secreto guardado
   useEffect(() => {
     if (secret) return;
+    let alive = true;
+    setError(null);
     call({ action: 'create' }).then((r) => {
-      if (r?.secret) { localStorage.setItem(STORAGE_KEY, r.secret); setPin(r.pin); setSecret(r.secret); }
+      if (!alive) return;
+      try { localStorage.setItem(STORAGE_KEY, r.secret); } catch { /* usable for this window even without storage */ }
+      setPin(r.pin); setSecret(r.secret);
+    }).catch(() => {
+      if (alive) setError('No se pudo generar el código. Revisa la conexión y vuelve a intentar.');
     });
-  }, [secret]);
+    return () => { alive = false; };
+  }, [secret, retry]);
 
   // Consulta estado / datos cada 5 s
   useEffect(() => {
     if (!secret) return;
     let alive = true;
+    let inFlight = false;
     const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const r = await call({ action: 'data', secret });
         if (!alive) return;
         if (['invalid', 'revoked', 'expired'].includes(r?.status)) {
-          localStorage.removeItem(STORAGE_KEY); setState(null); setPin(null); setSecret(null); return;
+          try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore unavailable storage */ }
+          setError(null); setState(null); setPin(null); setSecret(null); return;
         }
         if (r?.status === 'pending') setPin(r.pin);
+        setError(null);
         setState(r);
-      } catch { /* sin red: se mantiene lo último mostrado */ }
+      } catch {
+        if (alive) setError('Sin conexión con Central. Reintentando…');
+      } finally { inFlight = false; }
     };
     tick();
     const id = setInterval(tick, 5000);
     return () => { alive = false; clearInterval(id); };
-  }, [secret]);
+  }, [secret, retry]);
 
   if (!state || state.status === 'pending') {
     return (
@@ -77,7 +87,12 @@ export default function TvScreen() {
           <h1 className="text-3xl font-bold">Vincular esta pantalla</h1>
           <p className="text-lg text-muted-foreground">En el computador de la Central, abre <b>Pantalla Central → Pantallas remotas</b> e ingresa este código:</p>
         </div>
-        {pin ? (
+        {error ? (
+          <div role="alert" className="space-y-3">
+            <p className="text-warning">{error}</p>
+            <Button variant="outline" onClick={() => { setError(null); setRetry(n => n + 1); }}>Reintentar</Button>
+          </div>
+        ) : pin ? (
           <p className="font-mono text-7xl font-bold tracking-[0.3em] text-emergency sm:text-8xl">{pin}</p>
         ) : (
           <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
@@ -87,7 +102,10 @@ export default function TvScreen() {
     );
   }
 
-  return <PairedView data={state} now={now} />;
+  return <>
+    {error && <div role="status" className="fixed bottom-4 left-4 z-50 rounded border border-warning bg-background px-4 py-2 text-warning">{error}</div>}
+    <PairedView data={state} now={now} />
+  </>;
 }
 
 function PairedView({ data, now }: { data: any; now: number }) {

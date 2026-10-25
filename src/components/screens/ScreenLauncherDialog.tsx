@@ -37,8 +37,14 @@ export default function ScreenLauncherDialog({ open, onOpenChange }: { open: boo
   });
 
   const openLocal = (path: string, popup: boolean) => {
-    if (popup) window.open(path, `screen-${path}`, 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
-    else window.open(path, '_blank');
+    const url = new URL(path, window.location.origin).href;
+    const screen = popup
+      ? window.open(url, `screen-${path}`, 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no')
+      : window.open(url, '_blank');
+    if (!screen) {
+      toast.error('El navegador bloqueó la pantalla. Permite las ventanas emergentes para este sitio.');
+      return;
+    }
     onOpenChange(false);
   };
 
