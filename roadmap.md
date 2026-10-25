@@ -4,7 +4,8 @@
 - [x] Guardias, revisión previa de fase 1: SQL completo y explicación de políticas/GRANT, funciones, índices, restricciones y riesgos entregados; creación y pruebas de seguridad en PostgreSQL desechable aprobadas, no equivalen a verificación real. Sin cambios en producción.
 - [x] Guardias, revisión adicional: contrato y privilegios reales revisados, cuatro carreras locales verificadas, SQL v2 e informe preparados; autodelegación prohibida por decisión de Susana, sin cambios de destino.
 - [x] Guardias, cierre de candidata: G-04/G-07 y reemplazo propuestos; 44 comprobaciones locales aprobadas y v3 entregada, sin aplicar; sesiones reales pendientes.
-- [ ] Guardias, interfaz Recursos y consulta personal: implementar y verificar vista previa sin operaciones SQL ni datos ficticios.
+- [x] Guardias, interfaz Recursos y consulta personal implementada sin operaciones SQL ni datos ficticios; 19 pruebas aprobadas y compilación correcta.
+- [ ] Guardias, verificación visual autenticada: falta sesión de la solicitante en la vista previa; no fue posible obtener su sesión propia.
 - [ ] Guardias, fases 1–5: implementar por fases después de autorización explícita; bloqueado hasta aprobación.
 
 - [x] Evitar fallos silenciosos de TV: solicitud con límite de tiempo, validación, aviso y reintento; recuperación a PIN real comprobada y 4 pruebas aprobadas.
