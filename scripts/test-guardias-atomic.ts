@@ -1,7 +1,7 @@
 /** Disposable local PostgreSQL only; no hosted credentials or real JWTs. */
 import postgres from 'postgres';
 import { strict as assert } from 'node:assert';
-const db = postgres({ host: '/tmp/guardias-atomic/socket', port: 55441, database: 'postgres', username: 'local_guard', max: 1 });
+const db = postgres({ host: '/tmp/guardias-atomic/socket', port: 55441, database: 'atomic_validation', username: 'local_guard', max: 1 });
 const u = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`;
 const [org, company, otherCompany, root, issuer, corps, admin, volunteer] = [1,2,3,4,5,6,7,8].map(u);
 const slot = { role: 'Dotación', mode: 'presencial', start: '2026-11-10T08:00:00Z', end: '2026-11-10T12:00:00Z', capacity: 2, critical: false, specialties: [] };
@@ -11,7 +11,7 @@ async function actor(tx: any, id: string) {
   await tx`SELECT set_config('request.jwt.claim.sub',${id},true)`;
 }
 async function create(tx: any, c: string, slots: unknown) {
-  const rows = await tx`SELECT public.guard_create_draft(${org}::uuid,${c}::uuid,'Atomic local','2026-11-10T08:00:00Z','2026-11-10T12:00:00Z','presencial',${JSON.stringify(slots)}::jsonb) AS id`;
+  const rows = await tx`SELECT public.guard_create_draft(${org}::uuid,${c}::uuid,'Atomic local','2026-11-10T08:00:00Z','2026-11-10T12:00:00Z','presencial',${tx.json(slots)}::jsonb) AS id`;
   return rows[0].id;
 }
 async function counts() {
