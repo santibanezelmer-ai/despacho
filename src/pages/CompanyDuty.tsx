@@ -11,14 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table';
-import { COMPANY_DUTY_INTEGRATION, buildDraftCommand, dutyCompanyScope, dutyRpcContract, fetchDutyShifts, fetchMyDutyAssignments, visibleDutyCompanies, type DraftFormSlot, type DutyCompany } from '@/lib/companyDuty';
+import { COMPANY_DUTY_INTEGRATION, buildDraftCommand, defaultSlotMode, dutyCompanyScope, dutyStatusOptions, incompatibleSlotIndexes, dutyRpcContract, fetchDutyShifts, fetchMyDutyAssignments, visibleDutyCompanies, type DraftFormSlot, type DutyCompany } from '@/lib/companyDuty';
 
 const pending = COMPANY_DUTY_INTEGRATION.message;
-const STATUS: Record<string, string> = { borrador: 'Borrador', publicado: 'Publicado', en_curso: 'En curso', finalizado: 'Finalizado', cancelado: 'Cancelado', asignado: 'Asignado', confirmado: 'Confirmado', rechazado: 'Rechazado' };
+const STATUS: Record<string, string> = { borrador: 'Borrador', publicado: 'Publicado', en_curso: 'En curso', finalizado: 'Finalizado', cancelado: 'Cancelado', asignado: 'Asignado', propuesto: 'Propuesto', retirado: 'Retirado', reemplazado: 'Reemplazado', confirmado: 'Confirmado', rechazado: 'Rechazado' };
 const fmt = (s: string) => new Date(s).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
 const sameDay = (iso: string, day: string) => { const d = new Date(iso); return d.toLocaleDateString('sv-SE') === day; };
 type FormSlot = DraftFormSlot & { id: number };
-const emptySlot = (id: number): FormSlot => ({ id, role: '', mode: 'presencial', start: '', end: '', capacity: 1 });
+const emptySlot = (id: number, mode = 'presencial'): FormSlot => ({ id, role: '', mode, start: '', end: '', capacity: 1 });
 
 export default function CompanyDuty({ personal = false }: { personal?: boolean }) {
   const { orgId, orgRole, currentOrg } = useOrganization();
@@ -33,7 +33,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
 
   const companies = useQuery({
     queryKey: ['duty-companies', orgId, orgRole, currentOrg?.company_id, scope],
-    enabled: !!orgId && scope !== 'own',
+    enabled: !!orgId,
     retry: false,
     queryFn: async () => {
       if (!orgId) return [];
@@ -56,7 +56,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
   const resetFilters = () => { setCompany('all'); setDate(''); setStatus('all'); };
 
   const rows = (scope === 'own'
-    ? (mine.data ?? []).map(a => ({ id: a.assignment_id, company_id: a.company_id, name: `${a.shift_name} · ${a.role_name}`, starts_at: a.starts_at, ends_at: a.ends_at, status: a.shift_status, extra: STATUS[a.assignment_status] ?? a.assignment_status }))
+    ? (mine.data ?? []).map(a => ({ id: a.assignment_id, company_id: a.company_id, name: `${a.shift_name} · ${a.role_name}`, starts_at: a.starts_at, ends_at: a.ends_at, status: a.assignment_status, extra: STATUS[a.assignment_status] ?? a.assignment_status }))
     : (shifts.data ?? []).map(s => ({ id: s.id, company_id: s.company_id, name: s.name, starts_at: s.starts_at, ends_at: s.ends_at, status: s.status, extra: String(s.capacity) })))
     .filter(r => (activeCompany === 'all' || r.company_id === activeCompany) && (status === 'all' || r.status === status) && (!date || sameDay(r.starts_at, date)));
   const active = scope === 'own' ? mine : shifts;
@@ -64,7 +64,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
   const today = new Date().toLocaleDateString('sv-SE');
   const stats = active.data ? [all.filter(x => sameDay(x.at, today)).length, all.filter(x => x.s === 'publicado' && new Date(x.at) > new Date()).length, all.filter(x => x.s === 'en_curso').length, all.filter(x => x.s === 'finalizado').length] : null;
 
-  const openDraft = () => { setForm({ companyId: activeCompany !== 'all' ? activeCompany : '', name: '', start: '', end: '', mode: 'presencial' }); setSlots([emptySlot(0)]); setCheck(null); setOpen(true); };
+  const openDraft = () => { setForm({ companyId: activeCompany !== 'all' ? activeCompany : '', name: '', start: '', end: '', mode: 'presencial' }); setSlots([emptySlot(0, 'presencial')]); setCheck(null); setOpen(true); };
   const updSlot = (id: number, patch: Partial<FormSlot>) => setSlots(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
   const validate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +96,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
     <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div className="space-y-1.5"><Label htmlFor="duty-company">Compañía</Label><Select value={activeCompany} onValueChange={setCompany} disabled={scope === 'own' || companies.isLoading || !!companies.error}><SelectTrigger id="duty-company"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{scope === 'own' ? 'Según sus asignaciones' : 'Todas las autorizadas'}</SelectItem>{options.map(c => <SelectItem key={c.id} value={c.id}>{c.number}ª · {c.name}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-1.5"><Label htmlFor="duty-date">Fecha</Label><Input id="duty-date" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-      <div className="space-y-1.5"><Label htmlFor="duty-status">Estado</Label><Select value={status} onValueChange={setStatus}><SelectTrigger id="duty-status"><SelectValue /></SelectTrigger><SelectContent>{[['all','Todos'],['borrador','Borrador'],['publicado','Publicado'],['en_curso','En curso'],['finalizado','Finalizado'],['cancelado','Cancelado']].map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+      <div className="space-y-1.5"><Label htmlFor="duty-status">Estado</Label><Select value={status} onValueChange={setStatus}><SelectTrigger id="duty-status"><SelectValue /></SelectTrigger><SelectContent>{[['all','Todos'], ...dutyStatusOptions(scope).map(v => [v, STATUS[v] ?? v])].map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
       <Button variant="ghost" onClick={resetFilters}>Limpiar filtros</Button>
     </div>
     {(companies.error || active.error) && <div role="alert" className="flex flex-wrap items-center justify-between gap-2 border border-destructive/30 bg-destructive/10 p-3 text-sm"><span>{errMsg || 'No se pudieron consultar las compañías autorizadas.'}</span><Button variant="outline" size="sm" onClick={() => { companies.refetch(); active.refetch(); }}><RefreshCw className="mr-2 h-4 w-4" />Reintentar</Button></div>}
@@ -116,7 +116,8 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
         <div className="space-y-1.5"><Label htmlFor="draft-name">Nombre del turno</Label><Input id="draft-name" maxLength={160} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
         <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="draft-start">Inicio</Label><Input id="draft-start" type="datetime-local" value={form.start} onChange={e => setForm(f => ({ ...f, start: e.target.value }))} /></div><div className="space-y-1.5"><Label htmlFor="draft-end">Término</Label><Input id="draft-end" type="datetime-local" value={form.end} onChange={e => setForm(f => ({ ...f, end: e.target.value }))} /></div></div>
         <div className="space-y-1.5"><Label htmlFor="draft-mode">Modalidad</Label><Select value={form.mode} onValueChange={v => setForm(f => ({ ...f, mode: v }))}><SelectTrigger id="draft-mode"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="domiciliaria">Domiciliaria</SelectItem><SelectItem value="mixta">Mixta</SelectItem></SelectContent></Select></div>
-        <div className="flex items-center justify-between gap-2 border-t border-border pt-4"><h2 className="font-medium">Cupos</h2><Button type="button" size="sm" variant="outline" disabled={slots.length >= 100} onClick={() => setSlots(prev => [...prev, emptySlot(Math.max(...prev.map(s => s.id)) + 1)])}><Plus className="mr-1 h-4 w-4" />Añadir cupo</Button></div>
+        {incompatibleSlotIndexes(form.mode, slots).length > 0 && <p role="alert" className="text-sm text-destructive">Cupo(s) {incompatibleSlotIndexes(form.mode, slots).join(', ')}: la modalidad no coincide con la del turno ({form.mode}). Ajústela o elija "Mixta".</p>}
+        <div className="flex items-center justify-between gap-2 border-t border-border pt-4"><h2 className="font-medium">Cupos</h2><Button type="button" size="sm" variant="outline" disabled={slots.length >= 100} onClick={() => setSlots(prev => [...prev, emptySlot(Math.max(...prev.map(s => s.id)) + 1, defaultSlotMode(form.mode))])}><Plus className="mr-1 h-4 w-4" />Añadir cupo</Button></div>
         {slots.map((slot, index) => <fieldset key={slot.id} className="space-y-3 border-b border-border pb-4"><legend className="mb-2 text-sm text-muted-foreground">Cupo {index + 1}</legend><div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor={`role-${slot.id}`}>Función</Label><Input id={`role-${slot.id}`} maxLength={100} value={slot.role} onChange={e => updSlot(slot.id, { role: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor={`capacity-${slot.id}`}>Cantidad</Label><Input id={`capacity-${slot.id}`} type="number" min={1} max={500} value={slot.capacity} onChange={e => updSlot(slot.id, { capacity: Number(e.target.value) })} /></div><div className="space-y-1.5"><Label htmlFor={`start-${slot.id}`}>Inicio del cupo</Label><Input id={`start-${slot.id}`} type="datetime-local" value={slot.start} onChange={e => updSlot(slot.id, { start: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor={`end-${slot.id}`}>Término del cupo</Label><Input id={`end-${slot.id}`} type="datetime-local" value={slot.end} onChange={e => updSlot(slot.id, { end: e.target.value })} /></div></div><Select value={slot.mode} onValueChange={v => updSlot(slot.id, { mode: v })}><SelectTrigger aria-label={`Modalidad del cupo ${index + 1}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="domiciliaria">Domiciliaria</SelectItem></SelectContent></Select><Button type="button" variant="ghost" size="sm" disabled={slots.length === 1} onClick={() => setSlots(prev => prev.filter(s => s.id !== slot.id))}><Trash2 className="mr-1 h-4 w-4" />Quitar cupo</Button></fieldset>)}
         {check && <div role={check.ok ? 'status' : 'alert'} className={`space-y-1 border p-3 text-sm ${check.ok ? 'border-success/30 bg-success/10' : 'border-destructive/30 bg-destructive/10'}`}>{check.lines.map(l => <p key={l}>{l}</p>)}</div>}
         <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cerrar</Button><Button type="submit" variant="outline">Revisar borrador</Button><Button type="button" disabled title={pending}>Guardar borrador · Bloqueado</Button></div>

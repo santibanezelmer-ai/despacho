@@ -55,7 +55,11 @@ export async function executeDutyCommand(orgId: string, command: DutyCommand, tr
 export function toQualifiedTimestamp(local: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(local)) return null;
   const d = new Date(local);
-  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+  if (!Number.isFinite(d.getTime())) return null;
+  const [y, mo, da] = local.slice(0, 10).split('-').map(Number), [h, mi] = local.slice(11, 16).split(':').map(Number);
+  // Reject calendar roll-overs such as 2026-02-31 or 25:00.
+  if (d.getFullYear() !== y || d.getMonth() + 1 !== mo || d.getDate() !== da || d.getHours() !== h || d.getMinutes() !== mi) return null;
+  return d.toISOString();
 }
 export interface DraftFormSlot { role: string; mode: string; start: string; end: string; capacity: number; critical?: boolean; specialties?: string[] }
 export interface DraftForm { companyId: string; name: string; start: string; end: string; mode: string; slots: DraftFormSlot[] }
@@ -79,10 +83,31 @@ export function buildDraftCommand(form: DraftForm, allowedCompanyIds: string[]):
     if (!Number.isInteger(s.capacity) || s.capacity < 1 || s.capacity > 500) errors.push(`Cupo ${n}: cantidad entre 1 y 500.`);
     if (!ss || !se) errors.push(`Cupo ${n}: indique inicio y término.`);
     else if (se <= ss) errors.push(`Cupo ${n}: el término debe ser posterior al inicio.`);
+    else if (start && end && (ss < start || se > end)) errors.push(`Cupo ${n}: debe quedar dentro del horario del turno.`);
+    if (form.mode !== 'mixta' && (s.mode === 'presencial' || s.mode === 'domiciliaria') && s.mode !== form.mode) errors.push(`Cupo ${n}: la modalidad debe ser ${form.mode} como el turno.`);
     if (ss && se) slots.push({ role, mode: s.mode as DutyDraftSlot['mode'], start: ss, end: se, capacity: s.capacity, critical: !!s.critical, specialties: s.specialties ?? [] });
   });
   if (errors.length) return { ok: false, errors };
   return { ok: true, command: { kind: 'createDraft', companyId: form.companyId, name, start: start!, end: end!, mode: form.mode as ShiftMode, slots } };
+}
+
+/** Mode for newly added slots: mirrors the shift unless it is mixta. */
+export function defaultSlotMode(shiftMode: string): 'presencial' | 'domiciliaria' {
+  return shiftMode === 'domiciliaria' ? 'domiciliaria' : 'presencial';
+}
+/** 1-based indexes of slots whose mode the shift does not admit (never rewritten silently). */
+export function incompatibleSlotIndexes(shiftMode: string, slots: { mode: string }[]): number[] {
+  if (shiftMode === 'mixta') return [];
+  return slots.flatMap((s, i) => s.mode !== shiftMode ? [i + 1] : []);
+}
+/** guard_assignments.status CHECK values. */
+export const ASSIGNMENT_STATUSES = ['propuesto', 'confirmado', 'rechazado', 'retirado', 'reemplazado'] as const;
+export const SHIFT_STATUSES = ['borrador', 'publicado', 'en_curso', 'finalizado', 'cancelado'] as const;
+export function dutyStatusOptions(scope: 'organization' | 'company' | 'own'): readonly string[] {
+  return scope === 'own' ? ASSIGNMENT_STATUSES : SHIFT_STATUSES;
+}
+export function filterMyAssignmentsByStatus<T extends { assignment_status: string }>(rows: T[], status: string): T[] {
+  return status === 'all' ? rows : rows.filter(r => r.assignment_status === status);
 }
 
 export interface DutyShiftRow { id: string; company_id: string; name: string; starts_at: string; ends_at: string; mode: string; status: string; capacity: number }
