@@ -23,3 +23,4 @@
 - Organization local landmarks (organization_landmarks, src/lib/localLandmarks.ts) are matched in memory first in LocationSearch before route/km and Google, and drawn on every LeafletMapCanvas via the landmarks prop — instant, cost-free lookup of colloquial names.
 
 - Geographic acceptance of any searched/auto-geocoded coordinate goes only through src/lib/geoJurisdiction.ts (50 km safety radius + commune/region coherence); only status ok auto-accepts, anything else needs explicit operator confirmation logged as an operational exception.
+- Guard push: DB triggers enqueue guard_notification_outbox (deduped by event_key+recipient, only for propuesto assignments on publicado shifts); the guard-push function drains it per org with its own Android channel guard_requests, never the emergency channel or send-push-notification.
