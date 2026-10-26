@@ -1,9 +1,10 @@
 import type { AccessRole } from './rolePermissions';
+import { supabase } from '@/integrations/supabase/client';
 
-/** Installation and real-session authorization have not been validated. Never probe with commands. */
+/** SQL installed; real-session write authorization not yet validated. Writes stay blocked. */
 export const COMPANY_DUTY_INTEGRATION = Object.freeze({
   operationsEnabled: false,
-  message: 'Pendiente de instalar y validar Guardias. No se guardarán cambios.',
+  message: 'Guardias en modo consulta. Las acciones que guardan cambios siguen bloqueadas.',
 });
 
 type ShiftState = 'borrador' | 'publicado' | 'en_curso' | 'finalizado' | 'cancelado';
@@ -37,9 +38,73 @@ export function dutyRpcContract(orgId: string, command: DutyCommand) {
   }
 }
 
-/** Fail closed even for non-UI callers. No transport is installed until real authorization is validated. */
-export async function executeDutyCommand(_orgId: string, _command: DutyCommand): Promise<never> {
-  throw new Error(COMPANY_DUTY_INTEGRATION.message);
+export type DutyRpcTransport = (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+const supabaseTransport: DutyRpcTransport = async (name, args) =>
+  (await (supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)(name, args));
+
+/** Writes stay blocked while operationsEnabled is false: the gate runs before any request is issued. */
+export async function executeDutyCommand(orgId: string, command: DutyCommand, transport: DutyRpcTransport = supabaseTransport): Promise<unknown> {
+  if (!COMPANY_DUTY_INTEGRATION.operationsEnabled) throw new Error(COMPANY_DUTY_INTEGRATION.message);
+  const contract = dutyRpcContract(orgId, command);
+  const { data, error } = await transport(contract.name, contract.args);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Converts a datetime-local value to a timezone-qualified ISO timestamp. */
+export function toQualifiedTimestamp(local: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(local)) return null;
+  const d = new Date(local);
+  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+}
+export interface DraftFormSlot { role: string; mode: string; start: string; end: string; capacity: number; critical?: boolean; specialties?: string[] }
+export interface DraftForm { companyId: string; name: string; start: string; end: string; mode: string; slots: DraftFormSlot[] }
+/** Mirrors guard_create_draft / guard_shifts / guard_slots checks. Server remains authoritative. */
+export function buildDraftCommand(form: DraftForm, allowedCompanyIds: string[]): { ok: true; command: Extract<DutyCommand, { kind: 'createDraft' }> } | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  if (!allowedCompanyIds.includes(form.companyId)) errors.push('Seleccione una compañía autorizada.');
+  const name = form.name.trim();
+  if (name.length < 1 || name.length > 160) errors.push('El nombre debe tener entre 1 y 160 caracteres.');
+  if (!['presencial', 'domiciliaria', 'mixta'].includes(form.mode)) errors.push('Modalidad inválida.');
+  const start = toQualifiedTimestamp(form.start), end = toQualifiedTimestamp(form.end);
+  if (!start || !end) errors.push('Indique inicio y término del turno.');
+  else if (end <= start) errors.push('El término debe ser posterior al inicio.');
+  if (form.slots.length < 1 || form.slots.length > 100) errors.push('Debe haber entre 1 y 100 cupos.');
+  const slots: DutyDraftSlot[] = [];
+  form.slots.forEach((s, i) => {
+    const n = i + 1, role = s.role.trim();
+    const ss = toQualifiedTimestamp(s.start), se = toQualifiedTimestamp(s.end);
+    if (role.length < 1 || role.length > 100) errors.push(`Cupo ${n}: función obligatoria (máx. 100).`);
+    if (s.mode !== 'presencial' && s.mode !== 'domiciliaria') errors.push(`Cupo ${n}: modalidad inválida.`);
+    if (!Number.isInteger(s.capacity) || s.capacity < 1 || s.capacity > 500) errors.push(`Cupo ${n}: cantidad entre 1 y 500.`);
+    if (!ss || !se) errors.push(`Cupo ${n}: indique inicio y término.`);
+    else if (se <= ss) errors.push(`Cupo ${n}: el término debe ser posterior al inicio.`);
+    if (ss && se) slots.push({ role, mode: s.mode as DutyDraftSlot['mode'], start: ss, end: se, capacity: s.capacity, critical: !!s.critical, specialties: s.specialties ?? [] });
+  });
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, command: { kind: 'createDraft', companyId: form.companyId, name, start: start!, end: end!, mode: form.mode as ShiftMode, slots } };
+}
+
+export interface DutyShiftRow { id: string; company_id: string; name: string; starts_at: string; ends_at: string; mode: string; status: string; capacity: number }
+/** Reads guard_shifts/guard_slots; RLS (guard_supervise / guard_can manage) decides visibility. */
+export async function fetchDutyShifts(orgId: string): Promise<DutyShiftRow[]> {
+  const { data: shifts, error } = await supabase.from('guard_shifts').select('id,company_id,name,starts_at,ends_at,mode,status').eq('organization_id', orgId).order('starts_at', { ascending: false }).limit(200);
+  if (error) throw error;
+  const ids = (shifts ?? []).map(s => s.id);
+  const cap = new Map<string, number>();
+  if (ids.length) {
+    const { data: slots, error: e2 } = await supabase.from('guard_slots').select('shift_id,capacity').eq('organization_id', orgId).in('shift_id', ids);
+    if (e2) throw e2;
+    (slots ?? []).forEach(s => cap.set(s.shift_id, (cap.get(s.shift_id) ?? 0) + s.capacity));
+  }
+  return (shifts ?? []).map(s => ({ ...s, capacity: cap.get(s.id) ?? 0 }));
+}
+export interface DutyMyAssignment { assignment_id: string; shift_id: string; slot_id: string; company_id: string; shift_name: string; starts_at: string; ends_at: string; mode: string; role_name: string; assignment_status: string; shift_status: string }
+/** guard_my_assignments(_org) filters by auth.uid() server-side; never pass a user id. */
+export async function fetchMyDutyAssignments(orgId: string): Promise<DutyMyAssignment[]> {
+  const { data, error } = await supabase.rpc('guard_my_assignments', { _org: orgId });
+  if (error) throw error;
+  return (data ?? []) as DutyMyAssignment[];
 }
 
 export interface DutyCompany { id: string; name: string; number: number; organization_id: string }
