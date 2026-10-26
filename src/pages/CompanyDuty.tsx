@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table';
-import { COMPANY_DUTY_INTEGRATION, buildDraftCommand, defaultSlotMode, dutyCompanyScope, dutyStatusOptions, incompatibleSlotIndexes, dutyRpcContract, fetchDutyShifts, fetchMyDutyAssignments, visibleDutyCompanies, type DraftFormSlot, type DutyCompany } from '@/lib/companyDuty';
+import { ShiftManageDialog, DelegationPanel, useDutyCommand } from '@/components/duty/DutyAdmin';
+import { toast } from 'sonner';
+import { COMPANY_DUTY_INTEGRATION, fetchManageableCompanies, type DutyShiftRow, buildDraftCommand, defaultSlotMode, dutyCompanyScope, dutyStatusOptions, incompatibleSlotIndexes, fetchDutyShifts, fetchMyDutyAssignments, visibleDutyCompanies, type DraftFormSlot, type DutyCompany } from '@/lib/companyDuty';
 
 const pending = COMPANY_DUTY_INTEGRATION.message;
 const STATUS: Record<string, string> = { borrador: 'Borrador', publicado: 'Publicado', en_curso: 'En curso', finalizado: 'Finalizado', cancelado: 'Cancelado', asignado: 'Asignado', propuesto: 'Propuesto', retirado: 'Retirado', reemplazado: 'Reemplazado', confirmado: 'Confirmado', rechazado: 'Rechazado' };
@@ -51,6 +53,12 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
   const mine = useQuery({ queryKey: ['duty-mine', orgId], enabled: !!orgId && scope === 'own', retry: false, refetchInterval: 5000, queryFn: () => fetchMyDutyAssignments(orgId!) });
 
   const options = companies.data ?? [];
+  const manageable = useQuery({ queryKey: ['duty-manage', orgId, options.map(c => c.id).join()], enabled: !!orgId && scope !== 'own' && options.length > 0, queryFn: () => fetchManageableCompanies(orgId!, options.map(c => c.id)) });
+  const canManage = (id: string) => (manageable.data ?? []).includes(id);
+  const manageOptions = options.filter(c => canManage(c.id));
+  const [selected, setSelected] = useState<DutyShiftRow | null>(null);
+  const [rejecting, setRejecting] = useState<{ id: string; reason: string } | null>(null);
+  const cmd = useDutyCommand(orgId, [['duty-shifts', orgId ?? ''], ['duty-mine', orgId ?? '']]);
   const names = useMemo(() => new Map(options.map(c => [c.id, `${c.number}ª · ${c.name}`])), [options]);
   const activeCompany = options.some(c => c.id === company) ? company : 'all';
   const resetFilters = () => { setCompany('all'); setDate(''); setStatus('all'); };
@@ -69,23 +77,26 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
   const validate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgId) return;
-    const r = buildDraftCommand({ ...form, slots }, options.map(c => c.id));
+    const r = buildDraftCommand({ ...form, slots }, manageOptions.map(c => c.id));
     if ('errors' in r) { setCheck({ ok: false, lines: r.errors }); return; }
-    const c = dutyRpcContract(orgId, r.command);
-    setCheck({ ok: true, lines: [`Borrador válido: ${r.command.slots.length} cupo(s), preparado para ${c.name}.`, 'No se envió a la base de datos: el guardado sigue bloqueado en esta fase.'] });
+    setCheck({ ok: true, lines: [`Guardando borrador con ${r.command.slots.length} cupo(s)…`] });
+    cmd.mutate(r.command, {
+      onSuccess: () => { toast.success('Borrador guardado.'); setOpen(false); },
+      onError: (err: Error) => setCheck({ ok: false, lines: [err.message] }),
+    });
   };
 
-  const headers = scope === 'own' ? ['Fecha y horario', 'Compañía', 'Turno y función', 'Mi asignación', 'Estado'] : ['Fecha y horario', 'Compañía', 'Turno', 'Cupos', 'Estado'];
+  const headers = scope === 'own' ? ['Fecha y horario', 'Compañía', 'Turno y función', 'Mi asignación', 'Acciones'] : ['Fecha y horario', 'Compañía', 'Turno', 'Cupos', 'Estado'];
   const errMsg = active.error ? ((active.error as { message?: string }).message?.includes('denied') ? 'No tiene autorización para consultar estas guardias.' : 'No se pudieron consultar las guardias.') : '';
 
   return <section className="space-y-5 p-4 md:p-6">
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div><h1 className="flex items-center gap-2 text-lg font-bold"><CalendarDays className="h-5 w-5 text-info" />{personal ? 'Mis guardias' : 'Guardias por Compañía'}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{currentOrg?.organization.name}</p></div>
-      {scope !== 'own' && <Button variant="outline" size="sm" onClick={openDraft}><Plus className="mr-2 h-4 w-4" />Preparar turno</Button>}
+      {scope !== 'own' && <Button variant="outline" size="sm" onClick={openDraft} disabled={manageOptions.length === 0} title={manageOptions.length === 0 ? 'Necesita delegación de gestión del Emisor para alguna compañía.' : undefined}><Plus className="mr-2 h-4 w-4" />Preparar turno</Button>}
     </header>
     <div role="status" className="flex items-start gap-3 border-l-2 border-warning bg-warning/10 p-3 text-sm">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /><div><p className="font-medium">Modo consulta</p><p className="mt-1 text-muted-foreground">{pending}</p></div>
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /><div><p className="font-medium">Operaciones protegidas</p><p className="mt-1 text-muted-foreground">{pending}</p></div>
     </div>
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4" />
       {scope === 'organization' ? 'Supervisión del Cuerpo · Gestión mediante delegación explícita' : scope === 'company' ? 'Ámbito de su compañía · Visibilidad según delegación' : 'Consulta personal · Solo sus asignaciones'}
@@ -100,19 +111,30 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
       <Button variant="ghost" onClick={resetFilters}>Limpiar filtros</Button>
     </div>
     {(companies.error || active.error) && <div role="alert" className="flex flex-wrap items-center justify-between gap-2 border border-destructive/30 bg-destructive/10 p-3 text-sm"><span>{errMsg || 'No se pudieron consultar las compañías autorizadas.'}</span><Button variant="outline" size="sm" onClick={() => { companies.refetch(); active.refetch(); }}><RefreshCw className="mr-2 h-4 w-4" />Reintentar</Button></div>}
-    <Tabs defaultValue="shifts"><TabsList className="h-auto flex-wrap"><TabsTrigger value="shifts">{scope === 'own' ? 'Mis turnos' : 'Turnos'}</TabsTrigger><TabsTrigger value="confirmations">Confirmaciones</TabsTrigger><TabsTrigger value="attendance">Asistencia</TabsTrigger></TabsList>
+    <Tabs defaultValue="shifts"><TabsList className="h-auto flex-wrap"><TabsTrigger value="shifts">{scope === 'own' ? 'Mis turnos' : 'Turnos'}</TabsTrigger><TabsTrigger value="confirmations">Confirmaciones</TabsTrigger><TabsTrigger value="attendance">Asistencia</TabsTrigger>{scope === 'organization' && <TabsTrigger value="permissions">Permisos</TabsTrigger>}</TabsList>
       <TabsContent value="shifts" className="space-y-3"><div className="overflow-x-auto rounded-md border border-border"><Table><TableHeader><TableRow>{headers.map(h => <TableHead key={h} className="whitespace-nowrap">{h}</TableHead>)}</TableRow></TableHeader><TableBody>
         {active.isLoading ? <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">Cargando guardias…</TableCell></TableRow>
           : rows.length === 0 ? <TableRow><TableCell colSpan={5} className="h-44 text-center"><CalendarDays className="mx-auto mb-3 h-7 w-7 text-muted-foreground" /><p className="font-medium">{scope === 'own' ? 'No tiene guardias asignadas' : 'No hay turnos para mostrar'}</p><p className="mt-1 text-sm text-muted-foreground">{scope === 'own' ? 'Solo se muestran turnos publicados asignados a usted.' : 'Solo verá turnos de compañías que pueda supervisar o gestionar.'}</p></TableCell></TableRow>
-          : rows.map(r => <TableRow key={r.id}><TableCell className="whitespace-nowrap">{fmt(r.starts_at)} – {fmt(r.ends_at)}</TableCell><TableCell>{names.get(r.company_id) ?? '—'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.extra}</TableCell><TableCell><Badge variant="outline">{STATUS[r.status] ?? r.status}</Badge></TableCell></TableRow>)}
+          : rows.map(r => {
+            const shiftRow = scope !== 'own' ? (shifts.data ?? []).find(s => s.id === r.id) : undefined;
+            const mineRow = scope === 'own' ? (mine.data ?? []).find(a => a.assignment_id === r.id) : undefined;
+            const canAnswer = mineRow && mineRow.assignment_status === 'propuesto' && (mineRow.shift_status === 'publicado' || mineRow.shift_status === 'en_curso');
+            return <TableRow key={r.id} className={shiftRow ? 'cursor-pointer' : undefined} onClick={shiftRow ? () => setSelected(shiftRow) : undefined}><TableCell className="whitespace-nowrap">{fmt(r.starts_at)} – {fmt(r.ends_at)}</TableCell><TableCell>{names.get(r.company_id) ?? '—'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{scope === 'own' ? <Badge variant="outline">{r.extra}</Badge> : r.extra}</TableCell><TableCell>{scope === 'own'
+              ? (canAnswer ? (rejecting?.id === r.id
+                ? <div className="flex flex-wrap gap-2"><Input aria-label="Motivo del rechazo" className="h-8 w-40" value={rejecting.reason} onChange={e => setRejecting({ id: r.id, reason: e.target.value })} /><Button size="sm" variant="destructive" disabled={cmd.isPending || rejecting.reason.trim().length < 3} onClick={() => cmd.mutate({ kind: 'confirm', assignmentId: r.id, accept: false, reason: rejecting.reason.trim() }, { onSuccess: () => { toast.success('Guardia rechazada.'); setRejecting(null); } })}>Enviar</Button><Button size="sm" variant="ghost" onClick={() => setRejecting(null)}>Volver</Button></div>
+                : <div className="flex gap-2"><Button size="sm" disabled={cmd.isPending} onClick={() => cmd.mutate({ kind: 'confirm', assignmentId: r.id, accept: true, reason: '' }, { onSuccess: () => toast.success('Guardia confirmada.') })}>Confirmar</Button><Button size="sm" variant="outline" disabled={cmd.isPending} onClick={() => setRejecting({ id: r.id, reason: '' })}>Rechazar</Button></div>)
+                : <span className="text-xs text-muted-foreground">Turno {STATUS[mineRow?.shift_status ?? ''] ?? mineRow?.shift_status}</span>)
+              : <Badge variant="outline">{STATUS[r.status] ?? r.status}</Badge>}</TableCell></TableRow>;
+          })}
       </TableBody></Table></div>
-      {scope !== 'own' && <div className="flex flex-wrap gap-2">{['Publicar turno','Cancelar turno','Asignar voluntarios'].map(label => <Button key={label} size="sm" variant="outline" disabled title={pending}>{label}</Button>)}</div>}</TabsContent>
-      <TabsContent value="confirmations"><div className="space-y-3 border-t border-border py-8 text-center"><Users className="mx-auto h-7 w-7 text-muted-foreground" /><p>Confirmaciones bloqueadas en esta fase.</p><p className="text-sm text-muted-foreground">{pending}</p><Button disabled variant="outline" title={pending}>Confirmar mi guardia</Button></div></TabsContent>
-      <TabsContent value="attendance"><div className="space-y-3 border-t border-border py-8 text-center"><ListChecks className="mx-auto h-7 w-7 text-muted-foreground" /><p>Registro de asistencia bloqueado.</p><p className="text-sm text-muted-foreground">La validación requiere autorización específica de asistencia.</p><Button disabled variant="outline" title={pending}>Validar asistencia</Button></div></TabsContent>
+      {scope !== 'own' && <p className="text-xs text-muted-foreground">Seleccione un turno para ver cupos, publicar, cancelar o asignar voluntarios.</p>}</TabsContent>
+      <TabsContent value="confirmations"><div className="space-y-3 border-t border-border py-8 text-center"><Users className="mx-auto h-7 w-7 text-muted-foreground" /><p>{scope === 'own' ? 'Confirme o rechace sus guardias propuestas desde la pestaña "Mis turnos".' : 'Cada voluntario confirma su propia asignación; aquí verá el estado en el detalle de cada turno.'}</p></div></TabsContent>
+      <TabsContent value="attendance"><div className="space-y-3 border-t border-border py-8 text-center"><ListChecks className="mx-auto h-7 w-7 text-muted-foreground" /><p>Registro de asistencia no disponible.</p><p className="text-sm text-muted-foreground">{COMPANY_DUTY_INTEGRATION.attendanceMessage}</p><Button disabled variant="outline">Validar asistencia</Button></div></TabsContent>
+      {scope === 'organization' && orgId && <TabsContent value="permissions"><DelegationPanel orgId={orgId} companies={options} /></TabsContent>}
     </Tabs>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>Preparar turno en borrador</DialogTitle><DialogDescription>Puede revisar el borrador. El guardado sigue bloqueado.</DialogDescription></DialogHeader>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>Preparar turno en borrador</DialogTitle><DialogDescription>Se guarda completo (turno y cupos) en una sola operación, o no se guarda nada.</DialogDescription></DialogHeader>
       <form className="space-y-4" onSubmit={validate}>
-        <div className="space-y-1.5"><Label htmlFor="draft-company">Compañía</Label><Select value={form.companyId || undefined} onValueChange={v => setForm(f => ({ ...f, companyId: v }))}><SelectTrigger id="draft-company"><SelectValue placeholder="Seleccionar compañía autorizada" /></SelectTrigger><SelectContent>{options.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-1.5"><Label htmlFor="draft-company">Compañía</Label><Select value={form.companyId || undefined} onValueChange={v => setForm(f => ({ ...f, companyId: v }))}><SelectTrigger id="draft-company"><SelectValue placeholder="Seleccionar compañía autorizada" /></SelectTrigger><SelectContent>{manageOptions.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label htmlFor="draft-name">Nombre del turno</Label><Input id="draft-name" maxLength={160} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
         <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="draft-start">Inicio</Label><Input id="draft-start" type="datetime-local" value={form.start} onChange={e => setForm(f => ({ ...f, start: e.target.value }))} /></div><div className="space-y-1.5"><Label htmlFor="draft-end">Término</Label><Input id="draft-end" type="datetime-local" value={form.end} onChange={e => setForm(f => ({ ...f, end: e.target.value }))} /></div></div>
         <div className="space-y-1.5"><Label htmlFor="draft-mode">Modalidad</Label><Select value={form.mode} onValueChange={v => setForm(f => ({ ...f, mode: v }))}><SelectTrigger id="draft-mode"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="domiciliaria">Domiciliaria</SelectItem><SelectItem value="mixta">Mixta</SelectItem></SelectContent></Select></div>
@@ -120,8 +142,9 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
         <div className="flex items-center justify-between gap-2 border-t border-border pt-4"><h2 className="font-medium">Cupos</h2><Button type="button" size="sm" variant="outline" disabled={slots.length >= 100} onClick={() => setSlots(prev => [...prev, emptySlot(Math.max(...prev.map(s => s.id)) + 1, defaultSlotMode(form.mode))])}><Plus className="mr-1 h-4 w-4" />Añadir cupo</Button></div>
         {slots.map((slot, index) => <fieldset key={slot.id} className="space-y-3 border-b border-border pb-4"><legend className="mb-2 text-sm text-muted-foreground">Cupo {index + 1}</legend><div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor={`role-${slot.id}`}>Función</Label><Input id={`role-${slot.id}`} maxLength={100} value={slot.role} onChange={e => updSlot(slot.id, { role: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor={`capacity-${slot.id}`}>Cantidad</Label><Input id={`capacity-${slot.id}`} type="number" min={1} max={500} value={slot.capacity} onChange={e => updSlot(slot.id, { capacity: Number(e.target.value) })} /></div><div className="space-y-1.5"><Label htmlFor={`start-${slot.id}`}>Inicio del cupo</Label><Input id={`start-${slot.id}`} type="datetime-local" value={slot.start} onChange={e => updSlot(slot.id, { start: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor={`end-${slot.id}`}>Término del cupo</Label><Input id={`end-${slot.id}`} type="datetime-local" value={slot.end} onChange={e => updSlot(slot.id, { end: e.target.value })} /></div></div><Select value={slot.mode} onValueChange={v => updSlot(slot.id, { mode: v })}><SelectTrigger aria-label={`Modalidad del cupo ${index + 1}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="domiciliaria">Domiciliaria</SelectItem></SelectContent></Select><Button type="button" variant="ghost" size="sm" disabled={slots.length === 1} onClick={() => setSlots(prev => prev.filter(s => s.id !== slot.id))}><Trash2 className="mr-1 h-4 w-4" />Quitar cupo</Button></fieldset>)}
         {check && <div role={check.ok ? 'status' : 'alert'} className={`space-y-1 border p-3 text-sm ${check.ok ? 'border-success/30 bg-success/10' : 'border-destructive/30 bg-destructive/10'}`}>{check.lines.map(l => <p key={l}>{l}</p>)}</div>}
-        <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cerrar</Button><Button type="submit" variant="outline">Revisar borrador</Button><Button type="button" disabled title={pending}>Guardar borrador · Bloqueado</Button></div>
+        <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cerrar</Button><Button type="submit" disabled={cmd.isPending}>Guardar borrador</Button></div>
       </form>
     </DialogContent></Dialog>
+    {selected && orgId && <ShiftManageDialog orgId={orgId} shift={(shifts.data ?? []).find(s => s.id === selected.id) ?? selected} canManage={canManage(selected.company_id)} onClose={() => setSelected(null)} />}
   </section>;
 }
