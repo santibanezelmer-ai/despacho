@@ -56,7 +56,23 @@ export async function executeDutyCommand(orgId: string, command: DutyCommand, tr
   const contract = dutyRpcContract(orgId, command);
   const { data, error } = await transport(contract.name, contract.args);
   if (error) throw new Error(dutyErrorMessage(error.message));
+  if (transport === supabaseTransport && dutyCommandQueuesPush(command)) void flushDutyPush(orgId);
   return data;
+}
+
+/** Assigning or publishing enqueues guard push requests server-side (DB trigger); this only triggers delivery. */
+export function dutyCommandQueuesPush(command: DutyCommand): boolean {
+  const c = command as { kind: string; next?: string };
+  return c.kind === 'assign' || (c.kind === 'transition' && c.next === 'publicado');
+}
+
+/** Delivers pending guard push notifications for the organization. Separate from emergency alerts. */
+export async function flushDutyPush(orgId: string): Promise<void> {
+  try {
+    await supabase.functions.invoke('guard-push', { body: { organization_id: orgId } });
+  } catch (e) {
+    console.warn('[guard-push] delivery deferred', e);
+  }
 }
 
 /** Maps server exceptions to operator-facing Spanish messages; unknown errors keep a generic text. */
