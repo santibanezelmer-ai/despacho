@@ -85,12 +85,27 @@ export function DelegationPanel({ orgId, companies }: { orgId: string; companies
       return (m ?? []).map(x => ({ ...x, name: names.get(x.user_id) || 'Miembro sin nombre' }));
     },
   });
-  const cmd = useDutyCommand(orgId, []);
+  // UI hint only: the server (guard_is_issuer) remains the authority. Reads the latest audited issuer event.
+  const currentIssuer = useQuery({
+    queryKey: ['duty-issuer', orgId],
+    queryFn: async () => {
+      const [{ data: u }, { data }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from('audit_log').select('new_data').eq('organization_id', orgId).eq('table_name', 'guard_permission_issuers').in('action', ['GUARD_ISSUER', 'GUARD_ISSUER_INVALIDATE']).order('created_at', { ascending: false }).limit(1),
+      ]);
+      const after = (data?.[0]?.new_data as { entity_after?: { user_id?: string; revoked_at?: string | null } } | undefined)?.entity_after;
+      return { me: u.user?.id ?? null, issuerId: after && !after.revoked_at ? after.user_id ?? null : null };
+    },
+  });
+  const cmd = useDutyCommand(orgId, [['duty-issuer', orgId]]);
   const [issuer, setIssuer] = useState({ target: '', grant: 'true', reason: '' });
   const [perm, setPerm] = useState({ company: '', target: '', action: 'manage', grant: 'true', reason: '' });
   const list = members.data ?? [];
   const label = (m: { name: string; role: string }) => `${m.name} · ${m.role}`;
-  const targets = list.filter(m => perm.action === 'manage' ? m.role === 'admin' && (!m.company_id || m.company_id === perm.company) : m.role === 'oficial' && (!m.company_id || m.company_id === perm.company));
+  const issuerId = currentIssuer.data?.issuerId ?? null;
+  const issuerName = issuerId ? list.find(m => m.user_id === issuerId)?.name ?? 'Administrador designado' : null;
+  const iAmIssuer = !!issuerId && issuerId === currentIssuer.data?.me;
+  const targets = list.filter(m => m.user_id !== currentIssuer.data?.me && (perm.action === 'manage' ? m.role === 'admin' && (!m.company_id || m.company_id === perm.company) : m.role === 'oficial' && (!m.company_id || m.company_id === perm.company)));
 
   return <div className="space-y-6">
     {isSuper.data && <section className="space-y-2 rounded-md border border-border p-4"><h2 className="font-medium">Emisor autorizado (superadministrador)</h2>
@@ -104,6 +119,8 @@ export function DelegationPanel({ orgId, companies }: { orgId: string; companies
     </section>}
     <section className="space-y-2 rounded-md border border-border p-4"><h2 className="font-medium">Delegar permisos por compañía (Emisor)</h2>
       <p className="text-sm text-muted-foreground">Solo el Emisor autorizado puede delegar; el servidor rechaza cualquier otro intento.</p>
+      <p role="status" className="text-sm">{issuerName ? <>Emisor vigente: <strong>{issuerName}</strong>{iAmIssuer ? ' (usted)' : ''}</> : 'No hay Emisor vigente designado.'}</p>
+      {issuerName && !iAmIssuer && <p role="alert" className="text-sm text-destructive">Su cuenta no es el Emisor. Para delegar, inicie sesión con la cuenta de {issuerName}.</p>}
       <div className="grid gap-2 sm:grid-cols-2">
         <Select value={perm.company || undefined} onValueChange={v => setPerm(s => ({ ...s, company: v, target: '' }))}><SelectTrigger aria-label="Compañía"><SelectValue placeholder="Compañía" /></SelectTrigger><SelectContent>{companies.map(c => <SelectItem key={c.id} value={c.id}>{c.number}ª · {c.name}</SelectItem>)}</SelectContent></Select>
         <Select value={perm.action} onValueChange={v => setPerm(s => ({ ...s, action: v, target: '' }))}><SelectTrigger aria-label="Permiso"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="manage">Gestionar guardias</SelectItem><SelectItem value="validate_attendance">Validar asistencia</SelectItem></SelectContent></Select>
@@ -111,7 +128,7 @@ export function DelegationPanel({ orgId, companies }: { orgId: string; companies
         <Select value={perm.grant} onValueChange={v => setPerm(s => ({ ...s, grant: v }))}><SelectTrigger aria-label="Acción"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Otorgar</SelectItem><SelectItem value="false">Revocar</SelectItem></SelectContent></Select>
       </div>
       <Input aria-label="Motivo de delegación" placeholder="Motivo (obligatorio)" maxLength={1000} value={perm.reason} onChange={e => setPerm(s => ({ ...s, reason: e.target.value }))} />
-      <Button size="sm" disabled={!perm.company || !perm.target || perm.reason.trim().length < 3 || cmd.isPending} onClick={() => cmd.mutate({ kind: 'setPermission', companyId: perm.company, targetUserId: perm.target, action: perm.action as 'manage' | 'validate_attendance', grant: perm.grant === 'true', reason: perm.reason.trim() }, { onSuccess: () => { toast.success('Permiso actualizado.'); setPerm(s => ({ ...s, target: '', reason: '' })); } })}>Guardar</Button>
+      <Button size="sm" disabled={!iAmIssuer || !perm.company || !perm.target || perm.reason.trim().length < 3 || cmd.isPending} onClick={() => cmd.mutate({ kind: 'setPermission', companyId: perm.company, targetUserId: perm.target, action: perm.action as 'manage' | 'validate_attendance', grant: perm.grant === 'true', reason: perm.reason.trim() }, { onSuccess: () => { toast.success('Permiso actualizado.'); setPerm(s => ({ ...s, target: '', reason: '' })); } })}>Guardar</Button>
     </section>
   </div>;
 }
