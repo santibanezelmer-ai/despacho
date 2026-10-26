@@ -127,6 +127,13 @@
       "when": 1792974849427,
       "tag": "0017_guardias_unificada_v3",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792979834994,
+      "tag": "0018_guard_assignment_push_outbox",
+      "breakpoints": true
     }
   ]
 }
