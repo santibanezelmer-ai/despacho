@@ -208,3 +208,8 @@ export function visibleDutyCompanies(companies: DutyCompany[], orgId: string, ro
   const scope = dutyCompanyScope(role, companyId);
   return companies.filter(c => c.organization_id === orgId && (scope === 'organization' || (scope === 'company' && c.id === companyId)));
 }
+/** Companies a personal (own) view may offer as filters: only those present in the user's own assignments. */
+export function ownScopeCompanies(companies: DutyCompany[], assignmentCompanyIds: string[]): DutyCompany[] {
+  const ids = new Set(assignmentCompanyIds);
+  return companies.filter(c => ids.has(c.id));
+}

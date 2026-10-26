@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table';
 import { ShiftManageDialog, DelegationPanel, useDutyCommand } from '@/components/duty/DutyAdmin';
 import { toast } from 'sonner';
-import { COMPANY_DUTY_INTEGRATION, fetchManageableCompanies, type DutyShiftRow, buildDraftCommand, defaultSlotMode, dutyCompanyScope, dutyStatusOptions, incompatibleSlotIndexes, fetchDutyShifts, fetchMyDutyAssignments, visibleDutyCompanies, type DraftFormSlot, type DutyCompany } from '@/lib/companyDuty';
+import { COMPANY_DUTY_INTEGRATION, fetchManageableCompanies, type DutyShiftRow, buildDraftCommand, defaultSlotMode, dutyCompanyScope, dutyStatusOptions, incompatibleSlotIndexes, fetchDutyShifts, fetchMyDutyAssignments, visibleDutyCompanies, ownScopeCompanies, type DraftFormSlot, type DutyCompany } from '@/lib/companyDuty';
 
 const pending = COMPANY_DUTY_INTEGRATION.message;
 const STATUS: Record<string, string> = { borrador: 'Borrador', publicado: 'Publicado', en_curso: 'En curso', finalizado: 'Finalizado', cancelado: 'Cancelado', asignado: 'Asignado', propuesto: 'Propuesto', retirado: 'Retirado', reemplazado: 'Reemplazado', confirmado: 'Confirmado', rechazado: 'Rechazado' };
@@ -47,7 +47,9 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
       }
       const { data, error } = await query;
       if (error) throw error;
-      return visibleDutyCompanies((data ?? []) as DutyCompany[], orgId, orgRole, currentOrg?.company_id ?? null);
+      const list = (data ?? []) as DutyCompany[];
+      // Personal (own) view needs real company names for its rows; roster visibility stays governed by visibleDutyCompanies.
+      return scope === 'own' ? list : visibleDutyCompanies(list, orgId, orgRole, currentOrg?.company_id ?? null);
     },
   });
   const shifts = useQuery({ queryKey: ['duty-shifts', orgId], enabled: !!orgId && scope !== 'own', retry: false, refetchInterval: 5000, queryFn: () => fetchDutyShifts(orgId!) });
@@ -113,7 +115,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
       {[{ name: 'Hoy', icon: CalendarDays }, { name: 'Próximas', icon: Clock }, { name: 'En curso', icon: ListChecks }, { name: 'Finalizadas', icon: CheckCircle2 }].map((item, i) => <div key={item.name} className="rounded-md border border-border bg-card p-4"><div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">{item.name}<item.icon className="h-4 w-4 text-info" /></div><p className="mt-2 text-2xl font-bold">{stats ? stats[i] : '—'}</p></div>)}
     </div>
     <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1.5"><Label htmlFor="duty-company">Compañía</Label><Select value={activeCompany} onValueChange={setCompany} disabled={scope === 'own' || companies.isLoading || !!companies.error}><SelectTrigger id="duty-company"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{scope === 'own' ? 'Según sus asignaciones' : 'Todas las autorizadas'}</SelectItem>{options.map(c => <SelectItem key={c.id} value={c.id}>{c.number}ª · {c.name}</SelectItem>)}</SelectContent></Select></div>
+      <div className="space-y-1.5"><Label htmlFor="duty-company">Compañía</Label><Select value={activeCompany} onValueChange={setCompany} disabled={companies.isLoading || !!companies.error}><SelectTrigger id="duty-company"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{scope === 'own' ? 'Según sus asignaciones' : 'Todas las autorizadas'}</SelectItem>{(scope === 'own' ? ownScopeCompanies(options, (mine.data ?? []).map(a => a.company_id)) : options).map(c => <SelectItem key={c.id} value={c.id}>{c.number}ª · {c.name}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-1.5"><Label htmlFor="duty-date">Fecha</Label><Input id="duty-date" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
       <div className="space-y-1.5"><Label htmlFor="duty-status">Estado</Label><Select value={status} onValueChange={setStatus}><SelectTrigger id="duty-status"><SelectValue /></SelectTrigger><SelectContent>{[['all','Todos'], ...dutyStatusOptions(scope).map(v => [v, STATUS[v] ?? v])].map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
       <Button variant="ghost" onClick={resetFilters}>Limpiar filtros</Button>
