@@ -62,8 +62,7 @@ export async function executeDutyCommand(orgId: string, command: DutyCommand, tr
 
 /** Assigning or publishing enqueues guard push requests server-side (DB trigger); this only triggers delivery. */
 export function dutyCommandQueuesPush(command: DutyCommand): boolean {
-  const c = command as { kind: string; next?: string };
-  return c.kind === 'assign' || (c.kind === 'transition' && c.next === 'publicado');
+  return command.kind === 'assign' || command.kind === 'publish';
 }
 
 /** Delivers pending guard push notifications for the organization. Separate from emergency alerts. */
