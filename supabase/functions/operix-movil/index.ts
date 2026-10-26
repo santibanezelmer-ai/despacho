@@ -149,12 +149,12 @@ Deno.serve(async (req) => {
 
       const { data: codeRow } = await supabase
         .from('vehicle_device_codes')
-        .select('id, organization_id, label, expires_at, used_at, used_by_device_id')
+        .select('id, organization_id, label, expires_at, used_at, used_by_device_id, is_permanent, vehicle_id, revoked_at')
         .eq('code', code)
         .maybeSingle();
 
-      if (!codeRow) return json({ error: 'Código no válido' }, 410);
-      if (new Date(codeRow.expires_at).getTime() < Date.now()) {
+      if (!codeRow || codeRow.revoked_at) return json({ error: 'Código no válido' }, 410);
+      if (!codeRow.is_permanent && new Date(codeRow.expires_at).getTime() < Date.now()) {
         return json({ error: 'El código ha expirado' }, 410);
       }
 
@@ -162,6 +162,52 @@ Deno.serve(async (req) => {
       const platform = String(body?.platform ?? 'unknown').slice(0, 40);
       const token = newDeviceToken();
       const tokenHash = await sha256(token);
+
+      // ---- Código permanente de móvil: reutilizable, asocia el móvil ----
+      if (codeRow.is_permanent && codeRow.vehicle_id) {
+        const now = new Date().toISOString();
+        // Revoca dispositivos anteriores de ese móvil (una sola tablet activa por móvil).
+        await supabase
+          .from('vehicle_devices')
+          .update({ status: 'revoked', revoked_at: now, vehicle_id: null })
+          .eq('organization_id', codeRow.organization_id)
+          .eq('vehicle_id', codeRow.vehicle_id)
+          .eq('status', 'active');
+
+        const { data: device, error } = await supabase
+          .from('vehicle_devices')
+          .insert({
+            organization_id: codeRow.organization_id,
+            vehicle_id: codeRow.vehicle_id,
+            vehicle_changed_at: now,
+            name: deviceName,
+            platform,
+            token_hash: tokenHash,
+          })
+          .select('id')
+          .single();
+        if (error || !device) return json({ error: error?.message ?? 'No se pudo crear el dispositivo' }, 400);
+
+        await supabase
+          .from('vehicle_device_codes')
+          .update({ last_used_at: now, used_by_device_id: device.id })
+          .eq('id', codeRow.id);
+
+        const [{ data: org }, { data: vehicle }] = await Promise.all([
+          supabase.from('organizations').select('id, name, time_format').eq('id', codeRow.organization_id).maybeSingle(),
+          supabase.from('vehicles').select('id, code, type, status').eq('id', codeRow.vehicle_id).maybeSingle(),
+        ]);
+
+        return json({
+          device_id: device.id,
+          device_token: token,
+          device_name: deviceName,
+          organization: org,
+          vehicle,
+          vehicles: await vehiclesOfOrg(codeRow.organization_id),
+        });
+      }
+
 
       // Reserva atómica del código: solo un intento puede pasar de aquí.
       const { data: claimed } = await supabase
@@ -376,6 +422,95 @@ Deno.serve(async (req) => {
         .eq('organization_id', device.organization_id);
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true, status });
+    }
+
+    // ---------- 5. Claves operativas (solicitud; la consola confirma) ----------
+    if (action === 'operational-key') {
+      if (!device.vehicle_id) return json({ error: 'El dispositivo no tiene un móvil asociado' }, 409);
+      const rawKey = body?.key ?? body?.status;
+      const rawMsg = typeof body?.message === 'string' ? body.message.trim().slice(0, 4000)
+        : typeof body?.pre_report === 'string' ? body.pre_report.trim().slice(0, 4000) : '';
+      const message = rawMsg.length > 0 ? rawMsg : null;
+      let key = rawKey == null ? '' : String(rawKey).trim().toUpperCase();
+      if (key === 'PREINFORME' || (!key && message)) key = 'PRE-INFORME';
+      const ALLOWED = ['6-3', '6-7', '6-8', '6-9', '6-10', 'PRE-INFORME'];
+      if (!ALLOWED.includes(key)) return json({ error: 'Clave no válida', allowed: ALLOWED }, 400);
+      if (key === 'PRE-INFORME' && !message) return json({ error: 'El pre-informe requiere un mensaje' }, 400);
+
+      const { data: link } = await supabase
+        .from('emergency_vehicles')
+        .select('id, emergency_id')
+        .eq('organization_id', device.organization_id)
+        .eq('vehicle_id', device.vehicle_id)
+        .is('released_at', null)
+        .order('assigned_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!link) return json({ error: 'El móvil no está asignado a una emergencia activa' }, 409);
+
+      const ts = body?.timestamp ?? body?.reported_at;
+      const d = ts ? new Date(ts) : new Date();
+      const reportedAt = Number.isNaN(d.getTime()) || d.getTime() > Date.now() + 120_000
+        ? new Date().toISOString()
+        : d.toISOString();
+      const lat = num(body?.latitude);
+      const lng = num(body?.longitude);
+      const odo = num(body?.odometer_end ?? body?.odometer);
+
+      const base = {
+        organization_id: device.organization_id,
+        emergency_id: link.emergency_id,
+        emergency_vehicle_id: link.id,
+        vehicle_id: device.vehicle_id,
+        device_id: device.id,
+        reported_at: reportedAt,
+        latitude: lat !== null && Math.abs(lat) <= 90 ? lat : null,
+        longitude: lng !== null && Math.abs(lng) <= 180 ? lng : null,
+      };
+      const created: unknown[] = [];
+
+      // Clave operativa: una sola pendiente por móvil (la anterior queda reemplazada).
+      if (key !== 'PRE-INFORME') {
+        await supabase
+          .from('vehicle_operational_requests')
+          .update({ status: 'reemplazada', resolved_at: new Date().toISOString() })
+          .eq('emergency_vehicle_id', link.id)
+          .eq('status', 'pendiente')
+          .neq('requested_status', 'PRE-INFORME');
+        const { data, error } = await supabase
+          .from('vehicle_operational_requests')
+          .insert({ ...base, requested_status: key, odometer_end: odo !== null && odo >= 0 ? Math.round(odo) : null })
+          .select('id, requested_status, reported_at, status')
+          .single();
+        if (error) return json({ error: error.message }, 400);
+        created.push(data);
+      }
+
+      // Pre-informe (solo o adjunto a una clave): ticket independiente, se acumulan.
+      if (message) {
+        const { data, error } = await supabase
+          .from('vehicle_operational_requests')
+          .insert({ ...base, requested_status: 'PRE-INFORME', message })
+          .select('id, requested_status, reported_at, status')
+          .single();
+        if (error) return json({ error: error.message }, 400);
+        created.push(data);
+      }
+
+      await touchDevice(device);
+      const label = key === 'PRE-INFORME' ? 'Pre-informe' : message ? `${key} + pre-informe` : key;
+      return json({ ok: true, request: created[0], requests: created, message: `${label} enviado a Central · Pendiente de confirmación` });
+    }
+
+    if (action === 'operational-key-status') {
+      if (!device.vehicle_id) return json({ requests: [] });
+      const { data } = await supabase
+        .from('vehicle_operational_requests')
+        .select('id, requested_status, reported_at, status, resolved_at')
+        .eq('vehicle_id', device.vehicle_id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return json({ requests: data ?? [] });
     }
 
     return json({ error: 'Acción no soportada' }, 404);

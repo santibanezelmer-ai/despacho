@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useVehicleAvailability } from '@/lib/vehicleAvailability';
+import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailabilityPicker';
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
@@ -20,6 +22,11 @@ import AssignedVehiclesManager from './AssignedVehiclesManager';
 
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
+import LocationSearch from './LocationSearch';
+import { evaluateLocation, type GeoCheck } from '@/lib/geoJurisdiction';
+import TerritoryStatus from './TerritoryStatus';
+import { useOrganizationLocation } from '@/hooks/useStations';
+import { findNearestRouteKm, formatRouteKmAddress } from '@/lib/routeKilometer';
 
 
 
@@ -47,6 +54,7 @@ interface Props {
 export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, onClose }: Props) {
   const [activeTab, setActiveTab] = useState('location');
   const [editAddress, setEditAddress] = useState(emergency.address);
+  const [addressFocusTick, setAddressFocusTick] = useState(0);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(
     emergency.latitude && emergency.longitude ? { lat: emergency.latitude, lng: emergency.longitude } : null
   );
@@ -56,6 +64,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const [callerPhone, setCallerPhone] = useState('');
   const [savingPhone, setSavingPhone] = useState(false);
   const [locRequestId, setLocRequestId] = useState<string | null>(null);
+  const { data: orgLocation } = useOrganizationLocation();
+  const [lastPick, setLastPick] = useState<{ lat: number; lng: number; check: GeoCheck } | null>(null);
   const [locFix, setLocFix] = useState<LocationFix | null>(null);
   const [locationSource, setLocationSource] = useState<string | null>(null);
   const [sharedCoords, setSharedCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -116,10 +126,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     return () => { cancelled = true; };
   }, [emergency.id, isClosed]);
 
-  const { data: allVehicles } = useVehicles({ refetchInterval: 5000 });
-  const available = (allVehicles ?? []).filter(
-    v => v.status === 'disponible' && !assignedVehicleIds.includes(v.id)
-  );
+  const availabilityAll = useVehicleAvailability(emergency.id);
+  const available = availabilityAll.filter(v => !assignedVehicleIds.includes(v.id));
   const [selectedNewVehicles, setSelectedNewVehicles] = useState<string[]>([]);
 
   const updateAddress = useUpdateAddress();
@@ -132,15 +140,21 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
   const handleLocationFix = useCallback((fix: LocationFix) => {
     setLocFix(fix);
     setSharedCoords({ lat: fix.latitude, lng: fix.longitude });
-    if (operatorLocked) {
-      toast.info('Ubicación compartida recibida — se conserva la corregida por el operador');
-      return;
-    }
-    setMapCoords({ lat: fix.latitude, lng: fix.longitude });
-    setLocationSource('compartida');
-    toast.success('Ubicación recibida y asignada al mapa');
-    queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
-  }, [queryClient, operatorLocked]);
+    // La ubicación compartida solo se recepciona: nunca mueve el marcador,
+    // porque quien la envía puede retirarse del lugar del incidente.
+    toast.info('Ubicación compartida recibida — el marcador no se mueve', {
+      id: 'location-received',
+      action: {
+        label: 'Usar en el mapa',
+        onClick: () => {
+          setMapCoords({ lat: fix.latitude, lng: fix.longitude });
+          setLocationSource('compartida');
+          queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+        },
+      },
+      duration: 12000,
+    });
+  }, [queryClient]);
 
   const handleSavePhone = async () => {
     const cleaned = callerPhone.trim();
@@ -177,6 +191,18 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     });
   };
 
+  // Reconoce ruta oficial + km cuando el operador mueve el marcador a mano.
+  const recognizeRoute = async (lat: number, lng: number) => {
+    const r = await findNearestRouteKm(lat, lng);
+    if (!r) return;
+    const text = formatRouteKmAddress(r);
+    toast.info(`Punto sobre ${text}`, {
+      description: `A ${r.distanceM} m del eje oficial (Vialidad/MOP).`,
+      duration: 10000,
+      action: { label: 'Usar en dirección', onClick: () => setEditAddress(text) },
+    });
+  };
+
   const placeMarker = (lat: number, lng: number) => {
     if (!leafletMapRef.current) return;
     if (markerRef.current) {
@@ -188,6 +214,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       markerRef.current.on('dragend', () => {
         const pos = markerRef.current.getLatLng();
         setMapCoords({ lat: pos.lat, lng: pos.lng });
+        void recognizeRoute(pos.lat, pos.lng);
       });
     }
   };
@@ -213,6 +240,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
       const { lat, lng } = e.latlng;
       setMapCoords({ lat, lng });
       placeMarker(lat, lng);
+      void recognizeRoute(lat, lng);
     });
 
 
@@ -283,8 +311,24 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
 
   const handleSaveLocation = () => {
     if (!mapCoords) return;
+    const origin = orgLocation?.latitude != null && orgLocation?.longitude != null
+      ? { lat: Number(orgLocation.latitude), lng: Number(orgLocation.longitude) } : null;
+    // Distancia siempre sobre la coordenada final (incluye arrastre manual);
+    // la revisión por comuna se mantiene si el marcador no se movió desde la sugerencia.
+    const distanceCheck = evaluateLocation({ latitude: mapCoords.lat, longitude: mapCoords.lng, trusted: true }, origin);
+    const samePoint = lastPick && Math.abs(lastPick.lat - mapCoords.lat) < 1e-6 && Math.abs(lastPick.lng - mapCoords.lng) < 1e-6;
+    const reasons = [
+      ...(distanceCheck.status === 'outside' ? distanceCheck.reasons : []),
+      ...(samePoint && lastPick?.check.status === 'review' ? lastPick.check.reasons : []),
+    ];
+    let exception: string | undefined;
+    if (reasons.length) {
+      const ok = window.confirm(`Ubicación fuera de lo esperado:\n\n${reasons.join('\n')}\n\n¿Confirmas que es correcta (excepción operacional)?`);
+      if (!ok) return;
+      exception = reasons.join(' ');
+    }
     updateLocation.mutate(
-      { id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng },
+      { id: emergency.id, latitude: mapCoords.lat, longitude: mapCoords.lng, exception },
       { onSuccess: () => setLocationSource('operador') },
     );
   };
@@ -405,6 +449,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         <Input
                           value={editAddress}
                           onChange={e => setEditAddress(e.target.value)}
+                          onFocus={() => setAddressFocusTick(t => t + 1)}
+                          onClick={() => setAddressFocusTick(t => t + 1)}
                           className="min-w-0 flex-1 bg-muted/50"
                           spellCheck
                           lang="es-CL"
@@ -415,6 +461,14 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                           {updateAddress.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         </Button>
                       </div>
+                      {!isClosed && <p className="mt-1 text-[10px] text-muted-foreground">La ubicación se reconoce automáticamente al escribir (vía y comuna, ruta y km, o puente). Puedes ajustar el texto o mover el marcador en el mapa.</p>}
+                      {!isClosed && (
+                        <LocationSearch
+                          query={editAddress}
+                          searchSignal={addressFocusTick}
+                          onSelect={(c, check) => { setMapCoords({ lat: c.latitude, lng: c.longitude }); setLastPick(check ? { lat: c.latitude, lng: c.longitude, check } : null); }}
+                        />
+                      )}
                     </div>
 
                     {!isClosed && (
@@ -469,6 +523,7 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                       <span>Haz clic para marcar o arrastra el marcador para ajustar. La rueda del mouse sobre el mapa acerca o aleja.</span>
                       {mapCoords && <span className="font-mono">{mapCoords.lat.toFixed(5)}, {mapCoords.lng.toFixed(5)}</span>}
                     </div>
+                    {mapCoords && <div className="mt-2"><TerritoryStatus latitude={mapCoords.lat} longitude={mapCoords.lng} homeLatitude={orgLocation?.latitude} homeLongitude={orgLocation?.longitude} /></div>}
                     <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
                       <p>
                         Origen de la ubicación:{' '}
@@ -477,9 +532,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
                         </span>
                       </p>
                       {sharedCoords && (
-                        <p className="font-mono">
-                          Ubicación compartida recibida: {sharedCoords.lat.toFixed(5)}, {sharedCoords.lng.toFixed(5)}
-                        </p>
+                        <div className="space-y-1">
+                          <p className="font-mono">
+                            Ubicación compartida recibida: {sharedCoords.lat.toFixed(5)}, {sharedCoords.lng.toFixed(5)}
+                          </p>
+                          <TerritoryStatus latitude={sharedCoords.lat} longitude={sharedCoords.lng} homeLatitude={orgLocation?.latitude} homeLongitude={orgLocation?.longitude} />
+                        </div>
                       )}
                       {operatorLocked && (
                         <p>Las ubicaciones que lleguen por el enlace ya no reemplazan esta corrección.</p>
@@ -499,22 +557,12 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               <p className="text-xs text-muted-foreground">No hay móviles disponibles</p>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {available.map(v => (
-                    <button
-                      key={v.id}
-                      onClick={() => setSelectedNewVehicles(prev =>
-                        prev.includes(v.id) ? prev.filter(x => x !== v.id) : [...prev, v.id]
-                      )}
-                      className={`rounded-md border px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
-                        selectedNewVehicles.includes(v.id)
-                          ? 'border-emergency bg-emergency/20 text-emergency'
-                          : 'border-border bg-muted/30 text-muted-foreground hover:border-foreground/30'
-                      }`}
-                    >
-                      {v.code} · {v.type}
-                    </button>
-                  ))}
+                <div className="mb-2">
+                  <VehicleAvailabilityPicker
+                    items={available}
+                    selected={selectedNewVehicles}
+                    onToggle={(id) => setSelectedNewVehicles(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                  />
                 </div>
                 {selectedNewVehicles.length > 0 && (
                   <Button size="sm" onClick={handleAssignVehicles} disabled={assignVehicles.isPending}>

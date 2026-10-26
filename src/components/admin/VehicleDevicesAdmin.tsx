@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Smartphone, Plus, Copy, Ban, Trash2, Truck, Clock, AlertTriangle } from 'lucide-react';
+import { Smartphone, Plus, Copy, Ban, Trash2, Truck, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useVehicles } from '@/hooks/useVehicles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useVehicleDevices, useVehicleDeviceCodes, useVehicleDeviceActions } from '@/hooks/useVehicleDevices';
+import { useVehicleDevices, useVehicleDeviceCodes, useVehicleDeviceActions, usePermanentDeviceCodes } from '@/hooks/useVehicleDevices';
 import { useVehicleLastPositions, formatPositionAge, isPositionStale } from '@/hooks/useVehiclePositions';
 
 const EXPIRY_OPTIONS = [
@@ -25,16 +26,20 @@ export default function VehicleDevicesAdmin() {
   const { isOrgAdmin } = useOrganization();
   const { data: devices = [] } = useVehicleDevices();
   const { data: codes = [] } = useVehicleDeviceCodes();
+  const { data: permCodes = [] } = usePermanentDeviceCodes();
+  const { data: vehicles = [] } = useVehicles() as { data?: any[] };
   const { data: positions = [] } = useVehicleLastPositions({ refetchInterval: 10000 });
-  const { generateCode, revokeDevice, cancelCode } = useVehicleDeviceActions();
+  const { generateCode, revokeDevice, cancelCode, generatePermanentCode } = useVehicleDeviceActions();
 
   const [label, setLabel] = useState('');
   const [hours, setHours] = useState('24');
   const [toRevoke, setToRevoke] = useState<string | null>(null);
+  const [toRegen, setToRegen] = useState<{ id: string; code: string } | null>(null);
 
   if (!isOrgAdmin) return null;
 
   const posByVehicle = new Map(positions.map((p) => [p.vehicle_id, p]));
+  const permByVehicle = new Map(permCodes.map((c) => [c.vehicle_id, c]));
 
   const copy = async (code: string) => {
     try {
@@ -50,6 +55,15 @@ export default function VehicleDevicesAdmin() {
       const created = await generateCode.mutateAsync({ label, hours: Number(hours) });
       setLabel('');
       toast({ title: 'Código generado', description: `${created.code} — de un solo uso` });
+    } catch (e) {
+      toast({ title: 'Error', description: (e as Error).message, variant: 'destructive' });
+    }
+  };
+
+  const handlePermanent = async (vehicleId: string, vehicleCode: string) => {
+    try {
+      const c = await generatePermanentCode.mutateAsync({ vehicleId, vehicleCode });
+      toast({ title: `Código permanente de ${vehicleCode}`, description: c.code });
     } catch (e) {
       toast({ title: 'Error', description: (e as Error).message, variant: 'destructive' });
     }
@@ -97,7 +111,58 @@ export default function VehicleDevicesAdmin() {
         </Button>
       </div>
 
-      {/* Códigos vigentes */}
+      {/* Códigos permanentes por móvil */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">
+          Códigos permanentes por móvil — siempre visibles; reutilizables si la tablet se cambia o reinstala
+        </p>
+        {vehicles.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+            No hay móviles registrados.
+          </p>
+        ) : (
+          vehicles.map((v: any) => {
+            const pc = permByVehicle.get(v.id);
+            const dev = devices.find((d) => d.vehicle_id === v.id && d.status === 'active');
+            return (
+              <div key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {v.code}
+                    {v.companies?.name && <span className="ml-2 text-[11px] font-normal text-muted-foreground">{v.companies.name}</span>}
+                  </p>
+                  {pc ? (
+                    <p className="font-mono text-base font-bold tracking-widest text-foreground">{pc.code}</p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">Sin código permanente</p>
+                  )}
+                  <p className="text-[11px] text-muted-foreground">
+                    {dev ? `Tablet: ${dev.name}${dev.last_seen_at ? ` · vista ${formatPositionAge(dev.last_seen_at)}` : ''}` : 'Sin tablet vinculada'}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  {pc && (
+                    <Button size="icon" variant="ghost" onClick={() => copy(pc.code)} title="Copiar">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={generatePermanentCode.isPending}
+                    onClick={() => (pc ? setToRegen({ id: v.id, code: v.code }) : handlePermanent(v.id, v.code))}
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                    {pc ? 'Regenerar' : 'Crear código'}
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Códigos temporales vigentes */}
       {codes.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Códigos vigentes sin usar</p>
@@ -164,6 +229,19 @@ export default function VehicleDevicesAdmin() {
                       </span>
                     )}
                   </div>
+                  {d.activation_codes?.[0]?.code && (
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <span>
+                        Código de activación:{' '}
+                        <span className="font-mono font-bold tracking-widest text-foreground">{d.activation_codes[0].code}</span>
+                        {d.activation_codes[0].is_permanent ? ' (permanente)' : ''}
+                        {' · '}activado {new Date(d.activated_at).toLocaleString('es-CL')}
+                      </span>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copy(d.activation_codes![0].code)} title="Copiar">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 {d.status === 'active' && (
                   <Button size="sm" variant="outline" onClick={() => setToRevoke(d.id)}>
@@ -176,6 +254,29 @@ export default function VehicleDevicesAdmin() {
           })
         )}
       </div>
+
+      <AlertDialog open={!!toRegen} onOpenChange={(o) => !o && setToRegen(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Regenerar código de {toRegen?.code}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El código actual dejará de funcionar para nuevas activaciones. La tablet ya vinculada
+              sigue operando hasta que se active otra con el nuevo código.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toRegen) handlePermanent(toRegen.id, toRegen.code);
+                setToRegen(null);
+              }}
+            >
+              Regenerar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!toRevoke} onOpenChange={(o) => !o && setToRevoke(null)}>
         <AlertDialogContent>

@@ -94,3 +94,23 @@ Lista los móviles de la organización del dispositivo.
 
 - `useVehicleDevices` / `useVehicleDeviceCodes` / `useVehicleDeviceActions`: administración desde el panel de la organización.
 - `useVehicleLastPositions` + `formatPositionAge` / `isPositionStale`: última posición por móvil, lista para usarse en Mapa Operativo, Pantalla Central, `/pantalla-mapa`, ficha del móvil y emergencia (Leaflet + OpenStreetMap, sin cambios de proveedor).
+
+## POST /operational-key
+Header `x-device-token`. Body: `{ "key": "6-3" | "6-8" | "6-9" | "6-10", "timestamp"?: ISO, "latitude"?, "longitude"?, "odometer_end"?: number }`.
+Crea una solicitud **pendiente** para la emergencia activa del móvil. No cambia nada por sí sola: la Central la acepta o descarta. Una nueva solicitud reemplaza la pendiente anterior.
+Respuesta: `{ ok, request: { id, requested_status, reported_at, status }, message }`. 409 si el móvil no está asignado.
+
+## POST /operational-key-status
+Devuelve las últimas 5 solicitudes del móvil con su estado (`pendiente`, `aceptada`, `rechazada`, `reemplazada`).
+
+## Códigos permanentes por móvil
+`vehicle_device_codes.is_permanent = true` + `vehicle_id`: no expiran ni se consumen. `/activate` con un código permanente crea un dispositivo ya asociado al móvil (respuesta incluye `vehicle`), revoca la tablet activa anterior de ese móvil y registra `last_used_at`. Regenerar marca el código anterior con `revoked_at`. Los códigos temporales (un solo uso) siguen igual.
+
+## Pre-informe desde Operix Móvil
+
+`POST /operational-key` acepta un texto opcional `message` (máx. 4000 caracteres):
+
+- Solo pre-informe: `{ "key": "PRE-INFORME", "message": "..." }` (o `key: null` con `message`).
+- Clave + pre-informe: `{ "key": "6-10", "message": "..." }` — crea dos avisos separados.
+
+En la consola aparece un aviso amarillo con el texto. Aceptar lo **agrega** (nunca reemplaza) al pre-informe oficial con el prefijo `[MÓVIL HH:MM]` y deja registro en la bitácora. Varios pre-informes pendientes se acumulan; no se reemplazan entre sí.

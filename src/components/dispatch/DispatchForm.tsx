@@ -4,18 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useVehicles } from '@/hooks/useVehicles';
+import { useVolunteers } from '@/hooks/useVolunteers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useOrganizationLandmarks } from '@/hooks/useOrganizationLandmarks';
+import { autoGeocodeDetailed } from '@/lib/autoGeocode';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useCompanies } from '@/hooks/useCompanies';
 import { getPlayableToneSrc } from '@/services/toneCache';
 import { enqueueDispatch, isNetworkError, performDispatch, type PendingDispatch } from '@/services/offlineDispatchQueue';
+import { findVehicleConflicts } from '@/lib/vehicleAvailability';
+import { useVehicleAvailability } from '@/lib/vehicleAvailability';
+import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailabilityPicker';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
+import TerritoryStatus from './TerritoryStatus';
+import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
 
 import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
 
@@ -103,6 +111,31 @@ function stopGlobalTones() {
   globalOnUpdate?.(false, '');
 }
 
+// ── Claves de salida autorizada / otros servicios (10-9 y similares) ──
+const AUTHORIZED_SERVICE_TERMS = [
+  'otros servicios',
+  'otro servicio',
+  'servicio especial',
+  'servicios especiales',
+  'traslado',
+  'salida autorizada',
+];
+
+const AUTHORIZER_RANKS = [
+  'Superintendente',
+  'Comandante',
+  '2° Comandante',
+  'Capitán',
+  'Oficial de Guardia',
+];
+
+function isAuthorizedServiceKey(key: { code: string; name: string }): boolean {
+  const code = (key.code ?? '').replace(/\s/g, '').toLowerCase();
+  if (code === '10-9' || code === '109') return true;
+  const name = (key.name ?? '').toLowerCase();
+  return AUTHORIZED_SERVICE_TERMS.some(term => name.includes(term));
+}
+
 interface Props {
   emergencyKey: EmergencyKeyRow;
   onClose: () => void;
@@ -115,7 +148,9 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const queryClient = useQueryClient();
   const { data: allVehicles } = useVehicles();
   const { data: companies } = useCompanies();
-  const available = (allVehicles ?? []).filter(v => v.status === 'disponible');
+  const { data: volunteers } = useVolunteers();
+  const availability = useVehicleAvailability();
+  const isServiceKey = isAuthorizedServiceKey(emergencyKey);
 
   const [draft] = useState(() => loadDraft(emergencyKey.id));
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>(draft.selectedVehicleIds ?? []);
@@ -125,8 +160,21 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [callerPhone, setCallerPhone] = useState(draft.callerPhone ?? '');
   const [observations, setObservations] = useState(draft.observations ?? '');
   const [submitting, setSubmitting] = useState(false);
+  const { data: localLandmarks = [] } = useOrganizationLandmarks();
+  const { data: orgGeo } = useQuery({
+    queryKey: ['org-geo-context', orgId],
+    enabled: !!orgId,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('organizations').select('commune, region, latitude, longitude').eq('id', orgId!).maybeSingle();
+      return data;
+    },
+  });
+  // Id estable por ventana: reintentar no crea una emergencia duplicada
+  const [dispatchId] = useState(() => crypto.randomUUID());
   const [playingTones, setPlayingTones] = useState(false);
   const [currentTone, setCurrentTone] = useState('');
+  const [authorizerJustPicked, setAuthorizerJustPicked] = useState(false);
   const [locationRequestId, setLocationRequestId] = useState<string | null>(draft.locationRequestId ?? null);
   const [locationFix, setLocationFix] = useState<LocationFix | null>(draft.locationFix ?? null);
 
@@ -159,7 +207,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         ? prev
         : fix.address ?? `${fix.latitude.toFixed(6)}, ${fix.longitude.toFixed(6)}`
     );
-    toast.success('Ubicación recibida correctamente.');
+    toast.success('Ubicación recibida correctamente.', { id: 'location-received' });
   }, []);
 
   const handleManualCoords = useCallback((lat: number, lng: number) => {
@@ -186,6 +234,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   }, []);
 
   const buildToneQueue = useCallback((vehicleIds: string[]) => {
+    // 10-9 / otros servicios: salida administrativa, sin tonos en consola.
+    if (isAuthorizedServiceKey(emergencyKey)) return [];
     const companyMap = new Map<string, { tone_url: string | null; name: string; number: number }>();
     for (const vid of vehicleIds) {
       const v = (allVehicles ?? []).find(veh => veh.id === vid);
@@ -219,6 +269,21 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     return queue;
   }, [allVehicles, companies, emergencyKey]);
 
+  // El propio campo "Autorizado por" actúa como buscador de personal (un solo input)
+  const authorizerMatches = (() => {
+    if (!isServiceKey || authorizerJustPicked) return [];
+    const q = callerName.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return (volunteers ?? [])
+      .filter((v: any) => {
+        const name = (v.name ?? '').toLowerCase();
+        const code = String(v.code ?? v.internal_id ?? v.registration_number ?? '').toLowerCase();
+        const rut = String(v.rut ?? '').toLowerCase();
+        return name.includes(q) || (code && code.includes(q)) || (rut && rut.includes(q));
+      })
+      .slice(0, 6);
+  })();
+
   const toggleVehicle = (id: string) => {
     setSelectedVehicleIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -231,9 +296,40 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       return;
     }
 
+    // Bloquea coordenadas fuera de rango antes de guardar el despacho.
+    // No corrige la coordenada: el operador debe reubicar el marcador.
+    if (locationFix && !isValidLatLng(locationFix.latitude, locationFix.longitude)) {
+      toast.error(coordRangeMessage(locationFix.latitude, locationFix.longitude));
+      return;
+    }
+
     setSubmitting(true);
+
+    // Sin ubicación marcada: reconoce la dirección automáticamente (sin mostrar opciones).
+    let coords: { latitude: number; longitude: number } | null =
+      locationFix ? { latitude: locationFix.latitude, longitude: locationFix.longitude } : null;
+    if (!coords && navigator.onLine) {
+      const near = orgGeo?.latitude != null && orgGeo?.longitude != null
+        ? { lat: Number(orgGeo.latitude), lng: Number(orgGeo.longitude) } : null;
+      const origin = near ? { ...near, commune: orgGeo?.commune ?? null, region: (orgGeo as any)?.region ?? null } : null;
+      const outcome = await Promise.race([
+        autoGeocodeDetailed(address, { landmarks: localLandmarks, near, defaultContext: orgGeo?.commune ?? null, origin }),
+        new Promise<null>(r => setTimeout(() => r(null), 6000)),
+      ]).catch(() => null);
+      const found = outcome?.result ?? null;
+      if (found && isValidLatLng(found.latitude, found.longitude)) {
+        coords = { latitude: found.latitude, longitude: found.longitude };
+        toast.success(`Dirección ubicada automáticamente (${found.source}).`);
+      } else if (outcome?.rejected.length) {
+        // Coincidencia dudosa (otra comuna o fuera del radio): nunca se confirma en silencio.
+        toast.warning(`La dirección coincide con un lugar que requiere revisión (${outcome.rejected[0].check.reasons.join(' ')}). Se despacha sin marcador; revísalo en Acciones → Ubicación.`, { duration: 10000 });
+      } else {
+        toast.warning('No se pudo ubicar la dirección en el mapa. Se despacha sin marcador; ajústalo desde Acciones → Ubicación.', { duration: 8000 });
+      }
+    }
+
     const payload: PendingDispatch = {
-      clientId: crypto.randomUUID(),
+      clientId: dispatchId,
       orgId: orgId!,
       userId: user?.id ?? null,
       keyId: emergencyKey.id,
@@ -244,8 +340,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       callerName: callerName.trim() || null,
       callerPhone: callerPhone.trim() || null,
       observations: observations.trim() || null,
-      latitude: locationFix?.latitude ?? null,
-      longitude: locationFix?.longitude ?? null,
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
       locationRequestId,
       vehicleIds: selectedVehicleIds,
       vehicleLabels: selectedVehicleIds.map(id => (allVehicles ?? []).find(v => v.id === id)?.code ?? '').filter(Boolean),
@@ -265,6 +361,19 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       if (!navigator.onLine) {
         queueOffline();
         return;
+      }
+      // Revalida en el servidor justo antes de crear la emergencia: si otro
+      // operador comprometió un móvil, no se despacha y se pide elegir otro.
+      if (selectedVehicleIds.length) {
+        const conflicts = await findVehicleConflicts(orgId!, selectedVehicleIds);
+        if (conflicts.length) {
+          const codes = conflicts
+            .map(c => `${(allVehicles ?? []).find(v => v.id === c.vehicleId)?.code ?? 'Móvil'} (${c.folio})`)
+            .join(', ');
+          setSelectedVehicleIds(prev => prev.filter(id => !conflicts.some(c => c.vehicleId === id)));
+          toast.error(`Móvil ya comprometido en otra emergencia: ${codes}. Se quitó de la selección; elige otro y vuelve a despachar.`, { duration: 10000 });
+          return;
+        }
       }
       await performDispatch(payload);
       startGlobalToneSequence(toneQueue);
@@ -339,9 +448,57 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <User className="h-3.5 w-3.5" /> Solicitante
+                <User className="h-3.5 w-3.5" /> {isServiceKey ? 'Autorizado por' : 'Solicitante'}
               </label>
-              <Input value={callerName} onChange={e => setCallerName(e.target.value)} placeholder="Nombre del solicitante" className="bg-muted/50" spellCheck={false} autoCorrect="off" />
+              <div className="relative">
+                <Input
+                  value={callerName}
+                  onChange={e => {
+                    setCallerName(e.target.value);
+                    setAuthorizerJustPicked(false);
+                  }}
+                  placeholder={isServiceKey ? 'Nombre, cargo o ID de personal…' : 'Nombre del solicitante'}
+                  className="bg-muted/50"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoComplete="off"
+                />
+                {authorizerMatches.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                    {authorizerMatches.map((v: any) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          setCallerName(v.name);
+                          setAuthorizerJustPicked(true);
+                        }}
+                        className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted/60"
+                      >
+                        <span className="font-medium">{v.name}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {[v.code, v.rut].filter(Boolean).join(' · ') || ''}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {isServiceKey && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {AUTHORIZER_RANKS.map(rank => (
+                    <button
+                      key={rank}
+                      type="button"
+                      onClick={() => setCallerName(prev => (prev.trim() ? prev : `${rank} `))}
+                      className="rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                    >
+                      {rank}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -367,6 +524,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
                 longitude={locationFix?.longitude ?? null}
                 onSubmit={handleManualCoords}
               />
+              {locationFix && <div className="mt-2"><TerritoryStatus latitude={locationFix.latitude} longitude={locationFix.longitude} /></div>}
             </div>
 
 
@@ -374,9 +532,21 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <MessageSquare className="h-3.5 w-3.5" /> Observaciones
+              <MessageSquare className="h-3.5 w-3.5" /> {isServiceKey ? 'Motivo del servicio' : 'Observaciones'}
             </label>
-            <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalles adicionales de la emergencia..." rows={3} className="bg-muted/50" spellCheck lang="es-CL" autoCorrect="off" />
+            <Textarea
+              value={observations}
+              onChange={e => setObservations(e.target.value)}
+              onFocus={() => {
+                if (isServiceKey && !observations.trim()) setObservations('Motivo: ');
+              }}
+              placeholder={isServiceKey ? 'Motivo del servicio, destino o instrucción de la salida...' : 'Detalles adicionales de la emergencia...'}
+              rows={3}
+              className="bg-muted/50"
+              spellCheck
+              lang="es-CL"
+              autoCorrect="off"
+            />
           </div>
 
           {/* Vehicle selection */}
@@ -384,25 +554,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Truck className="h-3.5 w-3.5" /> Asignar Móviles ({selectedVehicleIds.length} seleccionados)
             </label>
-            <div className="flex flex-wrap gap-2">
-              {available.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No hay móviles disponibles</p>
-              ) : (
-                available.map(v => (
-                  <button
-                    key={v.id}
-                    onClick={() => toggleVehicle(v.id)}
-                    className={`rounded-md border px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
-                      selectedVehicleIds.includes(v.id)
-                        ? 'border-emergency bg-emergency/20 text-emergency'
-                        : 'border-border bg-muted/30 text-muted-foreground hover:border-foreground/30'
-                    }`}
-                  >
-                    {v.code} · {v.type}
-                  </button>
-                ))
-              )}
-            </div>
+            <VehicleAvailabilityPicker items={availability} selected={selectedVehicleIds} onToggle={toggleVehicle} />
           </div>
 
           {/* Actions */}

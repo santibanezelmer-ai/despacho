@@ -1,9 +1,10 @@
-import { memo, useEffect, useState } from 'react';
-import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X, Loader2 } from 'lucide-react';
+import { Fragment, memo, useEffect, useState } from 'react';
+import { Check, Smartphone } from 'lucide-react';
+import { usePendingOperationalRequests, useResolveOperationalRequest } from '@/hooks/useVehicleOperationalRequests';
+import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross, CloudUpload, Ban, X } from 'lucide-react';
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
-import { useUnassignVehicle } from '@/hooks/useUnassignVehicle';
 import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
 import {
   SELECTABLE_VEHICLE_STATUSES,
@@ -11,16 +12,6 @@ import {
   vehicleStatusMeta,
 } from '@/lib/vehicleOperationalStatus';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -72,7 +63,7 @@ interface EmergencyCardProps {
     personnelCount: number;
     _offline?: boolean;
   };
-  onAdvanceStatus?: (id: string, newStatus: string) => void;
+  onAdvanceStatus?: (id: string, newStatus: string) => Promise<boolean> | void;
 }
 
 const STATUS_ORDER = ['despacho', 'en_ruta', 'en_trabajo', 'controlada', 'finalizada', 'en_cuartel'];
@@ -82,15 +73,27 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
   const ek = emergency.emergency_keys;
   const status = statusConfig[emergency.status] ?? statusConfig.despacho;
   const currentIdx = STATUS_ORDER.indexOf(emergency.status);
-  // en_cuartel is auto-managed by VehicleReturnManager, don't show advance button for it
-  const nextStatus = currentIdx < STATUS_ORDER.length - 1 && STATUS_ORDER[currentIdx + 1] !== 'en_cuartel'
-    ? STATUS_ORDER[currentIdx + 1]
-    : null;
+  // En Ruta / En Trabajo / Controlada se sincronizan solos con las claves de los móviles.
+  // El operador solo cierra la emergencia (o marca Controlada si aún no lo hizo un móvil).
+  const finIdx = STATUS_ORDER.indexOf('finalizada');
+  const nextStatus = currentIdx >= 0 && currentIdx < finIdx ? 'finalizada' : null;
+  const canMarkControlled = currentIdx >= 0 && currentIdx < STATUS_ORDER.indexOf('controlada');
   const [showActions, setShowActions] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
-  const [unassignTarget, setUnassignTarget] = useState<{ vehicleId: string; code: string } | null>(null);
-  const unassign = useUnassignVehicle();
+  const [advancing, setAdvancing] = useState(false);
+  /** Un solo envío a la vez; devuelve true solo si el servidor confirmó. */
+  const advance = async (next: string): Promise<boolean> => {
+    if (advancing || !onAdvanceStatus) return false;
+    setAdvancing(true);
+    try {
+      return (await onAdvanceStatus(emergency.id, next)) === true;
+    } finally {
+      setAdvancing(false);
+    }
+  };
   const statusMutation = useVehicleOperationalStatus();
+  const { data: pendingRequests } = usePendingOperationalRequests();
+  const resolveRequest = useResolveOperationalRequest();
   const assignedVehicles = emergency.assignedVehicles?.length
     ? emergency.assignedVehicles
     : emergency.vehicleCodes.map((code, i) => ({
@@ -190,9 +193,14 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
             <div className="mt-3 flex flex-wrap gap-1.5">
               {assignedVehicles.map((av, i) => {
                 const meta = vehicleStatusMeta(av.operationalStatus);
+                const mine = (pendingRequests ?? []).filter(r =>
+                  r.emergency_id === emergency.id &&
+                  (av.evId ? r.emergency_vehicle_id === av.evId : r.vehicle_id === av.vehicleId));
+                const req = mine.find(r => r.requested_status !== 'PRE-INFORME');
+                const preReqs = mine.filter(r => r.requested_status === 'PRE-INFORME');
                 return (
+                  <Fragment key={av.evId || av.vehicleId || `${av.code}-${i}`}>
                   <span
-                    key={av.evId ?? av.vehicleId ?? `${av.code}-${i}`}
                     className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-mono ${meta.chip}`}
                   >
                     {av.evId ? (
@@ -242,50 +250,95 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
                     ) : (
                       <span className="font-semibold">{av.code}</span>
                     )}
-                    {av.vehicleId && (
+                  </span>
+                  {req && (
+                    <span
+                      title={`Operix Móvil: ${av.code} reporta ${req.requested_status} a las ${new Date(req.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+                      className="flex animate-pulse items-center gap-1 rounded border border-warning/60 bg-warning/15 px-1.5 py-0.5 text-[11px] font-mono text-warning"
+                    >
+                      <Smartphone className="h-3 w-3" />
+                      <span className="font-semibold">{req.requested_status}</span>
+                      <span className="opacity-80">{new Date(req.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                       <button
                         type="button"
-                        title={`Quitar móvil ${av.code} de la emergencia`}
-                        className="text-destructive/70 hover:text-destructive"
-                        onClick={() => setUnassignTarget({ vehicleId: av.vehicleId, code: av.code })}
+                        title="Aceptar clave del móvil"
+                        disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: req, accept: true, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-success hover:bg-success/20"
+                      >
+                        <Check className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Descartar"
+                        disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: req, accept: false, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-destructive hover:bg-destructive/20"
                       >
                         <X className="h-3 w-3" />
                       </button>
-                    )}
-                  </span>
+                    </span>
+                  )}
+                  {preReqs.map(pr => (
+                    <span
+                      key={pr.id}
+                      title={pr.message ?? ''}
+                      className="flex w-full items-start gap-1.5 rounded border border-warning/60 bg-warning/15 px-1.5 py-1 text-[11px] text-warning"
+                    >
+                      <Smartphone className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span className="flex-1 min-w-0">
+                        <span className="font-mono font-semibold">{av.code} · Pre-informe {new Date(pr.reported_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="block whitespace-pre-wrap break-words text-foreground/90 line-clamp-3">{pr.message}</span>
+                      </span>
+                      <button type="button" title="Agregar al pre-informe de la emergencia" disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: pr, accept: true, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-success hover:bg-success/20"><Check className="h-3 w-3" /></button>
+                      <button type="button" title="Descartar" disabled={resolveRequest.isPending}
+                        onClick={() => resolveRequest.mutate({ request: pr, accept: false, vehicleCode: av.code })}
+                        className="rounded px-0.5 text-destructive hover:bg-destructive/20"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                  </Fragment>
                 );
               })}
             </div>
           )}
 
 
-          <div className="mt-3 flex gap-2">
-            {/* Actions button */}
+          {/* Área 2: estado general y acciones rápidas */}
+          {onAdvanceStatus && (canMarkControlled || nextStatus) && (
+            <div className="mt-3 flex gap-2">
+              {canMarkControlled && (
+                <button
+                  disabled={advancing}
+                  onClick={() => advance('controlada')}
+                  className="flex-1 rounded-md border border-info/50 py-1.5 text-xs font-medium text-info hover:bg-info/10 transition-colors disabled:opacity-50"
+                >
+                  {advancing ? 'Guardando…' : 'Controlada (6-7)'}
+                </button>
+              )}
+              {nextStatus && (
+                <button
+                  disabled={advancing}
+                  onClick={() => setShowFinalize(true)}
+                  className="flex-1 rounded-md border border-success/50 py-1.5 text-xs font-medium text-success hover:bg-success/10 transition-colors disabled:opacity-50"
+                >
+                  Finalizar
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Acciones avanzadas */}
+          <div className="mt-2 flex gap-2">
             <button
               onClick={() => setShowActions(true)}
+              title="Reasignar o quitar móviles, personal, preinforme, ubicación y GPS compartido"
               className="flex-1 rounded-md border border-border py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-center gap-1.5"
             >
-              <Settings className="h-3.5 w-3.5" /> Acciones
+              <Settings className="h-3.5 w-3.5" /> Más acciones
             </button>
-
-            {/* PDF download */}
             <EmergencyPdfDownload emergencyId={emergency.id} folio={emergency.folio} />
-
-            {/* Advance status */}
-            {nextStatus && onAdvanceStatus && (
-              <button
-                onClick={() => {
-                  if (nextStatus === 'finalizada') {
-                    setShowFinalize(true);
-                    return;
-                  }
-                  onAdvanceStatus(emergency.id, nextStatus);
-                }}
-                className="flex-1 rounded-md border border-border py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
-              >
-                → {statusConfig[nextStatus]?.label}
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -304,43 +357,13 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
           emergencyStatus={emergency.status}
           folio={emergency.folio}
           onClose={() => setShowFinalize(false)}
-          onConfirm={() => {
-            setShowFinalize(false);
-            onAdvanceStatus?.(emergency.id, 'finalizada');
+          onConfirm={async () => {
+            const ok = await advance('finalizada');
+            if (ok) setShowFinalize(false);
           }}
         />
       )}
 
-      <AlertDialog open={!!unassignTarget} onOpenChange={open => { if (!open) setUnassignTarget(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar asignación del móvil {unassignTarget?.code}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se quitará el móvil {unassignTarget?.code} de la emergencia {emergency.folio} junto con el personal
-              asignado a él. El móvil volverá a estado disponible y la acción quedará registrada en la bitácora de la
-              emergencia. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={unassign.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={unassign.isPending}
-              onClick={e => {
-                e.preventDefault();
-                if (!unassignTarget) return;
-                unassign.mutate(
-                  { emergencyId: emergency.id, ...unassignTarget },
-                  { onSuccess: () => setUnassignTarget(null) },
-                );
-              }}
-            >
-              {unassign.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Eliminar asignación
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
     </>
   );

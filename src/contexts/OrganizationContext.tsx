@@ -104,7 +104,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     };
 
     fetchMemberships();
-  }, [user]);
+  }, [user?.id]);
 
   const currentOrg = memberships.find(m => m.organization_id === currentOrgId) ?? null;
   const orgRole = currentOrg?.role ?? null;

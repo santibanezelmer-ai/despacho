@@ -1,8 +1,11 @@
+import { prepareReassignment } from '@/lib/vehicleAvailability';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
+import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
 
 function useInvalidate() {
   const qc = useQueryClient();
@@ -10,6 +13,7 @@ function useInvalidate() {
     qc.invalidateQueries({ queryKey: ['active-emergencies'] });
     qc.invalidateQueries({ queryKey: ['vehicles'] });
     qc.invalidateQueries({ queryKey: ['emergency-vehicles-assigned'] });
+    qc.invalidateQueries({ queryKey: ['open-vehicle-assignments'] });
     qc.invalidateQueries({ queryKey: ['emergency-vehicles-return'] });
     qc.invalidateQueries({ queryKey: ['emergency-vehicle-personnel'] });
     qc.invalidateQueries({ queryKey: ['emergency-personnel'] });
@@ -49,7 +53,12 @@ export function useUpdateLocation() {
   const { user } = useAuth();
   const { orgId } = useOrganization();
   return useMutation({
-    mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: number; longitude: number }) => {
+    mutationFn: async ({ id, latitude, longitude, exception }: { id: string; latitude: number; longitude: number; exception?: string }) => {
+      // Bloquea coordenadas fuera de rango (ej. longitud -344.6 al arrastrar
+      // el marcador con el mapa muy alejado). No corrige: solo impide guardar.
+      if (!isValidLatLng(latitude, longitude)) {
+        throw new Error(coordRangeMessage(latitude, longitude));
+      }
       // Guarda el estado anterior para bitácora/auditoría
       const { data: before } = await supabase
         .from('emergencies')
@@ -74,7 +83,8 @@ export function useUpdateLocation() {
         `Ubicación corregida por operador: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}` +
           (before?.latitude != null && before?.longitude != null
             ? ` (anterior ${Number(before.latitude).toFixed(5)}, ${Number(before.longitude).toFixed(5)} — origen ${before.location_source ?? 'sin definir'})`
-            : ''),
+            : '') +
+          (exception ? ` — EXCEPCIÓN OPERACIONAL autorizada: ${exception}` : ''),
       );
 
       if (orgId) {
@@ -88,12 +98,12 @@ export function useUpdateLocation() {
             longitude: before?.longitude ?? null,
             location_source: before?.location_source ?? null,
           } as any,
-          _new_data: { latitude, longitude, location_source: 'operador' } as any,
+          _new_data: { latitude, longitude, location_source: 'operador', geo_exception: exception ?? null } as any,
         });
       }
     },
     onSuccess: () => { invalidate(); toast.success('Ubicación guardada'); },
-    onError: () => toast.error('Error al guardar ubicación'),
+    onError: (err) => toast.error(err instanceof Error && err.message.startsWith('Coordenada fuera de rango') ? err.message : 'Error al guardar ubicación'),
   });
 }
 
@@ -110,6 +120,14 @@ export function useAssignVehicles() {
         .in('id', vehicleIds);
       const odometerMap = new Map((vehicleData ?? []).map(v => [v.id, v.odometer]));
 
+      const { data: codesData } = await supabase.from('vehicles').select('id, code').in('id', vehicleIds);
+      const { data: target } = await supabase.from('emergencies').select('folio').eq('id', emergencyId).maybeSingle();
+      const codeMap = Object.fromEntries((codesData ?? []).map(v => [v.id, v.code]));
+      const moved = await prepareReassignment({
+        orgId: orgId!, vehicleIds, targetEmergencyId: emergencyId,
+        targetLabel: target?.folio ?? 'otra emergencia', vehicleCodes: codeMap,
+      });
+
       const inserts = vehicleIds.map(vid => ({
         emergency_id: emergencyId,
         vehicle_id: vid,
@@ -120,9 +138,12 @@ export function useAssignVehicles() {
       if (error) throw error;
       await supabase.from('vehicles').update({ status: 'en_servicio' as const }).in('id', vehicleIds);
       await log(emergencyId, `Móviles asignados: ${vehicleIds.length}`);
+      for (const m of moved) {
+        await log(emergencyId, `Móvil ${codeMap[m.vehicleId] ?? ''} asignado (reasignado desde ${m.folio})`);
+      }
     },
     onSuccess: () => { invalidate(); toast.success('Móviles asignados'); },
-    onError: () => toast.error('Error al asignar móviles'),
+    onError: (e: any) => toast.error(e?.message?.startsWith('Móvil comprometido') ? e.message : 'Error al asignar móviles'),
   });
 }
 
@@ -131,7 +152,7 @@ export function useToggleFlag() {
   const log = useLog();
   return useMutation({
     mutationFn: async ({ id, field, value, label }: { id: string; field: string; value: boolean; label: string }) => {
-      const update: Record<string, any> = { [field]: value };
+      const update: TablesUpdate<'emergencies'> = { [field]: value };
       if (field === 'declared' && value) update.declared_at = new Date().toISOString();
       const { error } = await supabase.from('emergencies').update(update).eq('id', id);
       if (error) throw error;

@@ -11,7 +11,14 @@ export interface PushPayload {
   emergencyId?: string;
   emergency_id?: string;
   type?: string;
+  assignment_id?: string;
+  path?: string;
 }
+
+// Guardias por Compañía: own channel, never the emergency dispatch tone.
+const GUARD_CHANNEL_ID = 'guard_requests';
+const isGuardPayload = (p?: PushPayload | null) => p?.type === 'guard_assignment' && !!p.assignment_id;
+const guardPath = (p: PushPayload) => `/voluntario/guardias?asignacion=${encodeURIComponent(p.assignment_id!)}`;
 
 // v2 channel: Android channels are immutable once created, so a new id is
 // required to switch the sound to the custom MP3 (res/raw/dispatch_tone.mp3).
@@ -72,6 +79,14 @@ async function ensureNotificationChannel(): Promise<void> {
       sound: CHANNEL_SOUND, // res/raw/dispatch_tone.mp3 — suena con app cerrada
       vibration: true,
       lights: true,
+    });
+    await LocalNotifications.createChannel({
+      id: GUARD_CHANNEL_ID,
+      name: 'Solicitudes de guardia',
+      description: 'Asignaciones de guardia por compañía que requieren respuesta',
+      importance: 4,
+      visibility: 1,
+      vibration: true,
     });
     channelCreated = true;
     console.log(`[Push] Channel "${CHANNEL_ID}" created with sound "${CHANNEL_SOUND}"`);
@@ -341,6 +356,19 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
     await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
       console.log('[Push] pushNotificationReceived received:', JSON.stringify(notification));
       const payload = (notification.data ?? {}) as PushPayload;
+      if (isGuardPayload(payload)) {
+        try {
+          await LocalNotifications.schedule({ notifications: [{
+            title: notification.title || payload.title || 'Solicitud de guardia',
+            body: notification.body || payload.body || '',
+            id: Math.floor(Math.random() * 2147483647),
+            channelId: GUARD_CHANNEL_ID,
+            extra: { type: 'guard_assignment', assignment_id: payload.assignment_id },
+            smallIcon: 'ic_notification',
+          }] });
+        } catch (err) { console.error('[Push] Guard local notification error:', err); }
+        return;
+      }
       const title = notification.title || payload.title || 'Nueva emergencia';
       const body = notification.body || payload.body || '';
       const emergencyId = payload.emergencyId || payload.emergency_id || '';
@@ -355,6 +383,7 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
     await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       console.log('[Push] Push tap:', JSON.stringify(action));
       const payload = action.notification.data as PushPayload;
+      if (isGuardPayload(payload)) { activeNavigate?.(guardPath(payload)); return; }
       const emergencyId = payload?.emergencyId || payload?.emergency_id || '';
       if (emergencyId) {
         markNotificationOpened(emergencyId);
@@ -366,6 +395,7 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
     await LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
       console.log('[Push] Local tap:', JSON.stringify(action));
       const extra = action.notification.extra as PushPayload | undefined;
+      if (isGuardPayload(extra)) { activeNavigate?.(guardPath(extra!)); return; }
       const emergencyId = extra?.emergencyId || extra?.emergency_id || '';
       if (emergencyId) {
         markNotificationOpened(emergencyId);

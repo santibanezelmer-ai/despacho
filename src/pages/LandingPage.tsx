@@ -5,6 +5,7 @@ import LeadCaptureSection from '@/components/landing/LeadCaptureSection';
 import LandingFooter from '@/components/landing/LandingFooter';
 import StickyCTA from '@/components/landing/StickyCTA';
 import LandingSEO from '@/components/landing/LandingSEO';
+import PartnersCarousel from '@/components/landing/PartnersCarousel';
 
 const ProblemSolutionSection = lazy(() => import('@/components/landing/ProblemSolutionSection'));
 const ComparisonSection = lazy(() => import('@/components/landing/ComparisonSection'));
@@ -12,6 +13,7 @@ const ModulesSection = lazy(() => import('@/components/landing/ModulesSection'))
 const ShowcaseSection = lazy(() => import('@/components/landing/ShowcaseSection'));
 const WhyOperixSection = lazy(() => import('@/components/landing/WhyOperixSection'));
 const StepsSection = lazy(() => import('@/components/landing/StepsSection'));
+const RadioComplementSection = lazy(() => import('@/components/landing/RadioComplementSection'));
 const PricingSection = lazy(() => import('@/components/landing/PricingSection'));
 const FAQSection = lazy(() => import('@/components/landing/FAQSection'));
 const SecuritySection = lazy(() => import('@/components/landing/SecuritySection'));
@@ -28,10 +30,12 @@ export default function LandingPage() {
       <LandingSEO />
       <LandingHeader />
       <HeroSection />
+      <PartnersCarousel />
       <LeadCaptureSection />
       <Suspense fallback={<LazyFallback />}>
         <ProblemSolutionSection />
         <WhyOperixSection />
+        <RadioComplementSection />
         <ComparisonSection />
         <ModulesSection />
         <ShowcaseSection />

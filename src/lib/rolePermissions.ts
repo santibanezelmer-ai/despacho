@@ -41,7 +41,7 @@ export function canAccessPath(path: string, ctx: AccessCtx): boolean {
   }
 
   if (ctx.orgRole === 'operador') {
-    if (SYSTEM_PATHS.includes(path)) return path === '/pantalla-central';
+    if (SYSTEM_PATHS.includes(path)) return path === '/pantalla-central' || path === '/claves';
     return true;
   }
 

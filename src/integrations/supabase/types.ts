@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -107,6 +107,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "companies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_guard_rules: {
+        Row: {
+          active: boolean
+          company_id: string
+          created_at: string
+          id: string
+          minimum: number
+          mode: string
+          organization_id: string
+          required_specialties: string[]
+          role_name: string
+        }
+        Insert: {
+          active?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          minimum: number
+          mode: string
+          organization_id: string
+          required_specialties?: string[]
+          role_name: string
+        }
+        Update: {
+          active?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          minimum?: number
+          mode?: string
+          organization_id?: string
+          required_specialties?: string[]
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_guard_rules_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "company_guard_rules_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -779,6 +830,786 @@ export type Database = {
           },
         ]
       }
+      guard_applications: {
+        Row: {
+          company_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          organization_id: string
+          reason: string | null
+          shift_id: string
+          slot_id: string
+          status: string
+          volunteer_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          organization_id: string
+          reason?: string | null
+          shift_id: string
+          slot_id: string
+          status?: string
+          volunteer_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          organization_id?: string
+          reason?: string | null
+          shift_id?: string
+          slot_id?: string
+          status?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_applications_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_applications_slot_id_shift_id_organization_id_compan_fkey"
+            columns: ["slot_id", "shift_id", "organization_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "guard_slots"
+            referencedColumns: [
+              "id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+          },
+          {
+            foreignKeyName: "guard_applications_volunteer_id_organization_id_fkey"
+            columns: ["volunteer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      guard_assignments: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          decided_at: string | null
+          ends_at: string
+          id: string
+          organization_id: string
+          reason: string | null
+          shift_id: string
+          slot_id: string
+          starts_at: string
+          status: string
+          volunteer_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          decided_at?: string | null
+          ends_at: string
+          id?: string
+          organization_id: string
+          reason?: string | null
+          shift_id: string
+          slot_id: string
+          starts_at: string
+          status?: string
+          volunteer_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          decided_at?: string | null
+          ends_at?: string
+          id?: string
+          organization_id?: string
+          reason?: string | null
+          shift_id?: string
+          slot_id?: string
+          starts_at?: string
+          status?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_assignments_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_assignments_slot_id_shift_id_organization_id_company_fkey"
+            columns: ["slot_id", "shift_id", "organization_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "guard_slots"
+            referencedColumns: [
+              "id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+          },
+          {
+            foreignKeyName: "guard_assignments_volunteer_id_organization_id_fkey"
+            columns: ["volunteer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      guard_attendance_events: {
+        Row: {
+          actor_id: string
+          assignment_id: string
+          company_id: string
+          created_at: string
+          decision: string | null
+          id: string
+          kind: string
+          occurred_at: string
+          organization_id: string
+          previous_event_id: string | null
+          reason: string | null
+          shift_id: string
+          volunteer_id: string
+        }
+        Insert: {
+          actor_id: string
+          assignment_id: string
+          company_id: string
+          created_at?: string
+          decision?: string | null
+          id?: string
+          kind: string
+          occurred_at: string
+          organization_id: string
+          previous_event_id?: string | null
+          reason?: string | null
+          shift_id: string
+          volunteer_id: string
+        }
+        Update: {
+          actor_id?: string
+          assignment_id?: string
+          company_id?: string
+          created_at?: string
+          decision?: string | null
+          id?: string
+          kind?: string
+          occurred_at?: string
+          organization_id?: string
+          previous_event_id?: string | null
+          reason?: string | null
+          shift_id?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_attendance_events_assignment_id_shift_id_organizatio_fkey"
+            columns: [
+              "assignment_id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "guard_assignments"
+            referencedColumns: [
+              "id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+          },
+          {
+            foreignKeyName: "guard_attendance_events_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_attendance_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_attendance_events_previous_event_id_assignment_id_sh_fkey"
+            columns: [
+              "previous_event_id",
+              "assignment_id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "guard_attendance_events"
+            referencedColumns: [
+              "id",
+              "assignment_id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+          },
+          {
+            foreignKeyName: "guard_attendance_events_volunteer_id_organization_id_fkey"
+            columns: ["volunteer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      guard_audit_links: {
+        Row: {
+          audit_id: string
+          company_id: string | null
+          created_at: string
+          event_name: string
+          id: string
+          organization_id: string
+          shift_id: string | null
+          summary: Json
+        }
+        Insert: {
+          audit_id: string
+          company_id?: string | null
+          created_at?: string
+          event_name: string
+          id?: string
+          organization_id: string
+          shift_id?: string | null
+          summary: Json
+        }
+        Update: {
+          audit_id?: string
+          company_id?: string | null
+          created_at?: string
+          event_name?: string
+          id?: string
+          organization_id?: string
+          shift_id?: string | null
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_audit_links_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: true
+            referencedRelation: "audit_log"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_audit_links_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_audit_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_audit_links_shift_id_organization_id_company_id_fkey"
+            columns: ["shift_id", "organization_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "guard_shifts"
+            referencedColumns: ["id", "organization_id", "company_id"]
+          },
+        ]
+      }
+      guard_notification_outbox: {
+        Row: {
+          attempts: number
+          company_id: string
+          created_at: string
+          event_key: string
+          id: string
+          next_attempt_at: string
+          organization_id: string
+          payload: Json
+          recipient_id: string
+          shift_id: string
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          company_id: string
+          created_at?: string
+          event_key: string
+          id?: string
+          next_attempt_at?: string
+          organization_id: string
+          payload: Json
+          recipient_id: string
+          shift_id: string
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          company_id?: string
+          created_at?: string
+          event_key?: string
+          id?: string
+          next_attempt_at?: string
+          organization_id?: string
+          payload?: Json
+          recipient_id?: string
+          shift_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_notification_outbox_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_notification_outbox_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_notification_outbox_shift_id_organization_id_company_fkey"
+            columns: ["shift_id", "organization_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "guard_shifts"
+            referencedColumns: ["id", "organization_id", "company_id"]
+          },
+        ]
+      }
+      guard_permission_issuers: {
+        Row: {
+          authorized_by: string
+          created_at: string
+          id: string
+          organization_id: string
+          reason: string
+          revoked_at: string | null
+          revoked_by: string | null
+          user_id: string
+        }
+        Insert: {
+          authorized_by: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          reason: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id: string
+        }
+        Update: {
+          authorized_by?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          reason?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_permission_issuers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guard_permissions: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          granted_by: string
+          id: string
+          organization_id: string
+          reason: string
+          revoked_at: string | null
+          revoked_by: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          granted_by: string
+          id?: string
+          organization_id: string
+          reason: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          granted_by?: string
+          id?: string
+          organization_id?: string
+          reason?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_permissions_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guard_shifts: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          mode: string
+          name: string
+          organization_id: string
+          reason: string | null
+          replaces_shift_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          ends_at: string
+          id?: string
+          mode: string
+          name: string
+          organization_id: string
+          reason?: string | null
+          replaces_shift_id?: string | null
+          starts_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          ends_at?: string
+          id?: string
+          mode?: string
+          name?: string
+          organization_id?: string
+          reason?: string | null
+          replaces_shift_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_replacement_scope"
+            columns: ["replaces_shift_id", "organization_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "guard_shifts"
+            referencedColumns: ["id", "organization_id", "company_id"]
+          },
+          {
+            foreignKeyName: "guard_shifts_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_shifts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guard_slots: {
+        Row: {
+          capacity: number
+          company_id: string
+          created_at: string
+          critical: boolean
+          ends_at: string
+          id: string
+          mode: string
+          open_applications: boolean
+          organization_id: string
+          required_specialties: string[]
+          role_name: string
+          shift_id: string
+          starts_at: string
+        }
+        Insert: {
+          capacity: number
+          company_id: string
+          created_at?: string
+          critical?: boolean
+          ends_at: string
+          id?: string
+          mode: string
+          open_applications?: boolean
+          organization_id: string
+          required_specialties?: string[]
+          role_name: string
+          shift_id: string
+          starts_at: string
+        }
+        Update: {
+          capacity?: number
+          company_id?: string
+          created_at?: string
+          critical?: boolean
+          ends_at?: string
+          id?: string
+          mode?: string
+          open_applications?: boolean
+          organization_id?: string
+          required_specialties?: string[]
+          role_name?: string
+          shift_id?: string
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_slots_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_slots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_slots_shift_id_organization_id_company_id_fkey"
+            columns: ["shift_id", "organization_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "guard_shifts"
+            referencedColumns: ["id", "organization_id", "company_id"]
+          },
+        ]
+      }
+      guard_swap_requests: {
+        Row: {
+          accepted_at: string | null
+          assignment_id: string
+          company_id: string
+          counterpart_assignment_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          organization_id: string
+          original_volunteer_id: string
+          reason: string | null
+          replacement_volunteer_id: string
+          shift_id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          assignment_id: string
+          company_id: string
+          counterpart_assignment_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          organization_id: string
+          original_volunteer_id: string
+          reason?: string | null
+          replacement_volunteer_id: string
+          shift_id: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          assignment_id?: string
+          company_id?: string
+          counterpart_assignment_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          organization_id?: string
+          original_volunteer_id?: string
+          reason?: string | null
+          replacement_volunteer_id?: string
+          shift_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_swap_requests_assignment_id_shift_id_organization_id_fkey"
+            columns: [
+              "assignment_id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "guard_assignments"
+            referencedColumns: [
+              "id",
+              "shift_id",
+              "organization_id",
+              "company_id",
+            ]
+          },
+          {
+            foreignKeyName: "guard_swap_requests_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_swap_requests_counterpart_assignment_id_fkey"
+            columns: ["counterpart_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "guard_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_swap_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_swap_requests_original_volunteer_id_organization_id_fkey"
+            columns: ["original_volunteer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_swap_requests_replacement_volunteer_id_organization__fkey"
+            columns: ["replacement_volunteer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      guard_templates: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          organization_id: string
+          specification: Json
+          version: number
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          organization_id: string
+          specification: Json
+          version?: number
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          specification?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_templates_company_id_organization_id_fkey"
+            columns: ["company_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "guard_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hydrants: {
         Row: {
           active: boolean
@@ -1117,6 +1948,56 @@ export type Database = {
           },
         ]
       }
+      organization_landmarks: {
+        Row: {
+          aliases: string[]
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          notes: string | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_landmarks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           company_id: string | null
@@ -1318,6 +2199,53 @@ export type Database = {
         }
         Relationships: []
       }
+      radio_glossary_keys: {
+        Row: {
+          active: boolean
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radio_glossary_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ranks: {
         Row: {
           created_at: string
@@ -1346,6 +2274,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ranks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      screen_pairings: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          name: string | null
+          organization_id: string | null
+          paired_at: string | null
+          paired_by: string | null
+          pin: string
+          pin_expires_at: string
+          revoked_at: string | null
+          secret_hash: string
+          view: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          paired_at?: string | null
+          paired_by?: string | null
+          pin: string
+          pin_expires_at?: string
+          revoked_at?: string | null
+          secret_hash: string
+          view?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          paired_at?: string | null
+          paired_by?: string | null
+          pin?: string
+          pin_expires_at?: string
+          revoked_at?: string | null
+          secret_hash?: string
+          view?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screen_pairings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1722,11 +2703,15 @@ export type Database = {
           created_by: string | null
           expires_at: string
           id: string
+          is_permanent: boolean
           label: string | null
+          last_used_at: string | null
           organization_id: string
+          revoked_at: string | null
           updated_at: string
           used_at: string | null
           used_by_device_id: string | null
+          vehicle_id: string | null
         }
         Insert: {
           code: string
@@ -1734,11 +2719,15 @@ export type Database = {
           created_by?: string | null
           expires_at?: string
           id?: string
+          is_permanent?: boolean
           label?: string | null
+          last_used_at?: string | null
           organization_id: string
+          revoked_at?: string | null
           updated_at?: string
           used_at?: string | null
           used_by_device_id?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           code?: string
@@ -1746,11 +2735,15 @@ export type Database = {
           created_by?: string | null
           expires_at?: string
           id?: string
+          is_permanent?: boolean
           label?: string | null
+          last_used_at?: string | null
           organization_id?: string
+          revoked_at?: string | null
           updated_at?: string
           used_at?: string | null
           used_by_device_id?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -1765,6 +2758,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_device_codes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -2022,6 +3022,99 @@ export type Database = {
           },
           {
             foreignKeyName: "vehicle_maintenance_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_operational_requests: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          emergency_id: string
+          emergency_vehicle_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          message: string | null
+          odometer_end: number | null
+          organization_id: string
+          reported_at: string
+          requested_status: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          emergency_id: string
+          emergency_vehicle_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          message?: string | null
+          odometer_end?: number | null
+          organization_id: string
+          reported_at?: string
+          requested_status: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          emergency_id?: string
+          emergency_vehicle_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          message?: string | null
+          odometer_end?: number | null
+          organization_id?: string
+          reported_at?: string
+          requested_status?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_operational_requests_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_emergency_vehicle_id_fkey"
+            columns: ["emergency_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_operational_requests_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
@@ -2336,6 +3429,167 @@ export type Database = {
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      guard_assign: {
+        Args: { _org: string; _slot: string; _volunteer: string }
+        Returns: string
+      }
+      guard_can: {
+        Args: { _action: string; _company: string; _org: string }
+        Returns: boolean
+      }
+      guard_confirm: {
+        Args: {
+          _accept: boolean
+          _assignment: string
+          _org: string
+          _reason: string
+        }
+        Returns: undefined
+      }
+      guard_create_draft: {
+        Args: {
+          _company: string
+          _end: string
+          _mode: string
+          _name: string
+          _org: string
+          _slots: Json
+          _start: string
+        }
+        Returns: string
+      }
+      guard_create_shift: {
+        Args: {
+          _company: string
+          _end: string
+          _mode: string
+          _name: string
+          _org: string
+          _start: string
+        }
+        Returns: string
+      }
+      guard_create_slot: {
+        Args: {
+          _capacity: number
+          _critical: boolean
+          _end: string
+          _mode: string
+          _org: string
+          _role: string
+          _shift: string
+          _specialties: string[]
+          _start: string
+        }
+        Returns: string
+      }
+      guard_edit_shift: {
+        Args: {
+          _end: string
+          _mode: string
+          _name: string
+          _org: string
+          _shift: string
+          _start: string
+        }
+        Returns: undefined
+      }
+      guard_enqueue_assignment_push: {
+        Args: { _assignment: string }
+        Returns: undefined
+      }
+      guard_history: {
+        Args: { _company: string; _org: string; _shift?: string }
+        Returns: {
+          event_name: string
+          happened_at: string
+          summary: Json
+        }[]
+      }
+      guard_is_issuer: { Args: { _org: string }; Returns: boolean }
+      guard_lock: { Args: { _org: string }; Returns: undefined }
+      guard_manage_required: {
+        Args: { _company: string; _org: string }
+        Returns: undefined
+      }
+      guard_member: { Args: { _org: string }; Returns: boolean }
+      guard_my_assignments: {
+        Args: { _org: string }
+        Returns: {
+          assignment_id: string
+          assignment_status: string
+          company_id: string
+          ends_at: string
+          mode: string
+          role_name: string
+          shift_id: string
+          shift_name: string
+          shift_status: string
+          slot_id: string
+          starts_at: string
+        }[]
+      }
+      guard_own_shift: {
+        Args: { _org: string; _shift: string }
+        Returns: boolean
+      }
+      guard_record: {
+        Args: {
+          _company: string
+          _event: string
+          _new: Json
+          _old: Json
+          _org: string
+          _shift: string
+        }
+        Returns: undefined
+      }
+      guard_replace_shift: {
+        Args: {
+          _end: string
+          _expected: string
+          _mode: string
+          _name: string
+          _org: string
+          _original: string
+          _reason: string
+          _slots: Json
+          _start: string
+        }
+        Returns: string
+      }
+      guard_self: { Args: { _org: string; _vol: string }; Returns: boolean }
+      guard_set_issuer: {
+        Args: {
+          _grant: boolean
+          _org: string
+          _reason: string
+          _target: string
+        }
+        Returns: string
+      }
+      guard_set_permission: {
+        Args: {
+          _action: string
+          _company: string
+          _grant: boolean
+          _org: string
+          _reason: string
+          _target: string
+        }
+        Returns: string
+      }
+      guard_supervise: { Args: { _org: string }; Returns: boolean }
+      guard_transition: {
+        Args: {
+          _expected: string
+          _next: string
+          _org: string
+          _reason: string
+          _shift: string
+        }
+        Returns: undefined
       }
       has_org_role: {
         Args: {

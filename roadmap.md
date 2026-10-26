@@ -1,5 +1,24 @@
 # Roadmap
 
+- [x] Guardias, cierre acotado: complemento atómico turno/cupos y matriz concreta de cuatro sesiones preparados; 13 comprobaciones PostgreSQL locales y 2 pruebas de contrato nuevas aprobadas; sin SQL aplicado al destino ni escrituras habilitadas.
+- [x] Guardias, contratos v3 preparados sin transporte ni cambios de diseño/destino; pruebas de integración segura nuevas ejecutadas.
+- [ ] Guardias, conectar consultas y operaciones reales: único bloqueo de habilitación es instalación autorizada 01→02→03→complemento atómico 05 y validación de permisos con sesiones reales en entorno aislado; no encadenar creación de turno/cupos.
+- [x] Guardias, fase 0: esquema y permisos reales auditados, diferencias contrastadas, diseño y pruebas preparados; 42 pruebas existentes aprobadas, sin cambios de producción.
+- [x] Guardias, revisión previa de fase 1: SQL completo y explicación de políticas/GRANT, funciones, índices, restricciones y riesgos entregados; creación y pruebas de seguridad en PostgreSQL desechable aprobadas, no equivalen a verificación real. Sin cambios en producción.
+- [x] Guardias, revisión adicional: contrato y privilegios reales revisados, cuatro carreras locales verificadas, SQL v2 e informe preparados; autodelegación prohibida por decisión de Susana, sin cambios de destino.
+- [x] Guardias, cierre de candidata: G-04/G-07 y reemplazo propuestos; 44 comprobaciones locales aprobadas y v3 entregada, sin aplicar; sesiones reales pendientes.
+- [x] Guardias, interfaz Recursos y consulta personal implementada sin operaciones SQL ni datos ficticios; 19 pruebas aprobadas y compilación correcta.
+- [ ] Guardias, verificación visual autenticada: falta sesión de la solicitante en la vista previa; no fue posible obtener su sesión propia.
+- [ ] Guardias, fases 1–5: implementar por fases después de autorización explícita; bloqueado hasta aprobación.
+
+- [x] Evitar fallos silenciosos de TV: solicitud con límite de tiempo, validación, aviso y reintento; recuperación a PIN real comprobada y 4 pruebas aprobadas.
+- [ ] Verificar ventanas locales y TV vinculada con la cuenta de Susana: falta iniciar sesión en la vista previa; no fue posible obtener su sesión de prueba.
+
+- [x] Compartir lectura de grifos entre organizaciones sin ampliar permisos de modificación; políticas verificadas, 3 pruebas aprobadas y consulta autenticada de 36 registros de otra organización comprobada en el mapa.
+
+- [x] Sustituir rutas móviles antiguas por Voluntarios y conservar push; 15 pruebas de rutas aprobadas, compilación automática correcta y acceso sin sesión verificado.
+- [ ] Verificar navegación de Voluntarios con sesión real en dispositivo nativo: requiere iniciar sesión en la vista previa y disponer del dispositivo.
+
 - [x] Mostrar la confirmación de cierre por encima del personal y oscurecer el fondo.
 - [x] Incluir nombre e ID de la emergencia en la ficha PDF descargable.
 - [x] Equilibrar el tema blanco de Consola de Despacho: menú lateral, bordes y controles en la misma paleta.
@@ -26,3 +45,6 @@
 - [x] Zoom con la rueda del mouse sobre el mapa de la ventana de despacho.
 - [x] Claves de estado por móvil (6-3, 6-7, 6-9, 6-10) controladas individualmente en la consola.
 - [x] Mantener en app móvil y voluntarios solo despachada / en trabajo / controlada / finalizada.
+- [x] Landing: CTA demo/llamada, "Operix en operaciones reales", tarjeta radio VHF/UHF, FAQ offline/radio/demo, Plan Global Institucional, footer Comercial Hels SpA.
+- [x] Pantalla Central: selector de vistas y pantallas remotas por código sin inicio de sesión (/tv).
+- [x] Acceso multirrol a Operix Voluntario (admin/operador/oficial/voluntario/visor)

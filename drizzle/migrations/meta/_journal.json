@@ -43,6 +43,97 @@
       "when": 1790735305355,
       "tag": "0005_register_device_token_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790735831175,
+      "tag": "0006_rls_org_isolation_device_tokens_equipment",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790807658784,
+      "tag": "0007_equipment_company_admin_volunteer_assignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791464795591,
+      "tag": "0008_vehicle_operational_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791548293508,
+      "tag": "0009_allow_disponible_lugar_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791906043523,
+      "tag": "0010_permanent_vehicle_device_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791940303904,
+      "tag": "0011_operational_requests_pre_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791978861075,
+      "tag": "0012_allow_6_7_operational_request",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791981533866,
+      "tag": "0013_radio_glossary_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792001305637,
+      "tag": "0014_screen_pairings",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792763064937,
+      "tag": "0015_create_organization_landmarks",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792791554430,
+      "tag": "0016_share_hydrants_across_organizations",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792974849427,
+      "tag": "0017_guardias_unificada_v3",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792979834994,
+      "tag": "0018_guard_assignment_push_outbox",
+      "breakpoints": true
     }
   ]
 }

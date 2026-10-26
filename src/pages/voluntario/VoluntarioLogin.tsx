@@ -37,7 +37,7 @@ export default function VoluntarioLogin() {
         <div className="mb-8 text-center">
           <img src="/voluntario-icon-512.png" alt="Operix Voluntario" className="mx-auto mb-3 h-20 w-20 rounded-2xl" />
           <h1 className="text-2xl font-bold text-foreground">Operix Voluntario</h1>
-          <p className="text-xs text-muted-foreground mt-1">Acceso solo para voluntarios</p>
+          <p className="text-xs text-muted-foreground mt-1">Acceso operativo y de voluntarios</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-4">

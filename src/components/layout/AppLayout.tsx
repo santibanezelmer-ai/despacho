@@ -10,7 +10,7 @@ import DemoExpiredOverlay from '@/components/demo/DemoExpiredOverlay';
 import DispatchForm from '@/components/dispatch/DispatchForm';
 import { DispatchFormProvider, useDispatchForm } from '@/contexts/DispatchFormContext';
 import {
-  Siren, Radio, MapPin, Users, Truck, ClipboardList, StickyNote,
+  Siren, Radio, MapPin, Users, Truck, ClipboardList, StickyNote, CalendarDays,
   BarChart3, Shield, Settings, Monitor, Wrench, GraduationCap,
   Bell, FileDown, Play, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Archive, WifiOff, LifeBuoy
 } from 'lucide-react';
@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 import OfflineDispatchBanner from '@/components/dispatch/OfflineDispatchBanner';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
+import { useOnboardingChecklist } from '@/hooks/useOnboardingChecklist';
+import ScreenLauncherDialog from '@/components/screens/ScreenLauncherDialog';
 
 const navItems = [
   { path: '/', label: 'Consola de Despacho', icon: Siren, section: 'Operaciones' },
@@ -28,16 +30,12 @@ const navItems = [
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
   { path: '/moviles', label: 'Móviles', icon: Truck, section: 'Recursos' },
   { path: '/companias', label: 'Compañías', icon: ClipboardList, section: 'Recursos' },
-  { path: '/equipamiento', label: 'Equipamiento', icon: Wrench, section: 'Recursos' },
-  { path: '/capacitaciones', label: 'Capacitaciones', icon: GraduationCap, section: 'Recursos' },
+  { path: '/guardias', label: 'Guardias por Compañía', icon: CalendarDays, section: 'Recursos' },
   { path: '/dashboard', label: 'Dashboard', icon: BarChart3, section: 'Análisis' },
   { path: '/auditoria', label: 'Auditoría', icon: Shield, section: 'Análisis' },
   { path: '/exportaciones', label: 'Exportaciones', icon: FileDown, section: 'Análisis' },
-  { path: '/pantalla-central', label: 'Pantalla Central', icon: Monitor, section: 'Sistema' },
-  { path: '/simulacion', label: 'Simulación', icon: Play, section: 'Sistema' },
-  { path: '/alertas', label: 'Alertas', icon: Bell, section: 'Sistema' },
-  { path: '/claves', label: 'Claves Emergencia', icon: Siren, section: 'Sistema' },
-  { path: '/notificaciones', label: 'Notificaciones', icon: Bell, section: 'Sistema' },
+  { path: '/pantalla-central', label: 'Pantallas / TV', icon: Monitor, section: 'Sistema' },
+  { path: '/claves', label: 'Claves', icon: Siren, section: 'Sistema' },
   { path: '/admin', label: 'Administración', icon: Settings, section: 'Sistema' },
   { path: '/admin/onboarding', label: 'Configuración inicial', icon: ClipboardList, section: 'Sistema' },
   { path: '/soporte', label: 'Soporte', icon: LifeBuoy, section: 'Ayuda' },
@@ -65,6 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return window.location.pathname === '/';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [screensOpen, setScreensOpen] = useState(false);
   const location = useLocation();
   const { theme: dispatchTheme } = useScreenTheme('operix.despacho.theme');
   const isDispatchConsole = location.pathname === '/';
@@ -79,7 +78,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut, isSuperadmin } = useAuth();
   const { currentOrg, orgRole, memberships, setCurrentOrgId, isCompanyAdmin } = useOrganization();
   const accessCtx = { orgRole, isCompanyAdmin, isSuperadmin };
-  const visibleNavItems = navItems.filter((item) => canAccessPath(item.path, accessCtx));
+  const { data: checklist } = useOnboardingChecklist();
+  const onboardingPending = !!checklist && checklist.some((c) => !c.completed);
+  const visibleNavItems = navItems.filter((item) =>
+    canAccessPath(item.path, accessCtx) && (item.path !== '/admin/onboarding' || onboardingPending));
   const { isOnline } = useOnlineStatus();
 
   useEffect(() => { startAutoSync(); }, []);
@@ -87,7 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const sidebarContent = (isMobile: boolean) => (
     <>
       {/* Logo + Org name */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-3">
+      <div className={`flex items-center gap-2 border-b border-border py-3 ${collapsed && !isMobile ? 'justify-center px-0' : 'px-3'}`}>
         <img
           src="/favicon.png"
           alt="Operix"
@@ -127,7 +129,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Live indicator */}
-      <div className={`flex items-center gap-2 border-b border-border px-3 py-2 ${!isOnline ? 'bg-destructive/5' : ''}`}>
+      <div className={`flex items-center gap-2 border-b border-border py-2 ${collapsed && !isMobile ? 'justify-center px-0' : 'px-3'} ${!isOnline ? 'bg-destructive/5' : ''}`}>
         {isOnline ? (
           <span className="pulse-live h-2 w-2 rounded-full bg-success" />
         ) : (
@@ -141,7 +143,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2">
         {isSuperadmin && (!collapsed || isMobile) && (
           <div className="mb-1">
             <Link
@@ -172,10 +174,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <button
                       key={item.path}
                       onClick={() => {
-                        window.open('/pantalla-central', 'central-screen', 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
+                        setScreensOpen(true);
                         if (isMobile) setMobileOpen(false);
                       }}
-                      className="mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className={`mb-0.5 flex items-center gap-2.5 rounded-md py-2 text-sm transition-colors text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${collapsed && !isMobile ? 'mx-auto h-9 w-10 justify-center px-0' : 'mx-1.5 w-[calc(100%-0.75rem)] px-2.5'}`}
                       title={collapsed && !isMobile ? item.label : undefined}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -189,10 +191,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => isMobile && setMobileOpen(false)}
-                    className={`mx-1.5 mb-0.5 flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-200 ${
+                    className={`mb-0.5 flex items-center gap-2.5 rounded-md py-2 text-sm transition-all duration-200 ${collapsed && !isMobile ? 'mx-auto h-9 w-10 justify-center px-0' : 'mx-1.5 px-2.5'} ${
                       isActive
                         ? 'bg-gradient-to-r from-emergency/20 to-emergency/5 text-emergency font-medium shadow-sm border border-emergency/20'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground '
                     }`}
                     title={collapsed && !isMobile ? item.label : undefined}
                   >
@@ -206,7 +208,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* User info */}
-      <div className="border-t border-border px-3 py-2">
+      <div className={`border-t border-border py-2 ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {(!collapsed || isMobile) && user && (
           <div className="mb-1">
             <Link to="/perfil" onClick={() => isMobile && setMobileOpen(false)} className="flex items-center gap-1.5 hover:text-info transition-colors">
@@ -219,20 +221,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
           </div>
         )}
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center gap-1 ${collapsed && !isMobile ? 'flex-col justify-center' : ''}`}>
           {!isMobile && (
             <button
               onClick={toggleCollapsed}
               title={collapsed ? 'Expandir menú' : 'Minimizar menú'}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className={`flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${collapsed ? 'h-9 w-10' : 'flex-1'}`}
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
               {!collapsed && <span className="text-[11px]">Minimizar</span>}
             </button>
           )}
+          {canAccessPath('/alertas', accessCtx) && (
+            <Link to="/alertas" title="Alertas operativas" onClick={() => isMobile && setMobileOpen(false)} className={`flex items-center justify-center rounded-md text-muted-foreground hover:text-warning transition-colors ${collapsed && !isMobile ? "h-9 w-10" : "py-1.5 px-2"}`}>
+              <Bell className="h-4 w-4" />
+            </Link>
+          )}
           <button
             onClick={signOut}
-            className="flex items-center justify-center py-1.5 px-2 text-muted-foreground hover:text-emergency transition-colors"
+            className={`flex items-center justify-center rounded-md text-muted-foreground hover:text-emergency transition-colors ${collapsed && !isMobile ? "h-9 w-10" : "py-1.5 px-2"}`}
             title="Cerrar sesión"
           >
             <LogOut className="h-4 w-4" />
@@ -244,9 +251,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <DispatchFormProvider>
+    <ScreenLauncherDialog open={screensOpen} onOpenChange={setScreensOpen} />
     <div data-theme={isDispatchConsole ? dispatchTheme : undefined} className={`flex h-screen overflow-hidden bg-background ${isDispatchConsole ? 'theme-screen dispatch-shell' : ''}`}>
       {/* Desktop sidebar */}
-      <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
+      <aside className={`hidden md:flex flex-col overflow-x-hidden border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}>
         {sidebarContent(false)}
       </aside>
 

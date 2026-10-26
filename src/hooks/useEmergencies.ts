@@ -12,6 +12,8 @@ export type EmergencyRow = Tables<'emergencies'> & {
   emergency_keys: { code: string; name: string; color: string } | null;
 };
 
+export const ACTIVE_EMERGENCIES_POLL_MS = 5000;
+
 export function useActiveEmergencies() {
   const { orgId } = useOrganization();
   const { isOnline } = useOnlineStatus();
@@ -95,8 +97,10 @@ export function useActiveEmergencies() {
       }
     },
     enabled: !!orgId,
-    // Realtime es el mecanismo principal; el polling queda como reconciliación.
-    refetchInterval: isOnline ? 20000 : false,
+    // Realtime es el mecanismo principal; el polling (5s, deduplicado por queryKey
+    // entre todas las vistas montadas) queda como reconciliación operativa.
+    refetchInterval: isOnline ? ACTIVE_EMERGENCIES_POLL_MS : false,
+    refetchIntervalInBackground: false,
     retry: isOnline ? 3 : 0,
   });
 
@@ -160,20 +164,22 @@ export async function updateOfflineEmergency(
   updates: Record<string, unknown>
 ): Promise<void> {
   const existing = await getCachedById<Record<string, unknown>>('emergencies', emergencyId);
+  const updatedAt = new Date().toISOString();
   const merged = {
     ...(existing ?? { id: emergencyId }),
     ...updates,
     id: emergencyId,
-    updated_at: new Date().toISOString(),
+    updated_at: updatedAt,
     _offline: true,
   };
 
   await putCached('emergencies', merged as any);
 
+  // Queue only the real delta for the emergencies table (never the enriched cached object)
   await addToSyncQueue({
     table: 'emergencies',
     operation: 'update',
-    data: merged,
+    data: { ...updates, id: emergencyId, updated_at: updatedAt },
   });
 
   toast.info('Cambio guardado en modo offline. Se sincronizará al reconectar.');

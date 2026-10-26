@@ -14,6 +14,18 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolveToneUrl } from '@/lib/toneUrl';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import RadioGlossary from '@/components/dispatch/RadioGlossary';
+import { Radio } from 'lucide-react';
+
+function TabBar({ tab, setTab }: { tab: 'emergency' | 'radio'; setTab: (t: 'emergency' | 'radio') => void }) {
+  const cls = (a: boolean) => `px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${a ? 'bg-card text-foreground border border-border' : 'text-muted-foreground hover:text-foreground'}`;
+  return (
+    <div className="inline-flex gap-1 rounded-lg bg-muted/40 p-1">
+      <button className={cls(tab === 'emergency')} onClick={() => setTab('emergency')}>Claves de Emergencia</button>
+      <button className={cls(tab === 'radio')} onClick={() => setTab('radio')}>Glosario Radial</button>
+    </div>
+  );
+}
 
 interface KeyForm {
   id?: string;
@@ -38,6 +50,7 @@ export default function EmergencyKeysAdmin() {
   const qc = useQueryClient();
 
   const isAdmin = hasRole('admin') || isOrgAdmin;
+  const [tab, setTab] = useState<'emergency' | 'radio'>('emergency');
 
   // Fetch ALL keys (including inactive) for admin
   const [allKeys, setAllKeys] = useState<any[]>([]);
@@ -129,20 +142,30 @@ export default function EmergencyKeysAdmin() {
     else { toast.success('Clave eliminada'); setLoadedAll(false); qc.invalidateQueries({ queryKey: ['emergency-keys'] }); }
   };
 
-  if (!isAdmin) {
-    return <div className="flex items-center justify-center h-full"><p className="text-muted-foreground">Solo administradores.</p></div>;
+  if (!isAdmin || tab === 'radio') {
+    return (
+      <div className="p-4 lg:p-6 space-y-4">
+        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <Radio className="h-5 w-5 text-emergency" /> Claves
+        </h1>
+        {isAdmin && <TabBar tab={tab} setTab={setTab} />}
+        <RadioGlossary editable={isAdmin} />
+      </div>
+    );
   }
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Siren className="h-5 w-5 text-emergency" /> Claves de Emergencia
+          <Siren className="h-5 w-5 text-emergency" /> Claves
         </h1>
         <Button size="sm" onClick={openNew} className="bg-emergency text-emergency-foreground hover:bg-emergency/90 text-xs">
           <Plus className="mr-1.5 h-3.5 w-3.5" /> Nueva Clave
         </Button>
       </div>
+      <TabBar tab={tab} setTab={setTab} />
+
 
       <div className="console-panel overflow-hidden">
         <table className="w-full text-sm">

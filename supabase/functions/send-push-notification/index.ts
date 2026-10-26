@@ -118,15 +118,19 @@ Deno.serve(async (req: Request) => {
 
     const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: userData, error: userError } = await anonClient.auth.getUser();
-    if (userError || !userData?.user) {
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: userError } = await anonClient.auth.getClaims(jwt);
+    const claimSub = claimsData?.claims?.sub as string | undefined;
+    if (userError || !claimSub) {
       console.error('[Push] Auth failed:', userError?.message);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const userData = { user: { id: claimSub } };
     console.log(`[Push] ✓ Authenticated user: ${userData.user.id}`);
 
     const { organization_id, emergency_id, note_id, title, body, type } = await req.json();

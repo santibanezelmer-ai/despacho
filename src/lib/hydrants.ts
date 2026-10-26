@@ -14,6 +14,11 @@ export const HYDRANT_STATUS: Record<HydrantStatus, { label: string; color: strin
 
 export const isHydrantStatus = (value: string): value is HydrantStatus => value in HYDRANT_STATUS;
 
+/** Shared visibility never transfers ownership to the viewing organization. */
+export function isOwnHydrant(ownerOrgId: string, currentOrgId: string | null): boolean {
+  return currentOrgId !== null && ownerOrgId === currentOrgId;
+}
+
 export function parseHydrantOutlets(value: unknown): HydrantOutlet[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item, index) => {

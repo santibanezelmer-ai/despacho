@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,12 +26,14 @@ import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const OperativeMap = lazy(() => import("@/pages/OperativeMap"));
+const TvScreen = lazy(() => import("@/pages/TvScreen"));
 const EquipmentPage = lazy(() => import("@/pages/Equipment"));
 const CentralScreen = lazy(() => import("@/pages/CentralScreen"));
 const MapScreen = lazy(() => import("@/pages/MapScreen"));
 const AlertsPage = lazy(() => import("@/pages/AlertsPage"));
 const SimulationPage = lazy(() => import("@/pages/SimulationPage"));
 const TrainingPage = lazy(() => import("@/pages/TrainingPage"));
+const CompanyDuty = lazy(() => import("@/pages/CompanyDuty"));
 const AuditPage = lazy(() => import("@/pages/AuditPage"));
 const ExportsPage = lazy(() => import("@/pages/ExportsPage"));
 import NotificationsPage from "@/pages/NotificationsPage";
@@ -44,15 +46,11 @@ import SuperadminSupport from "@/pages/superadmin/SuperadminSupport";
 import SuperadminHealth from "@/pages/superadmin/SuperadminHealth";
 import SupportPage from "@/pages/SupportPage";
 import NotFound from "./pages/NotFound";
-import MobileLayout from "@/components/mobile/MobileLayout";
-import MobileFeedPage from "@/pages/mobile/MobileFeedPage";
-import MobileEmergencyDetailPage from "@/pages/mobile/MobileEmergencyDetailPage";
-import MobileProfilePage from "@/pages/mobile/MobileProfilePage";
-const MobileMapPage = lazy(() => import("@/pages/mobile/MobileMapPage"));
 import OnboardingPage from "@/pages/admin/OnboardingPage";
 import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import SharedLocationPage from "@/pages/SharedLocationPage";
 import TermsPage from "@/pages/legal/TermsPage";
+import PrivacyPage from "@/pages/legal/PrivacyPage";
 import { Loader2 } from "lucide-react";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -77,9 +75,14 @@ function PageFallback() {
   );
 }
 
-function PushNotificationWrapper({ children }: { children: React.ReactNode }) {
+function NativePushRegistration() {
   usePushNotifications();
-  return <>{children}</>;
+  return null;
+}
+
+function LegacyMobileEmergencyRedirect() {
+  const { id } = useParams();
+  return <Navigate to={id ? `/voluntario/emergencia/${id}` : "/voluntario"} replace />;
 }
 
 function AppRoutes() {
@@ -108,7 +111,7 @@ function AppRoutes() {
 
   if (!user) {
     if (isNativeMobile && location.pathname === '/') {
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/voluntario/login" replace />;
     }
     return (
       <Routes>
@@ -247,6 +250,7 @@ function AppRoutes() {
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />
         <Route path="/companias" element={<Companies />} />
+        <Route path="/guardias" element={<CompanyDuty />} />
         <Route path="/claves" element={<EmergencyKeysAdmin />} />
         <Route path="/equipamiento" element={<EquipmentPage />} />
         <Route path="/capacitaciones" element={<TrainingPage />} />
@@ -278,18 +282,25 @@ const App = () => (
         <RouteErrorBoundary>
           <AuthProvider>
             <OrganizationProvider>
+              <NativePushRegistration />
               <SecurityGuard />
               <UserWatermark />
-              <PushNotificationWrapper>
-                <Routes>
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/invite/:token" element={<AcceptInvitation />} />
-                  <Route path="/location/:token" element={<SharedLocationPage />} />
-                  <Route path="/terminos" element={<TermsPage />} />
-                  <Route path="/voluntario/*" element={<VoluntarioApp />} />
-                  <Route path="*" element={<AppRoutes />} />
-                </Routes>
-              </PushNotificationWrapper>
+              <Routes>
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/invite/:token" element={<AcceptInvitation />} />
+                <Route path="/location/:token" element={<SharedLocationPage />} />
+                <Route path="/tv" element={<Suspense fallback={<PageFallback />}><TvScreen /></Suspense>} />
+                <Route path="/terminos" element={<TermsPage />} />
+                <Route path="/privacidad" element={<PrivacyPage />} />
+                <Route path="/voluntario/*" element={<VoluntarioApp />} />
+                <Route path="/mobile" element={<Navigate to="/voluntario" replace />} />
+                <Route path="/mobile/feed" element={<Navigate to="/voluntario" replace />} />
+                <Route path="/mobile/map" element={<Navigate to="/voluntario/mapa" replace />} />
+                <Route path="/mobile/profile" element={<Navigate to="/voluntario/perfil" replace />} />
+                <Route path="/mobile/emergency/:id" element={<LegacyMobileEmergencyRedirect />} />
+                <Route path="/mobile/*" element={<Navigate to="/voluntario" replace />} />
+                <Route path="*" element={<AppRoutes />} />
+              </Routes>
             </OrganizationProvider>
           </AuthProvider>
         </RouteErrorBoundary>

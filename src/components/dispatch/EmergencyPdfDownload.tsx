@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { resolveLogoUrl, toDataUrl } from '@/lib/logoStorage';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { VEHICLE_STATUS_META } from '@/lib/vehicleOperationalStatus';
 
 interface Props {
   emergencyId: string;
@@ -17,10 +18,84 @@ async function logoToDataUrl(value?: string | null): Promise<string | null> {
   return await toDataUrl(url);
 }
 
+// Abreviaturas de rango/cargo para la tabla de firmas (evita que el nombre quede oculto).
+const RANK_ABBR: [RegExp, string][] = [
+  [/^vice\s*super\s*intendente/i, 'VICE SUPTE.'],
+  [/^super\s*intendente/i, 'SUPTE.'],
+  [/^secretario\/?a?\s+general/i, 'SECR. GRAL.'],
+  [/^tesorero\/?a?\s+general/i, 'TES. GRAL.'],
+  [/^secretario\/?a?/i, 'SECR.'],
+  [/^tesorero\/?a?/i, 'TES.'],
+  [/^director/i, 'DIR.'],
+  [/^ayudante\s+de\s+comandancia/i, 'AYTE. CDCIA.'],
+  [/^ayudante/i, 'AYTE.'],
+  [/^comandante/i, 'CMDTE.'],
+  [/^capit[aá]n/i, 'CAP.'],
+  [/^teniente\s+de\s+m[aá]quina/i, 'TTE. MAQ.'],
+  [/^teniente\s*(\d)/i, 'TTE. $1°'],
+  [/^teniente/i, 'TTE.'],
+  [/^voluntario\/?a?/i, 'VOL.'],
+  [/^honorario\/?a?/i, 'HON.'],
+  [/^aspirante/i, 'ASP.'],
+];
+function abbreviateRank(rank?: string | null): string {
+  const r = rank?.trim();
+  if (!r) return '';
+  for (const [re, abbr] of RANK_ABBR) {
+    const m = r.match(re);
+    if (m) return abbr.replace('$1', m[1] ?? '');
+  }
+  return r.toUpperCase();
+}
+
 const fmtTime = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
 const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString('es-CL') : '';
+const fmtDateTime = (iso?: string | null) =>
+  iso ? `${fmtDate(iso)} ${fmtTime(iso)}` : 'Sin hora registrada';
+
+const is109 = (code?: string | null) => {
+  const c = (code ?? '').replace(/\s/g, '').toLowerCase();
+  return c === '10-9' || c === '109';
+};
+
+type KeyEntry = { code: string; description: string; at: string | null };
+
+/** Claves operativas reales de UN móvil: bitácora + marcas de tiempo guardadas. */
+function vehicleKeyHistory(ev: any, logs: any[]): KeyEntry[] {
+  const code = ev?.vehicles?.code;
+  const entries: KeyEntry[] = [];
+  const M = VEHICLE_STATUS_META;
+  if (ev?.assigned_at) entries.push({ code: M.despachado.code, description: M.despachado.description, at: ev.assigned_at });
+  const prefix = code ? `Móvil ${code} marcó clave ` : null;
+  const fromLog = prefix
+    ? logs.filter(l => typeof l.message === 'string' && l.message.startsWith(prefix))
+    : [];
+  if (fromLog.length > 0) {
+    for (const l of fromLog) {
+      const rest = l.message.slice(prefix!.length);
+      const [k, ...d] = rest.split(' — ');
+      entries.push({ code: k.trim(), description: d.join(' - ').trim(), at: l.created_at });
+    }
+  } else {
+    if (ev?.on_scene_at) entries.push({ code: M.en_lugar.code, description: M.en_lugar.description, at: ev.on_scene_at });
+    if (ev?.controlled_at) entries.push({ code: M.controlada.code, description: M.controlada.description, at: ev.controlled_at });
+    if (ev?.withdrawing_at) entries.push({ code: M.retirandose.code, description: M.retirandose.description, at: ev.withdrawing_at });
+  }
+  // Una reasignación desde 6-9/10-9 cierra la participación sin volver a cuartel:
+  // se registra como reasignación, nunca como un 6-10.
+  const reassign = code
+    ? logs.find(l => typeof l.message === 'string' && l.message.startsWith(`Móvil ${code} reasignado a `))
+    : null;
+  if (reassign) {
+    const target = reassign.message.slice(`Móvil ${code} reasignado a `.length).split(' desde ')[0];
+    entries.push({ code: 'REASIGNADO', description: `Reasignado a ${target} (sin retorno a cuartel)`, at: reassign.created_at });
+  } else if (ev?.released_at) {
+    entries.push({ code: M.en_cuartel.code, description: M.en_cuartel.description, at: ev.released_at });
+  }
+  return entries.sort((a, b) => (a.at ? Date.parse(a.at) : Infinity) - (b.at ? Date.parse(b.at) : Infinity));
+}
 
 export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
   const [loading, setLoading] = useState(false);
@@ -53,19 +128,19 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
       // Fetch personnel
       const { data: epData } = await supabase
         .from('emergency_personnel')
-        .select('*, volunteers(name, rut, phone, companies(name), ranks(name)), emergency_vehicles(vehicles(code))')
+        .select('*, volunteers(name, code, rut, phone, companies(id, name, number, logo_url), ranks(name)), emergency_vehicles(vehicles(code))')
         .eq('emergency_id', emergencyId);
 
-      // Resolve org logo + first company logo
+      // Bitácora (claves marcadas por cada móvil)
+      const { data: logData } = await supabase
+        .from('emergency_log')
+        .select('message, created_at')
+        .eq('emergency_id', emergencyId)
+        .order('created_at', { ascending: true });
+      const logs = logData ?? [];
+
+      // Encabezado de la primera hoja: solo el logo del cuerpo.
       const orgLogo = await logoToDataUrl(orgRow?.logo_url);
-      let companyLogo: string | null = null;
-      for (const ev of evData ?? []) {
-        const c = (ev as any).vehicles?.companies;
-        if (c?.logo_url) {
-          companyLogo = await logoToDataUrl(c.logo_url);
-          if (companyLogo) break;
-        }
-      }
 
       const ek = emg.emergency_keys as any;
       const doc = new jsPDF({ unit: 'mm', format: 'letter' });
@@ -74,12 +149,9 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
       const margin = 14;
       const contentW = pageW - margin * 2;
 
-      // ---- Header: logos + centered title ----
+      // ---- Header: logo del cuerpo + título centrado ----
       if (orgLogo) {
         try { doc.addImage(orgLogo, 'PNG', margin, 10, 16, 16); } catch { /* ignore */ }
-      }
-      if (companyLogo) {
-        try { doc.addImage(companyLogo, 'PNG', pageW - margin - 16, 10, 16, 16); } catch { /* ignore */ }
       }
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
@@ -113,38 +185,58 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
         y += rowH;
       };
 
-      // Identificación visible en todas las fichas, incluso si no hay móviles asignados.
+      const ensure = (need: number) => {
+        if (y + need > pageH - 16) { doc.addPage(); y = 20; }
+      };
+      const sectionTitle = (t: string) => {
+        ensure(16);
+        doc.setFillColor(225, 225, 225);
+        doc.rect(margin, y, contentW, 7, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(t, margin + 2, y + 5);
+        y += 7;
+      };
+
+      // ---- Información de la emergencia ----
+      sectionTitle('INFORMACIÓN DE LA EMERGENCIA');
       const emergencyName = ek?.name?.trim() || 'Sin nombre registrado';
       const nameLines = doc.splitTextToSize(emergencyName, contentW - 42);
       drawDataRow(['NOMBRE DE LA\nEMERGENCIA', emergencyName], [38, contentW - 38], Math.max(12, nameLines.length * 4.5 + 4));
-      drawDataRow(['ID DE LA\nEMERGENCIA', emg.id], [38, contentW - 38], 12);
+      drawDataRow(['FOLIO', emg.folio ?? '', 'CLAVE', ek?.code ?? '', 'FECHA', fmtDate(emg.created_at)],
+        [18, 50, 18, 40, 18, contentW - 144], 10);
+      if (is109(ek?.code)) {
+        const auth = (emg as any).caller_name?.trim();
+        drawDataRow(['AUTORIZADO\nPOR', auth || 'No registrado'], [38, contentW - 38], 10);
+      }
       y += 5;
 
       const vehicles = evData ?? [];
       const personnel = epData ?? [];
+      const personLabel = (ep: any) => {
+        if (!ep) return '';
+        const name = ep.volunteers?.name ?? '';
+        const id = ep.volunteers?.code?.trim();
+        return `${name} - ID: ${id || 'sin ID registrado'}`;
+      };
 
-      // ---- Vehicle blocks ----
-      const blocks = vehicles.length > 0 ? vehicles : [null];
-      for (const ev of blocks) {
-        if (y > pageH - 46) { doc.addPage(); y = 20; }
+      // ---- Información de los móviles ----
+      sectionTitle('INFORMACIÓN DE LOS MÓVILES');
+      if (vehicles.length === 0) {
+        drawDataRow(['MÓVILES', 'Sin móviles asignados'], [38, contentW - 38], 10);
+      }
+      for (const ev of vehicles) {
+        ensure(60);
         const v = (ev as any)?.vehicles;
         const evId = (ev as any)?.id;
-
-        // Personnel assigned to this vehicle
-        const vehPersonnel = evId
-          ? personnel.filter((ep: any) => ep.emergency_vehicle_id === evId || ep.emergency_vehicles?.vehicles?.code === v?.code)
-          : personnel;
-        const conductor = vehPersonnel.find((ep: any) =>
-          (ep.role ?? '').toLowerCase().includes('conductor'))?.volunteers?.name ?? '';
-        const aCargo = vehPersonnel.find((ep: any) => {
-          const r = (ep.role ?? '').toLowerCase();
-          return r.includes('cargo') || r.includes('oficial');
-        })?.volunteers?.name ?? '';
-
+        const vehPersonnel = personnel.filter((ep: any) => ep.emergency_vehicle_id === evId);
+        const conductor = vehPersonnel.find((ep: any) => ep.role === 'conductor');
+        const aCargo = vehPersonnel.find((ep: any) => ep.role === 'oficial_a_cargo');
         const assignedAt = (ev as any)?.assigned_at ?? emg.created_at;
-        const releasedAt = (ev as any)?.released_at ?? null;
+        // Si fue reasignado desde 6-9/10-9 no hubo llegada a cuartel: sin hora de llegada.
+        const wasReassigned = !!v?.code && logs.some(l => typeof l.message === 'string' && l.message.startsWith(`Móvil ${v.code} reasignado a `));
+        const releasedAt = wasReassigned ? null : ((ev as any)?.released_at ?? null);
 
-        // Row 1: MOVIL | CLAVE | HORA SALIDA | KM SALIDA | FECHA (5 label/value pairs)
         const r1: number[] = [16, 22, 14, 22, 18, 22, 18, 22, 14, contentW - 168];
         drawDataRow(
           ['MOVIL', v?.code ?? '', 'CLAVE', ek?.code ?? '', 'HORA\nSALIDA', fmtTime(assignedAt),
@@ -152,37 +244,106 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
             'FECHA', fmtDate(assignedAt)],
           r1, 11,
         );
-        // Row 2: SECTOR | HORA LLEGADA | KM LLEGADA
         const r2: number[] = [18, 70, 22, 26, 22, contentW - 158];
         drawDataRow(
           ['SECTOR', emg.address ?? '', 'HORA\nLLEGADA', fmtTime(releasedAt),
             'KM\nLLEGADA', (ev as any)?.odometer_end != null ? String((ev as any).odometer_end) : ''],
           r2, 11,
         );
-        // Row 3: CONDUCTOR/A | A CARGO
-        drawDataRow(
-          ['CONDUCTOR/A', conductor, 'A CARGO', aCargo],
-          [contentW * 0.16, contentW * 0.34, contentW * 0.16, contentW * 0.34],
-          11,
-        );
-        y += 4;
+        drawDataRow(['CONDUCTOR/A', personLabel(conductor)], [38, contentW - 38], 9);
+        drawDataRow(['OFICIAL A\nCARGO', personLabel(aCargo)], [38, contentW - 38], 9);
+
+        // Claves operativas de este móvil (orden cronológico)
+        const keys = vehicleKeyHistory(ev, logs);
+        const cw = [22, contentW - 22 - 44, 44];
+        const head = (label: string) => {
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+          let x = margin;
+          ['CLAVE', `REGISTRO DE CLAVES · ${label}`, 'FECHA Y HORA'].forEach((h, i) => {
+            doc.rect(x, y, cw[i], 6); doc.text(h, x + 1.5, y + 4); x += cw[i];
+          });
+          y += 6;
+        };
+        ensure(14);
+        head(v?.code ?? 'MÓVIL');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        if (keys.length === 0) {
+          doc.rect(margin, y, contentW, 6);
+          doc.text('Sin claves registradas', margin + 1.5, y + 4);
+          y += 6;
+        }
+        for (const k of keys) {
+          if (y + 6 > pageH - 16) { doc.addPage(); y = 20; head(`${v?.code ?? 'MÓVIL'} (cont.)`); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); }
+          const desc = doc.splitTextToSize(k.description || '', cw[1] - 3)[0] ?? '';
+          let x = margin;
+          [k.code, desc, fmtDateTime(k.at)].forEach((c, i) => {
+            doc.rect(x, y, cw[i], 6); doc.text(c, x + 1.5, y + 4); x += cw[i];
+          });
+          y += 6;
+        }
+        y += 5;
       }
 
-      // ---- Personnel by company ----
-      const byCompany = new Map<string, any[]>();
-      personnel.forEach((ep: any) => {
-        const cname = ep.volunteers?.companies?.name ?? 'SIN COMPAÑÍA';
-        if (!byCompany.has(cname)) byCompany.set(cname, []);
-        byCompany.get(cname)!.push(ep);
-      });
+      // ---- Preinforme ----
+      sectionTitle('PREINFORME');
+      const pre = ((emg as any).pre_report ?? '').trim();
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const preLines: string[] = pre
+        ? pre.split(/\r?\n/).flatMap((ln: string) => (ln.trim() ? doc.splitTextToSize(ln, contentW - 4) : ['']))
+        : ['Sin preinforme registrado'];
+      const lh = 4.4;
+      let chunkStart = y;
+      doc.setLineWidth(0.3);
+      for (const ln of preLines) {
+        if (y + lh > pageH - 16) {
+          doc.rect(margin, chunkStart, contentW, y - chunkStart + 2);
+          doc.addPage(); y = 20; chunkStart = y;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        }
+        doc.text(ln, margin + 2, y + 4);
+        y += lh;
+      }
+      doc.rect(margin, chunkStart, contentW, y - chunkStart + 2);
+      y += 8;
 
-      for (const [companyName, list] of byCompany) {
+      // ---- Personnel by company (siempre 1ª → última, sin importar orden de despacho) ----
+      const byCompany = new Map<string, { name: string; number: number; logo_url: string | null; list: any[] }>();
+      personnel.forEach((ep: any) => {
+        const c = ep.volunteers?.companies;
+        const key = c?.id ?? 'sin';
+        if (!byCompany.has(key)) {
+          byCompany.set(key, { name: c?.name ?? 'SIN COMPAÑÍA', number: c?.number ?? 9999, logo_url: c?.logo_url ?? null, list: [] });
+        }
+        byCompany.get(key)!.list.push(ep);
+      });
+      const companyGroups = [...byCompany.values()].sort((a, b) => a.number - b.number);
+      const logoCache = new Map<string, string | null>();
+      for (const g of companyGroups) {
+        if (g.logo_url && !logoCache.has(g.logo_url)) logoCache.set(g.logo_url, await logoToDataUrl(g.logo_url));
+      }
+
+      for (const { name: companyName, logo_url, list } of companyGroups) {
         if (y > pageH - 90) { doc.addPage(); y = 20; }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
-        doc.text(`OFICIALES Y VOLUNTARIOS ${companyName.toUpperCase()}.`, pageW / 2, y + 4, { align: 'center' });
-        y += 9;
+        const title = `OFICIALES Y VOLUNTARIOS ${companyName.toUpperCase()}.`;
+        const logo = logo_url ? logoCache.get(logo_url) : null;
+        const logoSize = 16;
+        if (logo) {
+          const tw = doc.getTextWidth(title);
+          const gap = 4;
+          const leftX = Math.max(margin, pageW / 2 - tw / 2 - gap - logoSize);
+          const rightX = Math.min(pageW - margin - logoSize, pageW / 2 + tw / 2 + gap);
+          try { doc.addImage(logo, 'PNG', leftX, y, logoSize, logoSize); } catch { /* ignore */ }
+          try { doc.addImage(logo, 'PNG', rightX, y, logoSize, logoSize); } catch { /* ignore */ }
+          doc.text(title, pageW / 2, y + logoSize / 2 + 1.5, { align: 'center' });
+          y += logoSize + 3;
+        } else {
+          doc.text(title, pageW / 2, y + 4, { align: 'center' });
+          y += 9;
+        }
 
         // 3 column-pairs: NOMBRES | FIRMA ×3
         const pairW = contentW / 3;
@@ -206,9 +367,9 @@ export default function EmergencyPdfDownload({ emergencyId, folio }: Props) {
 
         // Distribute: fill column-pairs top to bottom, then left to right
         const names = list.map((ep: any) => {
-          const rank = ep.volunteers?.ranks?.name;
+          const rank = abbreviateRank(ep.volunteers?.ranks?.name);
           const name = ep.volunteers?.name ?? '';
-          return (rank ? `${rank.toUpperCase()} ` : '') + name.toUpperCase();
+          return (rank ? `${rank} ` : '') + name.toUpperCase();
         });
         const totalRows = Math.max(12, Math.ceil(names.length / 3));
 

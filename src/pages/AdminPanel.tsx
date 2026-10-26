@@ -20,6 +20,9 @@ import VehicleDevicesAdmin from '@/components/admin/VehicleDevicesAdmin';
 
 import OrganizationBrandingCard from '@/components/admin/OrganizationBrandingCard';
 import CompanyAdminsManager from '@/components/admin/CompanyAdminsManager';
+import NotificationsPage from '@/pages/NotificationsPage';
+import SimulationPage from '@/pages/SimulationPage';
+import { Link } from 'react-router-dom';
 
 // Virtual role that maps to role='admin' + company_id NOT NULL in the DB.
 type UiRole = 'admin' | 'admin_compania' | 'operador' | 'oficial' | 'visor';
@@ -49,7 +52,7 @@ function toUiRole(dbRole: string, companyId: string | null): UiRole {
 
 export default function AdminPanel() {
   const { user } = useAuth();
-  const { orgId, isOrgAdmin, currentOrg } = useOrganization();
+  const { orgId, isOrgAdmin, currentOrg, isCompanyAdmin } = useOrganization();
   const queryClient = useQueryClient();
   const { data: companies } = useCompanies();
   const [search, setSearch] = useState('');
@@ -177,6 +180,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
+      <div className="flex justify-end"><Link to="/admin/onboarding" className="text-xs text-info hover:underline">Revisar configuración inicial →</Link></div>
       <Tabs defaultValue="miembros" className="space-y-4">
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="miembros" className="text-sm md:text-base">Miembros</TabsTrigger>
@@ -186,6 +190,8 @@ export default function AdminPanel() {
           <TabsTrigger value="dispositivos" className="text-sm md:text-base">Dispositivos</TabsTrigger>
           <TabsTrigger value="sonidos" className="text-sm md:text-base">Sonidos</TabsTrigger>
           <TabsTrigger value="demo" className="text-sm md:text-base">Demo</TabsTrigger>
+          {!isCompanyAdmin && <TabsTrigger value="notificaciones" className="text-sm md:text-base">Registro de notificaciones</TabsTrigger>}
+          {!isCompanyAdmin && <TabsTrigger value="simulacion" className="text-sm md:text-base">Simulación</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="miembros" className="space-y-3">
@@ -338,6 +344,8 @@ export default function AdminPanel() {
         <TabsContent value="dispositivos"><VehicleDevicesAdmin /></TabsContent>
         <TabsContent value="sonidos"><SystemSoundsAdmin /></TabsContent>
         <TabsContent value="demo"><DemoSettingsAdmin /></TabsContent>
+        {!isCompanyAdmin && <TabsContent value="notificaciones"><NotificationsPage /></TabsContent>}
+        {!isCompanyAdmin && <TabsContent value="simulacion"><SimulationPage /></TabsContent>}
       </Tabs>
     </div>
   );

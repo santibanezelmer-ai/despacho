@@ -1,144 +1,76 @@
-import { Link } from 'react-router-dom';
-import { CheckCircle2, ArrowRight, Star, Sparkles } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-const globalBenefits = [
-  'Sin costo de instalación',
-  'Implementación guiada',
-  'Capacitación incluida',
+// Solo funcionalidades existentes en la plataforma.
+const features = [
+  'Consola de despacho con claves y tono de despacho',
+  'Emergencias activas con claves por móvil y bitácora',
+  'Mapa operativo con grifos, cuarteles y capas territoriales',
+  'Solicitud de ubicación por enlace al denunciante',
+  'Pantalla central para cuartel',
+  'Gestión de voluntarios, compañías y rangos',
+  'Gestión de móviles, equipamiento y kilometraje',
+  'App móvil con notificaciones de despacho',
+  'Ficha PDF de la emergencia, historial y exportaciones',
+  'Roles de acceso y registro de auditoría',
+  'Implementación guiada y capacitación',
+  'Soporte por tickets desde la plataforma',
 ];
-
-const plans = [
-  {
-    name: 'Básico',
-    description: 'Para cuerpos pequeños que necesitan lo esencial',
-    features: ['Despacho de emergencias', 'Gestión de voluntarios', 'Acceso web', 'Soporte básico'],
-    cta: 'Solicitar acceso',
-    link: '/register',
-    highlighted: false,
-  },
-  {
-    name: 'Profesional',
-    description: 'La opción más completa para operaciones reales',
-    badge: 'Más utilizado',
-    features: ['Todo lo del plan Básico', 'App móvil con notificaciones push', 'Mapa operativo con hidrantes', 'Control de flota y equipamiento', 'Reportes y exportaciones'],
-    cta: 'Solicitar demo',
-    link: '/register',
-    highlighted: true,
-  },
-  {
-    name: 'Institucional',
-    description: 'Para grandes instituciones con múltiples cuarteles',
-    features: ['Multi-cuartel', 'Personalización completa', 'Integraciones a medida', 'Soporte técnico según plan'],
-    cta: 'Contactar',
-    link: '/register',
-    highlighted: false,
-  },
-];
-
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55 } },
-};
 
 export default function PricingSection() {
   return (
-    <section className="relative border-y border-border/40 bg-gradient-to-b from-card/30 via-background to-card/30 px-4 sm:px-6 py-20 sm:py-28 overflow-hidden">
-      {/* Background glow */}
+    <section
+      id="planes"
+      className="relative border-y border-border/40 bg-gradient-to-b from-card/30 via-background to-card/30 px-4 sm:px-6 py-20 sm:py-28 overflow-hidden scroll-mt-24"
+    >
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emergency/[0.04] blur-[120px] pointer-events-none" />
 
-      <div className="mx-auto max-w-5xl relative">
+      <div className="mx-auto max-w-3xl relative">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-6"
+          className="text-center mb-10"
         >
-          <h2 className="text-2xl sm:text-4xl font-bold">Planes adaptados a tu organización</h2>
+          <h2 className="text-2xl sm:text-4xl font-bold">Servicio y precios</h2>
           <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">
-            Operix se ajusta al tamaño y necesidades de cada cuerpo de bomberos
+            Un solo plan con todas las funcionalidades, cotizado según tu institución.
           </p>
         </motion.div>
 
-        {/* Global benefits */}
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex flex-wrap justify-center gap-x-8 gap-y-3 mb-12 sm:mb-16"
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl border border-emergency/40 bg-card/80 p-6 sm:p-10 shadow-[0_0_40px_hsl(0_85%_55%/0.15),0_8px_32px_hsl(0_0%_0%/0.25)] backdrop-blur-sm"
         >
-          {globalBenefits.map((b) => (
-            <div key={b} className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-              <div className="h-5 w-5 rounded-full bg-success/15 flex items-center justify-center">
-                <CheckCircle2 className="h-3 w-3 text-success" />
-              </div>
-              {b}
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-emergency/20 bg-emergency/10">
+              <Building2 className="h-5 w-5 text-emergency" />
             </div>
-          ))}
+            <div>
+              <h3 className="text-lg sm:text-2xl font-bold">Plan Global Institucional</h3>
+              <p className="text-sm text-muted-foreground">Cotización personalizada</p>
+            </div>
+          </div>
+
+          <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+            {features.map((f) => (
+              <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emergency" />
+                {f}
+              </li>
+            ))}
+          </ul>
+
+          <a href="#contacto" className="mt-8 block">
+            <Button className="w-full gap-2 h-12 font-semibold bg-emergency text-emergency-foreground hover:bg-emergency/90 shadow-[0_0_25px_hsl(0_85%_55%/0.35)]">
+              Solicitar cotización <ArrowRight className="h-4 w-4" />
+            </Button>
+          </a>
         </motion.div>
-
-        {/* Plan cards */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          variants={stagger}
-          className="grid gap-5 sm:grid-cols-3 items-start"
-        >
-          {plans.map((plan) => (
-            <motion.div
-              key={plan.name}
-              variants={fadeUp}
-              whileHover={{ y: -8, transition: { duration: 0.25 } }}
-              className={`relative rounded-2xl border p-6 sm:p-8 flex flex-col transition-all duration-300 backdrop-blur-sm ${
-                plan.highlighted
-                  ? 'border-emergency/40 bg-card/80 shadow-[0_0_40px_hsl(0_85%_55%/0.15),0_8px_32px_hsl(0_0%_0%/0.25)] sm:scale-[1.05] z-10'
-                  : 'border-border/50 bg-card/50 hover:border-border/70 hover:shadow-[0_4px_16px_hsl(0_0%_0%/0.2)]'
-              }`}
-            >
-              {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-emergency px-4 py-1.5 text-[11px] font-bold text-emergency-foreground shadow-[0_0_20px_hsl(0_85%_55%/0.4)]">
-                  <Star className="h-3 w-3" /> {plan.badge}
-                </div>
-              )}
-
-              <h3 className="text-lg sm:text-xl font-bold">{plan.name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{plan.description}</p>
-
-              <ul className="mt-6 space-y-3 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-xs sm:text-sm text-muted-foreground">
-                    <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${plan.highlighted ? 'text-emergency' : 'text-emergency/60'}`} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Link to={plan.link} className="mt-7">
-                <Button
-                  className={`w-full gap-2 h-11 font-semibold transition-all duration-300 ${
-                    plan.highlighted
-                      ? 'bg-emergency text-emergency-foreground hover:bg-emergency/90 shadow-[0_0_25px_hsl(0_85%_55%/0.35)] hover:shadow-[0_0_40px_hsl(0_85%_55%/0.45)]'
-                      : 'bg-secondary text-foreground hover:bg-secondary/80 hover:border-emergency/20'
-                  }`}
-                >
-                  {plan.cta} <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="mt-10 text-center text-xs text-muted-foreground/60 max-w-md mx-auto"
-        >
-          Los valores se ajustan según el tamaño de la organización. Contáctanos para una propuesta personalizada.
-        </motion.p>
       </div>
     </section>
   );

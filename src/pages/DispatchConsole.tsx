@@ -11,6 +11,9 @@ import { usePlaySystemSound } from '@/hooks/useSystemSounds';
 import type { EmergencyKeyRow } from '@/hooks/useEmergencyKeys';
 import { useDispatchForm } from '@/contexts/DispatchFormContext';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { BookOpen } from 'lucide-react';
+import RadioGlossary from '@/components/dispatch/RadioGlossary';
 
 export default function DispatchConsole() {
   const { openDispatch } = useDispatchForm();
@@ -45,7 +48,7 @@ export default function DispatchConsole() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right mr-2">
-            <SystemClock />
+            <SystemClock className="text-3xl font-mono font-bold tabular-nums leading-none text-foreground sm:text-4xl" />
           </div>
           <button
             onClick={toggleTheme}
@@ -55,6 +58,18 @@ export default function DispatchConsole() {
             {theme === 'dark' ? <Sun className="h-3.5 w-3.5 text-warning" /> : <Moon className="h-3.5 w-3.5 text-info" />}
             <span className="hidden md:inline">{theme === 'dark' ? 'Fondo blanco' : 'Fondo negro'}</span>
           </button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-xs">
+                <BookOpen className="mr-1.5 h-3.5 w-3.5" />
+                Glosario Radial
+              </Button>
+            </DialogTrigger>
+            <DialogContent data-theme={theme} className="theme-screen sm:max-w-2xl bg-background text-foreground">
+              <DialogHeader><DialogTitle>Glosario de claves radiales</DialogTitle></DialogHeader>
+              <RadioGlossary compact />
+            </DialogContent>
+          </Dialog>
           <Button
             variant="outline"
             size="sm"

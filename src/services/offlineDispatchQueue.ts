@@ -1,3 +1,4 @@
+import { prepareReassignment, findVehicleConflicts } from '@/lib/vehicleAvailability';
 import { supabase } from '@/integrations/supabase/client';
 import { sendPushToOrganization } from '@/services/pushService';
 
@@ -80,7 +81,30 @@ export function isNetworkError(err: unknown): boolean {
  * Misma secuencia que el despacho en línea: emergencia, móviles, bitácora y push.
  * Devuelve el id de la emergencia creada.
  */
-export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: boolean } = {}) {
+export async function performDispatch(d0: PendingDispatch, opts: { offlineSync?: boolean } = {}) {
+  let d = d0;
+  const dropped: string[] = [];
+  const dropBlocked = async () => {
+    if (!d.vehicleIds.length) return;
+    const blocked = (await findVehicleConflicts(d.orgId, d.vehicleIds)).filter(c => c.emergencyId !== d.clientId);
+    if (!blocked.length) return;
+    const ids = new Set(blocked.map(b => b.vehicleId));
+    dropped.push(...blocked.map(b => `${d.vehicleLabels[d.vehicleIds.indexOf(b.vehicleId)] || 'Móvil'} (${b.folio})`));
+    const keep = d.vehicleIds.map((id, i) => [id, d.vehicleLabels[i] ?? ''] as const).filter(([id]) => !ids.has(id));
+    d = { ...d, vehicleIds: keep.map(k => k[0]), vehicleLabels: keep.map(k => k[1]) };
+  };
+
+  // Verifica ANTES de crear la emergencia: en línea no se crea nada si un móvil
+  // quedó comprometido; al sincronizar sin conexión se despacha sin ese móvil.
+  if (d.vehicleIds.length) {
+    const blocked = (await findVehicleConflicts(d.orgId, d.vehicleIds)).filter(c => c.emergencyId !== d.clientId);
+    if (blocked.length && !opts.offlineSync) {
+      const codes = blocked.map(b => `${d.vehicleLabels[d.vehicleIds.indexOf(b.vehicleId)] || 'Móvil'} (${b.folio})`).join(', ');
+      throw new Error(`Móvil comprometido sin 6-9: ${codes}. Elige otro y vuelve a despachar.`);
+    }
+    if (blocked.length) await dropBlocked();
+  }
+
   const { error: eErr } = await supabase.from('emergencies').insert({
     id: d.clientId,
     emergency_key_id: d.keyId,
@@ -98,6 +122,18 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
   // 23505: ya existía (reintento tras corte a mitad) → continuar
   if (eErr && (eErr as any).code !== '23505') throw eErr;
   const alreadyExisted = !!eErr;
+
+  // La emergencia ya existe: nunca abortar. Un móvil comprometido en el último
+  // instante se omite y queda en bitácora, para no dejarla sin aviso ni registro.
+  await dropBlocked();
+  for (const label of dropped) {
+    await supabase.from('emergency_log').insert({
+      emergency_id: d.clientId,
+      organization_id: d.orgId,
+      created_by: d.userId,
+      message: `Móvil ${label} no asignado: comprometido en otra emergencia al momento del despacho`,
+    });
+  }
 
   if (d.locationRequestId) {
     await supabase.from('location_requests').update({ emergency_id: d.clientId }).eq('id', d.locationRequestId);
@@ -119,6 +155,26 @@ export async function performDispatch(d: PendingDispatch, opts: { offlineSync?: 
   }
 
   if (missingVehicleIds.length > 0) {
+    const { data: created } = await supabase.from('emergencies').select('folio').eq('id', d.clientId).maybeSingle();
+    const targetFolio = created?.folio || `nueva emergencia ${d.keyCode}`;
+    const vehicleCodes = Object.fromEntries(d.vehicleIds.map((id, i) => [id, d.vehicleLabels?.[i] ?? '']));
+    // Reasignación directa de móviles con 6-9 / 10-9; bloquea los comprometidos.
+    const moved = await prepareReassignment({
+      orgId: d.orgId,
+      vehicleIds: missingVehicleIds,
+      targetEmergencyId: d.clientId,
+      targetLabel: targetFolio,
+      vehicleCodes,
+      userId: d.userId,
+    });
+    for (const m of moved) {
+      await supabase.from('emergency_log').insert({
+        emergency_id: d.clientId,
+        organization_id: d.orgId,
+        created_by: d.userId,
+        message: `Móvil ${vehicleCodes[m.vehicleId] ?? ''} asignado (reasignado desde ${m.folio})`,
+      });
+    }
     const { data: vehicleData } = await supabase
       .from('vehicles')
       .select('id, odometer')

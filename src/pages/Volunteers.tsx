@@ -1,3 +1,6 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { lazy, Suspense } from 'react';
+const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
 import { useVolunteers } from '@/hooks/useVolunteers';
 import { Users, Search, Plus, Pencil, Trash2, Mail, Shield, ShieldOff, Loader2, IdCard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,7 +15,7 @@ import { toast } from 'sonner';
 import VolunteerFormDialog from '@/components/volunteers/VolunteerFormDialog';
 import VolunteerProfileDialog from '@/components/volunteers/VolunteerProfileDialog';
 
-export default function Volunteers() {
+function VolunteersList() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVolunteer, setEditingVolunteer] = useState<any>(null);
@@ -249,5 +252,24 @@ export default function Volunteers() {
 
       <VolunteerFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} volunteer={editingVolunteer} />
     </div>
+  );
+}
+
+export default function Volunteers() {
+  return (
+    <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') === 'capacitaciones' ? 'capacitaciones' : 'lista'} className="flex flex-col">
+      <div className="px-4 lg:px-6 pt-4">
+        <TabsList>
+          <TabsTrigger value="lista">Voluntarios</TabsTrigger>
+          <TabsTrigger value="capacitaciones">Capacitaciones y cursos</TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="lista" className="mt-0"><VolunteersList /></TabsContent>
+      <TabsContent value="capacitaciones" className="mt-0 p-4 lg:p-6">
+        <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+          <TrainingPage />
+        </Suspense>
+      </TabsContent>
+    </Tabs>
   );
 }

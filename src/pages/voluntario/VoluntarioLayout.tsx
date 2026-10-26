@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Clock, User, Siren, Map as MapIcon } from 'lucide-react';
+import { Clock, User, Siren, Map as MapIcon, CalendarDays } from 'lucide-react';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 
@@ -27,10 +27,11 @@ export default function VoluntarioLayout({ children, orgName, orgLogoUrl }: { ch
 
       {!hideNav && (
         <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-md safe-bottom">
-          <div className="mx-auto max-w-md grid grid-cols-4">
+          <div className="mx-auto max-w-md grid grid-cols-5">
             <Tab to="/voluntario" icon={<Siren className="h-6 w-6" />} label="Activas" exact />
             <Tab to="/voluntario/mapa" icon={<MapIcon className="h-6 w-6" />} label="Mapa" />
             <Tab to="/voluntario/historial" icon={<Clock className="h-6 w-6" />} label="Historial" />
+            <Tab to="/voluntario/guardias" icon={<CalendarDays className="h-6 w-6" />} label="Guardias" />
             <Tab to="/voluntario/perfil" icon={<User className="h-6 w-6" />} label="Perfil" />
           </div>
         </nav>

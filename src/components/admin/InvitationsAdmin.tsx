@@ -57,7 +57,7 @@ export default function InvitationsAdmin() {
   const sendInvite = useMutation({
     mutationFn: async (opts: { email: string; role: OrgRole; expires_in_days: number; resend?: boolean }) => {
       const parsed = inviteSchema.safeParse(opts);
-      if (!parsed.success) throw new Error(parsed.error.errors[0].message);
+      if (!parsed.success) throw new Error(parsed.error.issues[0].message);
 
       const { data, error } = await supabase.functions.invoke('send-invitation', {
         body: {

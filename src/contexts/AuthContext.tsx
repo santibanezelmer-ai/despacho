@@ -45,11 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-
+      // Al volver a la pestaña llegan TOKEN_REFRESHED/SIGNED_IN con un objeto
+      // user nuevo del mismo usuario: conservarlo evita recargar toda la app.
+      const nextUser = session?.user ?? null;
+      setUser(prev => (prev && nextUser && prev.id === nextUser.id ? prev : nextUser));
+      // Persistir siempre (incluido TOKEN_REFRESHED): el refresh token rota y el
+      // respaldo nativo debe tener el vigente para poder restaurar la sesión.
       if (session) {
         // Now handled by Supabase storage natively, but kept for legacy sync just in case
         void persistNativeAuthSession(session);
+      }
+
+      if (event === 'TOKEN_REFRESHED' && authBootstrappedRef.current) {
+        return;
+      }
+
+      if (session) {
+        // ya persistida arriba
       } else if (event === 'SIGNED_OUT') {
         console.warn('[Auth] SIGNED_OUT recibido; se conserva el respaldo nativo');
       }
