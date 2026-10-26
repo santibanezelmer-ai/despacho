@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { dutyRpcContract, executeDutyCommand, type DutyCommand } from '../lib/companyDuty';
 
 const draft: DutyCommand = {
@@ -15,6 +15,9 @@ it('maps the complete draft to one RPC without separate creation calls', () => {
     _end: draft.end, _mode: 'mixta', _slots: draft.slots,
   } });
 });
-it('keeps the new atomic write blocked before installation and real authorization validation', async () => {
-  await expect(executeDutyCommand('org-a', draft)).rejects.toThrow();
+it('saves the draft with a single guard_create_draft call', async () => {
+  const t = vi.fn().mockResolvedValue({ data: 'shift-id', error: null });
+  await executeDutyCommand('org-a', draft, t);
+  expect(t).toHaveBeenCalledTimes(1);
+  expect(t.mock.calls[0][0]).toBe('guard_create_draft');
 });

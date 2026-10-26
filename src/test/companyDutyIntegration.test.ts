@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { COMPANY_DUTY_INTEGRATION, dutyRpcContract, executeDutyCommand, type DutyCommand } from '../lib/companyDuty';
 
 const commands: DutyCommand[] = [
@@ -11,9 +11,25 @@ const commands: DutyCommand[] = [
 ];
 
 describe('Guardias v3 integration without installation', () => {
-  it.each(commands)('blocks $kind without issuing a request or returning a saved result', async command => {
-    expect(COMPANY_DUTY_INTEGRATION.operationsEnabled).toBe(false);
-    await expect(executeDutyCommand('org-a', command)).rejects.toThrow();
+  it.each(commands.slice(0, 2))('never dispatches $kind alone (drafts must be atomic)', async command => {
+    const t = vi.fn();
+    await expect(executeDutyCommand('org-a', command, t)).rejects.toThrow();
+    expect(t).not.toHaveBeenCalled();
+  });
+  it.each(commands.slice(2))('dispatches $kind as exactly one server RPC', async command => {
+    expect(COMPANY_DUTY_INTEGRATION.operationsEnabled).toBe(true);
+    const t = vi.fn().mockResolvedValue({ data: null, error: null });
+    await executeDutyCommand('org-a', command, t);
+    expect(t).toHaveBeenCalledTimes(1);
+    expect(t).toHaveBeenCalledWith(dutyRpcContract('org-a', command).name, dutyRpcContract('org-a', command).args);
+  });
+  it('maps server denial to a clear message', async () => {
+    const t = vi.fn().mockResolvedValue({ data: null, error: { message: 'company management denied' } });
+    await expect(executeDutyCommand('org-a', commands[2], t)).rejects.toThrow('No tiene delegación de gestión');
+  });
+  it('maps issuer and delegation contracts without client actor', () => {
+    expect(dutyRpcContract('org-a', { kind: 'setIssuer', targetUserId: 'u', grant: true, reason: 'Designación' })).toEqual({ name: 'guard_set_issuer', args: { _org: 'org-a', _target: 'u', _grant: true, _reason: 'Designación' } });
+    expect(dutyRpcContract('org-a', { kind: 'setPermission', companyId: 'c', targetUserId: 'u', action: 'manage', grant: false, reason: 'Fin' })).toEqual({ name: 'guard_set_permission', args: { _org: 'org-a', _company: 'c', _target: 'u', _action: 'manage', _grant: false, _reason: 'Fin' } });
   });
   it('maps the existing scalar UUID creation contract with organization and company scope', () => {
     expect(dutyRpcContract('org-a', commands[0])).toEqual({ name: 'guard_create_shift', args: { _org: 'org-a', _company: 'company-a', _name: 'Noche', _start: '2026-10-26T00:00:00Z', _end: '2026-10-26T08:00:00Z', _mode: 'mixta' } });
