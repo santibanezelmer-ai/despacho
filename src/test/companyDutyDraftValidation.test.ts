@@ -19,12 +19,13 @@ describe('Guardias draft validation (writes blocked)', () => {
   it('rejects capacity above 500', () => {
     expect(buildDraftCommand({ ...base, slots: [{ ...base.slots[0], capacity: 501 }] }, ['c1']).ok).toBe(false);
   });
-  it('never calls the transport while operations are disabled', async () => {
-    const transport = vi.fn();
+  it('a validated draft is sent once through guard_create_draft', async () => {
+    const transport = vi.fn().mockResolvedValue({ data: 'id', error: null });
     const r = buildDraftCommand(base, ['c1']);
     if ('errors' in r) throw new Error('invalid');
-    await expect(executeDutyCommand('org', r.command, transport)).rejects.toThrow();
-    expect(transport).not.toHaveBeenCalled();
+    await executeDutyCommand('org', r.command, transport);
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport.mock.calls[0][0]).toBe('guard_create_draft');
   });
 });
 
