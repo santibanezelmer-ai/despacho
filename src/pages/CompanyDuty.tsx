@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, Clock, CheckCircle2, ListChecks, Plus, Trash2, AlertTriangle, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +59,13 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
   const manageOptions = options.filter(c => canManage(c.id));
   const [selected, setSelected] = useState<DutyShiftRow | null>(null);
   const [rejecting, setRejecting] = useState<{ id: string; reason: string } | null>(null);
+  // Push deep link: /voluntario/guardias?asignacion=<id> highlights that request.
+  const [params] = useSearchParams();
+  const focusId = personal ? params.get('asignacion') : null;
+  useEffect(() => {
+    if (!focusId || !mine.data?.some(a => a.assignment_id === focusId)) return;
+    document.getElementById(`duty-row-${focusId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusId, mine.data]);
   const cmd = useDutyCommand(orgId, [['duty-shifts', orgId ?? ''], ['duty-mine', orgId ?? '']]);
   const names = useMemo(() => new Map(options.map(c => [c.id, `${c.number}ª · ${c.name}`])), [options]);
   const activeCompany = options.some(c => c.id === company) ? company : 'all';
@@ -119,7 +127,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
             const shiftRow = scope !== 'own' ? (shifts.data ?? []).find(s => s.id === r.id) : undefined;
             const mineRow = scope === 'own' ? (mine.data ?? []).find(a => a.assignment_id === r.id) : undefined;
             const canAnswer = mineRow && mineRow.assignment_status === 'propuesto' && (mineRow.shift_status === 'publicado' || mineRow.shift_status === 'en_curso');
-            return <TableRow key={r.id} className={shiftRow ? 'cursor-pointer' : undefined} onClick={shiftRow ? () => setSelected(shiftRow) : undefined}><TableCell className="whitespace-nowrap">{fmt(r.starts_at)} – {fmt(r.ends_at)}</TableCell><TableCell>{names.get(r.company_id) ?? '—'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{scope === 'own' ? <Badge variant="outline">{r.extra}</Badge> : r.extra}</TableCell><TableCell>{scope === 'own'
+            return <TableRow key={r.id} id={`duty-row-${r.id}`} className={shiftRow ? 'cursor-pointer' : r.id === focusId ? 'bg-info/10 ring-2 ring-inset ring-info' : undefined} onClick={shiftRow ? () => setSelected(shiftRow) : undefined}><TableCell className="whitespace-nowrap">{fmt(r.starts_at)} – {fmt(r.ends_at)}</TableCell><TableCell>{names.get(r.company_id) ?? '—'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{scope === 'own' ? <Badge variant="outline">{r.extra}</Badge> : r.extra}</TableCell><TableCell>{scope === 'own'
               ? (canAnswer ? (rejecting?.id === r.id
                 ? <div className="flex flex-wrap gap-2"><Input aria-label="Motivo del rechazo" className="h-8 w-40" value={rejecting.reason} onChange={e => setRejecting({ id: r.id, reason: e.target.value })} /><Button size="sm" variant="destructive" disabled={cmd.isPending || rejecting.reason.trim().length < 3} onClick={() => cmd.mutate({ kind: 'confirm', assignmentId: r.id, accept: false, reason: rejecting.reason.trim() }, { onSuccess: () => { toast.success('Guardia rechazada.'); setRejecting(null); } })}>Enviar</Button><Button size="sm" variant="ghost" onClick={() => setRejecting(null)}>Volver</Button></div>
                 : <div className="flex gap-2"><Button size="sm" disabled={cmd.isPending} onClick={() => cmd.mutate({ kind: 'confirm', assignmentId: r.id, accept: true, reason: '' }, { onSuccess: () => toast.success('Guardia confirmada.') })}>Confirmar</Button><Button size="sm" variant="outline" disabled={cmd.isPending} onClick={() => setRejecting({ id: r.id, reason: '' })}>Rechazar</Button></div>)

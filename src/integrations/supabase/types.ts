@@ -3495,6 +3495,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      guard_enqueue_assignment_push: {
+        Args: { _assignment: string }
+        Returns: undefined
+      }
       guard_history: {
         Args: { _company: string; _org: string; _shift?: string }
         Returns: {
