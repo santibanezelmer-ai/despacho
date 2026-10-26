@@ -1,10 +1,13 @@
 import type { AccessRole } from './rolePermissions';
 import { supabase } from '@/integrations/supabase/client';
 
-/** SQL installed; real-session write authorization not yet validated. Writes stay blocked. */
+/** Writes go through server RPCs that derive the actor and enforce issuer/delegation rules.
+ * createShift/createSlot are never dispatched alone: drafts must use the atomic guard_create_draft. */
 export const COMPANY_DUTY_INTEGRATION = Object.freeze({
-  operationsEnabled: false,
-  message: 'Guardias en modo consulta. Las acciones que guardan cambios siguen bloqueadas.',
+  operationsEnabled: true,
+  blockedKinds: Object.freeze(['createShift', 'createSlot'] as const),
+  message: 'Las acciones de Guardias requieren autorización explícita del Emisor; el servidor valida cada operación.',
+  attendanceMessage: 'El registro de asistencia no está disponible: la base de datos instalada no ofrece una operación autorizada para registrarla.',
 });
 
 type ShiftState = 'borrador' | 'publicado' | 'en_curso' | 'finalizado' | 'cancelado';
@@ -20,7 +23,9 @@ export type DutyCommand =
   | { kind: 'publish'; shiftId: string; expected: 'borrador'; reason: string }
   | { kind: 'cancel'; shiftId: string; expected: Exclude<ShiftState, 'finalizado' | 'cancelado'>; reason: string }
   | { kind: 'assign'; slotId: string; volunteerId: string }
-  | { kind: 'confirm'; assignmentId: string; accept: boolean; reason: string };
+  | { kind: 'confirm'; assignmentId: string; accept: boolean; reason: string }
+  | { kind: 'setIssuer'; targetUserId: string; grant: boolean; reason: string }
+  | { kind: 'setPermission'; companyId: string; targetUserId: string; action: 'manage' | 'validate_attendance'; grant: boolean; reason: string };
 
 /** Exact v3 public RPC arguments. Actor and authorization are derived by SQL, never sent by the client.
  * createDraft requires the unapplied v3 atomic supplement; never chain createShift/createSlot to save a draft.
@@ -35,6 +40,8 @@ export function dutyRpcContract(orgId: string, command: DutyCommand) {
     case 'cancel': return { name: 'guard_transition', args: { _org: orgId, _shift: command.shiftId, _expected: command.expected, _next: 'cancelado', _reason: command.reason } };
     case 'assign': return { name: 'guard_assign', args: { _org: orgId, _slot: command.slotId, _volunteer: command.volunteerId } };
     case 'confirm': return { name: 'guard_confirm', args: { _org: orgId, _assignment: command.assignmentId, _accept: command.accept, _reason: command.reason } };
+    case 'setIssuer': return { name: 'guard_set_issuer', args: { _org: orgId, _target: command.targetUserId, _grant: command.grant, _reason: command.reason } };
+    case 'setPermission': return { name: 'guard_set_permission', args: { _org: orgId, _company: command.companyId, _target: command.targetUserId, _action: command.action, _grant: command.grant, _reason: command.reason } };
   }
 }
 
@@ -45,10 +52,54 @@ const supabaseTransport: DutyRpcTransport = async (name, args) =>
 /** Writes stay blocked while operationsEnabled is false: the gate runs before any request is issued. */
 export async function executeDutyCommand(orgId: string, command: DutyCommand, transport: DutyRpcTransport = supabaseTransport): Promise<unknown> {
   if (!COMPANY_DUTY_INTEGRATION.operationsEnabled) throw new Error(COMPANY_DUTY_INTEGRATION.message);
+  if ((COMPANY_DUTY_INTEGRATION.blockedKinds as readonly string[]).includes(command.kind)) throw new Error('Use el guardado atómico del borrador.');
   const contract = dutyRpcContract(orgId, command);
   const { data, error } = await transport(contract.name, contract.args);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dutyErrorMessage(error.message));
   return data;
+}
+
+/** Maps server exceptions to operator-facing Spanish messages; unknown errors keep a generic text. */
+const DUTY_ERRORS: [string, string][] = [
+  ['company management denied', 'No tiene delegación de gestión para esta compañía. Solicítela al Emisor autorizado.'],
+  ['delegation denied', 'Solo el Emisor autorizado de la organización puede delegar permisos.'],
+  ['invalid issuer authorization', 'Solo un superadministrador puede designar al Emisor, y no puede designarse a sí mismo.'],
+  ['invalid permission target', 'La persona elegida no puede recibir ese permiso (gestión: administrador de la compañía; asistencia: oficial).'],
+  ['invalid delegation', 'Indique un motivo de al menos 3 caracteres.'],
+  ['slot full', 'El cupo ya está completo.'],
+  ['schedule conflict', 'El voluntario ya tiene otra guardia en ese horario.'],
+  ['slots required', 'El turno necesita al menos un cupo para publicarse.'],
+  ['self confirmation only', 'Solo el voluntario asignado puede confirmar o rechazar.'],
+  ['organization denied', 'No pertenece a esta organización.'],
+  ['invalid transition', 'El estado del turno cambió; actualice la lista e intente de nuevo.'],
+  ['state', 'El estado del turno cambió; actualice la lista e intente de nuevo.'],
+  ['reason', 'Indique un motivo válido.'],
+  ['volunteer', 'El voluntario no está disponible para este cupo.'],
+];
+export function dutyErrorMessage(raw: string): string {
+  const m = raw.toLowerCase();
+  return DUTY_ERRORS.find(([k]) => m.includes(k))?.[1] ?? 'No se pudo completar la operación. Intente nuevamente.';
+}
+
+export interface DutySlotRow { id: string; shift_id: string; company_id: string; role_name: string; mode: string; starts_at: string; ends_at: string; capacity: number }
+export interface DutyAssignmentRow { id: string; slot_id: string; shift_id: string; volunteer_id: string; status: string }
+/** Slots and assignments of one shift; RLS limits visibility to supervisors and delegated managers. */
+export async function fetchShiftDetail(orgId: string, shiftId: string) {
+  const [slots, assigns] = await Promise.all([
+    supabase.from('guard_slots').select('id,shift_id,company_id,role_name,mode,starts_at,ends_at,capacity').eq('organization_id', orgId).eq('shift_id', shiftId).order('starts_at'),
+    supabase.from('guard_assignments').select('id,slot_id,shift_id,volunteer_id,status').eq('organization_id', orgId).eq('shift_id', shiftId),
+  ]);
+  if (slots.error) throw slots.error;
+  if (assigns.error) throw assigns.error;
+  return { slots: (slots.data ?? []) as DutySlotRow[], assignments: (assigns.data ?? []) as DutyAssignmentRow[] };
+}
+/** Server-side check per company (guard_can). UI hint only; RPCs re-check. */
+export async function fetchManageableCompanies(orgId: string, companyIds: string[]): Promise<string[]> {
+  const res = await Promise.all(companyIds.map(async id => {
+    const { data } = await supabase.rpc('guard_can', { _org: orgId, _company: id, _action: 'manage' });
+    return data === true ? id : null;
+  }));
+  return res.filter((x): x is string => !!x);
 }
 
 /** Converts a datetime-local value to a timezone-qualified ISO timestamp. */
