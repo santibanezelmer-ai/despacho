@@ -8,7 +8,7 @@ describe('Guardias draft validation (writes blocked)', () => {
   it('builds a timezone-qualified createDraft command', () => {
     const r = buildDraftCommand(base, ['c1']);
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.command.start.endsWith('Z')).toBe(true); expect(r.command.slots[0].capacity).toBe(2); }
+    if ('command' in r) { expect(r.command.start.endsWith('Z')).toBe(true); expect(r.command.slots[0].capacity).toBe(2); }
   });
   it('rejects a company outside the authorized scope', () => {
     expect(buildDraftCommand(base, ['c2']).ok).toBe(false);
@@ -22,7 +22,7 @@ describe('Guardias draft validation (writes blocked)', () => {
   it('never calls the transport while operations are disabled', async () => {
     const transport = vi.fn();
     const r = buildDraftCommand(base, ['c1']);
-    if (!r.ok) throw new Error('invalid');
+    if ('errors' in r) throw new Error('invalid');
     await expect(executeDutyCommand('org', r.command, transport)).rejects.toThrow();
     expect(transport).not.toHaveBeenCalled();
   });

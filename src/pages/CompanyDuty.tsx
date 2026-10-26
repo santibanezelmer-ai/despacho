@@ -70,7 +70,7 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
     e.preventDefault();
     if (!orgId) return;
     const r = buildDraftCommand({ ...form, slots }, options.map(c => c.id));
-    if (!r.ok) { setCheck({ ok: false, lines: r.errors }); return; }
+    if ('errors' in r) { setCheck({ ok: false, lines: r.errors }); return; }
     const c = dutyRpcContract(orgId, r.command);
     setCheck({ ok: true, lines: [`Borrador válido: ${r.command.slots.length} cupo(s), preparado para ${c.name}.`, 'No se envió a la base de datos: el guardado sigue bloqueado en esta fase.'] });
   };
