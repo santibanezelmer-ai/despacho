@@ -58,8 +58,8 @@ export async function restoreNativeAuthSession(): Promise<Session | null> {
       const revoked = status === 400 || status === 401 || status === 403 ||
         /invalid|revoked|expired|not found/i.test(error.message ?? '');
       if (revoked) {
-        console.warn('[Auth] Native session backup discarded (token revoked)');
-        await clearNativeAuthSession();
+        console.warn('[Auth] Native session backup potentially revoked, but keeping it to force persistence.');
+        // Ya no borramos la sesión nativa aquí para evitar falsos positivos de red
       } else {
         console.warn('[Auth] Native session restore failed (backup kept):', error.message);
       }

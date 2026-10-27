@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearNativeAuthSession, persistNativeAuthSession, restoreNativeAuthSession } from '@/services/nativeAuthStorage';
+import { unregisterDeviceToken } from '@/services/pushService';
+import { Preferences } from '@capacitor/preferences';
+import { Capacitor } from '@capacitor/core';
 
 type AppRole = 'admin' | 'operador' | 'oficial' | 'visor';
 
@@ -121,10 +124,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // 1. Eliminar token de la base de datos ANTES de destruir la sesión
+    await unregisterDeviceToken();
+
+    // Permitir el borrado en el storage nativo
+    if (Capacitor.isNativePlatform()) {
+      await Preferences.set({ key: 'operix_intentional_logout', value: 'true' });
+    }
+
+    // 2. Destruir sesión en Supabase y de forma local
     await supabase.auth.signOut();
     await clearNativeAuthSession();
     setRoles([]);
     setIsSuperadmin(false);
+
+    if (Capacitor.isNativePlatform()) {
+      await Preferences.remove({ key: 'operix_intentional_logout' });
+    }
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);

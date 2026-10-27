@@ -124,6 +124,13 @@ export function brokeredPreviewStorage() {
       });
     },
     removeItem: async (key: string) => {
+      if (isNative) {
+        const { value: isIntentional } = await Preferences.get({ key: 'operix_intentional_logout' });
+        if (isIntentional !== 'true') {
+          console.warn('[Auth] Bloqueado intento de borrar sesión nativa. Forzando persistencia.');
+          return;
+        }
+      }
       isNative ? await fallbackStorage.removeItem(key) : localStorage.removeItem(key);
       return request('lovable-preview-auth:remove', key).then(() => undefined);
     },

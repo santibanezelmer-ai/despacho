@@ -14,8 +14,21 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Capacitor & Plugins Keep Rules
+-keep class com.getcapacitor.BridgeActivity { *; }
+-keep class com.getcapacitor.Plugin { *; }
+-keep class com.getcapacitor.PluginMethod { *; }
+-keep class com.getcapacitor.annotation.** { *; }
+
+# Firebase
+-keep class com.google.firebase.messaging.FirebaseMessagingService { *; }
+-keep class com.google.firebase.messaging.RemoteMessage { *; }
+-keep class com.google.firebase.messaging.RemoteMessage$Notification { *; }
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.tasks.** { *; }

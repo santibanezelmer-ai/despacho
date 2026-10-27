@@ -267,6 +267,22 @@ Deno.serve(async (req: Request) => {
     const isNote = !emergency_id && !!note_id;
     const collapseId = String(emergency_id ?? note_id);
 
+    // Determinar Canal y Tono en base al título (Claves)
+    let channelId = 'emergency_alerts_v2';
+    let soundName = 'dispatch_tone';
+    const upperTitle = String(title).toUpperCase();
+
+    if (isNote) {
+      channelId = 'alerts_notes';
+      soundName = 'tone_notes';
+    } else if (upperTitle.includes('10-0') || upperTitle.includes('FUEGO') || upperTitle.includes('INCENDIO') || upperTitle.includes('10-12')) {
+      channelId = 'alerts_fire';
+      soundName = 'tone_fire';
+    } else if (upperTitle.includes('10-3') || upperTitle.includes('10-4') || upperTitle.includes('RESCATE')) {
+      channelId = 'alerts_rescue';
+      soundName = 'tone_rescue';
+    }
+
     for (const { id: tokenId, token, platform, user_id } of tokens!) {
       const isWeb = platform === 'web';
       const isIos = platform === 'ios';
@@ -281,6 +297,7 @@ Deno.serve(async (req: Request) => {
             note_id: String(note_id ?? ''),
             title: String(title),
             body: String(body ?? ''),
+            android_channel_id: channelId
           },
         },
       };
@@ -295,9 +312,6 @@ Deno.serve(async (req: Request) => {
         };
       } else if (isIos) {
         // iOS / APNs: the custom tone must be a bundled sound file
-        // (ios/App/App/Sounds/dispatch_tone.caf, added to the Xcode target).
-        // `interruption-level: time-sensitive` lets the alert break through
-        // Focus modes; `sound` as an object keeps volume at max.
         fcmPayload.message.notification = { title, body: body ?? '' };
         fcmPayload.message.apns = {
           headers: {
@@ -309,7 +323,7 @@ Deno.serve(async (req: Request) => {
           payload: {
             aps: {
               alert: { title, body: body ?? '' },
-              sound: { critical: 0, name: 'dispatch_tone.caf', volume: 1.0 },
+              sound: { critical: 0, name: `${soundName}.caf`, volume: 1.0 },
               'interruption-level': 'time-sensitive',
               'mutable-content': 1,
               'content-available': 1,
@@ -319,15 +333,13 @@ Deno.serve(async (req: Request) => {
         };
       } else {
         // Native Android: keep notification block so system tray shows it
-        // even with the app fully closed, and force the custom MP3 that
-        // lives in android/app/src/main/res/raw/dispatch_tone.mp3.
         fcmPayload.message.notification = { title, body: body ?? '' };
         fcmPayload.message.android = {
           priority: 'HIGH',
           ttl: '600s',
           notification: {
-            channel_id: 'emergency_alerts_v2',
-            sound: 'dispatch_tone',
+            channel_id: channelId,
+            sound: soundName,
             default_sound: false,
             default_vibrate_timings: true,
             notification_priority: 'PRIORITY_MAX',

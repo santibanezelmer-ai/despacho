@@ -2,13 +2,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Truck, Megaphone, Ban, FileText, Navigation, WifiOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Logo } from '@/components/ui/Logo';
 import { es } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Preferences } from '@capacitor/preferences';
 
 interface Props { organizationId: string; orgName?: string; orgLogoUrl?: string | null }
 
@@ -40,53 +41,86 @@ function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
 
 export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: Props) {
   const { user } = useAuth();
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ['vol-feed', organizationId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('emergencies')
-        .select('id, folio, address, status, dispatched_at, created_at, observations, pre_report, declared, false_alarm, latitude, longitude, emergency_keys(code, name, color)')
-        .eq('organization_id', organizationId)
-        .not('status', 'in', '(finalizada,en_cuartel)')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
+      try {
+        const { data, error } = await (supabase as any)
+          .from('emergencies')
+          .select('id, folio, address, status, dispatched_at, created_at, observations, pre_report, declared, false_alarm, latitude, longitude, emergency_keys(code, name, color)')
+          .eq('organization_id', organizationId)
+          .not('status', 'in', '(finalizada,en_cuartel)')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (error) throw error;
 
-      const enriched = await Promise.all(
-        (data ?? []).map(async (e: any) => {
-          const { data: ev } = await (supabase as any)
-            .from('emergency_vehicles')
-            .select('vehicles(code)')
-            .eq('emergency_id', e.id);
-          return {
-            ...e,
-            vehicleCodes: (ev ?? []).map((r: any) => r.vehicles?.code).filter(Boolean),
-          };
-        }),
-      );
-      return enriched;
+        const enriched = await Promise.all(
+          (data ?? []).map(async (e: any) => {
+            const { data: ev } = await (supabase as any)
+              .from('emergency_vehicles')
+              .select('vehicles(code)')
+              .eq('emergency_id', e.id);
+            return {
+              ...e,
+              vehicleCodes: (ev ?? []).map((r: any) => r.vehicles?.code).filter(Boolean),
+            };
+          }),
+        );
+
+        // Guardar en caché nativo de forma silenciosa
+        await Preferences.set({ key: `operix_offline_feed_${organizationId}`, value: JSON.stringify(enriched) });
+        return enriched;
+      } catch (err) {
+        console.warn('[Offline Cache] No se pudo obtener el feed desde el servidor, intentando leer caché nativo...', err);
+        const { value } = await Preferences.get({ key: `operix_offline_feed_${organizationId}` });
+        if (value) {
+          setIsOffline(true);
+          return JSON.parse(value);
+        }
+        throw err;
+      }
     },
-    refetchInterval: 10_000,
+    refetchInterval: isOffline ? false : 10_000,
   });
 
   const { data: notes } = useQuery({
     queryKey: ['vol-notes', organizationId],
     queryFn: async () => {
-      // Comunicados: máx 7 días de vigencia; luego desaparecen del feed.
-      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await (supabase as any)
-        .from('dispatch_notes')
-        .select('id, title, content, created_at')
-        .eq('organization_id', organizationId)
-        .eq('active', true)
-        .gte('created_at', cutoff)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data ?? [];
+      try {
+        const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await (supabase as any)
+          .from('dispatch_notes')
+          .select('id, title, content, created_at')
+          .eq('organization_id', organizationId)
+          .eq('active', true)
+          .gte('created_at', cutoff)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+
+        await Preferences.set({ key: `operix_offline_notes_${organizationId}`, value: JSON.stringify(data ?? []) });
+        return data ?? [];
+      } catch (err) {
+        console.warn('[Offline Cache] No se pudo obtener comunicados, leyendo caché nativo...', err);
+        const { value } = await Preferences.get({ key: `operix_offline_notes_${organizationId}` });
+        if (value) return JSON.parse(value);
+        return [];
+      }
     },
-    refetchInterval: 10_000,
+    refetchInterval: isOffline ? false : 10_000,
   });
 
   const [latest, ...rest] = data ?? [];
@@ -103,10 +137,27 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
           )}
           <div className="min-w-0 flex-1">
             {orgName && <p className="text-[11px] font-cond uppercase tracking-widest text-muted-foreground truncate">{orgName}</p>}
-            <h1 className="text-3xl mt-0.5 leading-none text-foreground whitespace-nowrap">Emergencias Activas</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <h1 className="text-3xl leading-none text-foreground whitespace-nowrap">Emergencias Activas</h1>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Indicador Modo Offline */}
+      {isOffline && (
+        <div className="px-5 mb-4">
+          <div className="bg-warning/20 border border-warning/30 rounded-xl px-3 py-2.5 flex items-center gap-2">
+            <WifiOff className="h-4 w-4 text-warning shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-warning">Modo sin conexión</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                Viendo datos guardados en el dispositivo. La información podría no estar actualizada.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Comunicados — presented as emergency-like cards, persistent */}
@@ -191,23 +242,23 @@ function NoteCard({ n }: { n: any }) {
         <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden border-2 border-amber-500/60 bg-background flex flex-col mx-auto fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[85vh]">
           <DialogDescription className="sr-only">Detalle del comunicado</DialogDescription>
           <div className="bg-gradient-to-br from-amber-500/15 to-amber-600/5 flex flex-col overflow-hidden h-full">
-            <DialogHeader className="p-5 pb-0 shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="p-5 pr-14 pb-0 shrink-0">
+              <div className="flex items-start gap-3">
                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-black shadow-lg">
                   <Megaphone className="h-6 w-6" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                   <DialogTitle className="font-display uppercase text-2xl leading-tight text-foreground truncate">
+                   <DialogTitle className="font-display uppercase text-2xl leading-tight text-foreground" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                      {n.title || 'Comunicado'}
                    </DialogTitle>
-                   <div className="text-[11px] text-muted-foreground font-cond uppercase tracking-wider mt-1">
+                   <div className="text-[11px] text-muted-foreground font-cond uppercase tracking-wider mt-2">
                      Hace {formatDistanceToNow(new Date(n.created_at), { locale: es })}
                    </div>
                 </div>
               </div>
-            </DialogHeader>
+            </div>
             <div className="p-5 overflow-y-auto">
-               <p className="text-[15px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words break-all sm:break-words">
+               <p className="text-[15px] leading-relaxed text-foreground/90 whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                  {n.content}
                </p>
             </div>
