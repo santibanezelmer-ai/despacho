@@ -132,9 +132,9 @@ function AppRoutes() {
     return <Navigate to="/voluntario" replace />;
   }
 
-  // Authenticated user on web mobile hitting a non-mobile route
+  // Authenticated web-mobile user on a non-volunteer route: go to the volunteer app
   if (!isNativeMobile && window.innerWidth <= 768 && !location.pathname.startsWith('/mobile') && !location.pathname.startsWith('/voluntario') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
-    return <Navigate to="/mobile/feed" replace />;
+    return <Navigate to="/voluntario" replace />;
   }
 
   if (location.pathname === '/pantalla-central') {
