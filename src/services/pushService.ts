@@ -214,6 +214,27 @@ export async function flushPendingToken(): Promise<void> {
   if (saved) pendingTokenToSave = null;
 }
 
+/**
+ * Removes the current device's token from device_tokens (called on sign-out,
+ * before the session is destroyed so RLS can still match auth.uid()).
+ */
+export async function unregisterDeviceToken(): Promise<void> {
+  const token = lastRegisteredToken ?? pendingTokenToSave;
+  lastRegisteredToken = null;
+  pendingTokenToSave = null;
+  if (!token) return;
+  try {
+    const { error } = await (supabase as any)
+      .from('device_tokens')
+      .delete()
+      .eq('token', token);
+    if (error) console.warn('[Push] Could not unregister token:', error.message);
+    else console.log('[Push] Device token unregistered');
+  } catch (err: any) {
+    console.warn('[Push] Unregister exception:', err?.message || err);
+  }
+}
+
 /* ── Registration ── */
 
 export async function registerForPushNotifications(options: { force?: boolean; silent?: boolean } = {}): Promise<string | null> {
