@@ -132,9 +132,9 @@ function AppRoutes() {
     return <Navigate to="/voluntario" replace />;
   }
 
-  // Authenticated user on web mobile hitting a non-mobile route
+  // Authenticated web-mobile user on a non-volunteer route: go to the volunteer app
   if (!isNativeMobile && window.innerWidth <= 768 && !location.pathname.startsWith('/mobile') && !location.pathname.startsWith('/voluntario') && !['/pantalla-central', '/pantalla-mapa', '/pantalla-emergencias'].includes(location.pathname) && !location.pathname.startsWith('/superadmin')) {
-    return <Navigate to="/mobile/feed" replace />;
+    return <Navigate to="/voluntario" replace />;
   }
 
   if (location.pathname === '/pantalla-central') {
@@ -210,23 +210,7 @@ function AppRoutes() {
     );
   }
 
-  // Mobile routes (Only reached on web mobile if they navigate here manually or have higher roles)
-  if (location.pathname.startsWith('/mobile')) {
-    return (
-      <MobileLayout>
-        <Suspense fallback={<PageFallback />}>
-        <Routes>
-          <Route path="/mobile" element={<MobileFeedPage />} />
-          <Route path="/mobile/feed" element={<MobileFeedPage />} />
-          <Route path="/mobile/emergency/:id" element={<MobileEmergencyDetailPage />} />
-          <Route path="/mobile/profile" element={<MobileProfilePage />} />
-          <Route path="/mobile/map" element={<MobileMapPage />} />
-          <Route path="*" element={<Navigate to="/mobile/feed" replace />} />
-        </Routes>
-        </Suspense>
-      </MobileLayout>
-    );
-  }
+  // Legacy /mobile/* routes redirect to the volunteer app below (routes section).
 
   // Restricciones por rol (admin de compañía / operador)
   const accessCtx = {
