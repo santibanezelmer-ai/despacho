@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_feedback: {
+        Row: {
+          app_version: string | null
+          comments: string | null
+          created_at: string
+          had_errors: boolean
+          id: string
+          organization_id: string | null
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          comments?: string | null
+          created_at?: string
+          had_errors?: boolean
+          id?: string
+          organization_id?: string | null
+          rating: number
+          user_id?: string
+        }
+        Update: {
+          app_version?: string | null
+          comments?: string | null
+          created_at?: string
+          had_errors?: boolean
+          id?: string
+          organization_id?: string | null
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_feedback_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
