@@ -4,7 +4,8 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import VoluntarioApp from '@/pages/voluntario/VoluntarioApp';
 
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'volunteer' }, loading: false }) }));
+const auth = vi.hoisted(() => ({ user: { id: 'volunteer' }, loading: false }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => {
   const result = table === 'organization_members'
     ? { data: [{ organization_id: 'org', organizations: { name: 'Cuerpo', status: 'active' } }], error: null }

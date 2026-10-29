@@ -42,6 +42,7 @@ function codeSize(code?: string | null, base: 'lg' | 'xl' | '2xl' = '2xl') {
 export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: Props) {
   const { user } = useAuth();
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [usingCachedFeed, setUsingCachedFeed] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -82,12 +83,14 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
 
         // Guardar en caché nativo de forma silenciosa
         await Preferences.set({ key: `operix_offline_feed_${organizationId}`, value: JSON.stringify(enriched) });
+        setUsingCachedFeed(false);
         return enriched;
       } catch (err) {
         console.warn('[Offline Cache] No se pudo obtener el feed desde el servidor, intentando leer caché nativo...', err);
         const { value } = await Preferences.get({ key: `operix_offline_feed_${organizationId}` });
         if (value) {
-          setIsOffline(true);
+          // A server timeout is not a connectivity transition: keep polling online.
+          setUsingCachedFeed(true);
           return JSON.parse(value);
         }
         throw err;
@@ -145,12 +148,12 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
       </header>
 
       {/* Indicador Modo Offline */}
-      {isOffline && (
+      {(isOffline || usingCachedFeed) && (
         <div className="px-5 mb-4">
           <div className="bg-warning/20 border border-warning/30 rounded-xl px-3 py-2.5 flex items-center gap-2">
             <WifiOff className="h-4 w-4 text-warning shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-warning">Modo sin conexión</p>
+              <p className="text-xs font-semibold text-warning">{isOffline ? 'Modo sin conexión' : 'Información guardada · Reintentando'}</p>
               <p className="text-[10px] text-muted-foreground leading-tight">
                 Viendo datos guardados en el dispositivo. La información podría no estar actualizada.
               </p>
