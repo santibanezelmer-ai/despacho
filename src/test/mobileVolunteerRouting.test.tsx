@@ -29,6 +29,7 @@ vi.mock("@/pages/MapScreen", () => ({ default: () => <div data-testid="MapScreen
 vi.mock("@/pages/AlertsPage", () => ({ default: () => <div data-testid="AlertsPage" /> }));
 vi.mock("@/pages/SimulationPage", () => ({ default: () => <div data-testid="SimulationPage" /> }));
 vi.mock("@/pages/TrainingPage", () => ({ default: () => <div data-testid="TrainingPage" /> }));
+vi.mock("@/pages/CompanyDuty", () => ({ default: () => <div data-testid="CompanyDuty" /> }));
 vi.mock("@/pages/AuditPage", () => ({ default: () => <div data-testid="AuditPage" /> }));
 vi.mock("@/pages/ExportsPage", () => ({ default: () => <div data-testid="ExportsPage" /> }));
 vi.mock("@/pages/NotificationsPage", () => ({ default: () => <div data-testid="NotificationsPage" /> }));
@@ -55,7 +56,7 @@ vi.mock("@/contexts/OrganizationContext", () => ({ OrganizationProvider: ({ chil
 vi.mock("@/hooks/useIsNativeMobile", () => ({ useIsNativeMobile: () => state.native }));
 vi.mock("@/hooks/usePushNotifications", () => ({ usePushNotifications: state.push }));
 vi.mock("@/lib/rolePermissions", () => ({ canAccessPath: () => state.access, defaultPathFor: () => "/emergencias" }));
-beforeEach(() => { state.native = false; state.user = { id: "test" }; state.access = true; state.push.mockClear(); });
+beforeEach(() => { state.native = false; state.user = { id: "test" }; state.access = true; state.push.mockClear(); Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 }); });
 afterEach(cleanup);
 function open(path: string) { window.history.replaceState({}, "", path); render(<App />); }
 describe("Volunteer mobile routing", () => {
@@ -86,10 +87,21 @@ describe("Volunteer mobile routing", () => {
     open("/"); expect(screen.getByTestId("DispatchConsole")).toBeInTheDocument();
     expect(window.location.pathname).toBe("/");
   });
-  it.each(["/pantalla-central", "/pantalla-mapa", "/pantalla-emergencias", "/superadmin"])("preserves native exception %s", async path => {
+  it.each(["/pantalla-central", "/pantalla-mapa", "/pantalla-emergencias", "/superadmin"])("keeps native access in the volunteer app from %s", async path => {
     state.native = true; open(path);
-    await waitFor(() => expect(screen.queryByTestId("volunteer")).not.toBeInTheDocument());
+    await waitFor(() => expect(window.location.pathname).toBe('/voluntario'));
+    expect(screen.getByTestId("volunteer")).toBeInTheDocument();
+  });
+  it.each([["/", "DispatchConsole"], ["/dashboard", "Dashboard"], ["/admin", "AdminPanel"], ["/guardias", "CompanyDuty"]])("preserves authorized phone-browser access to %s", async (path, page) => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    open(path);
+    await screen.findByTestId(page);
     expect(window.location.pathname).toBe(path);
+  });
+  it("keeps permission checks in phone browsers", async () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    state.access = false; open('/admin');
+    await waitFor(() => expect(window.location.pathname).toBe('/emergencias'));
   });
   it("keeps desktop permission redirects", async () => {
     state.access = false; open("/");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,8 @@ import VoluntarioMap from './VoluntarioMap';
 import { ensureVolunteerServiceWorker, listenForeground, registerVolunteerPush } from '@/services/fcmWebPush';
 import { playDefaultDispatchTone } from '@/services/defaultDispatchTone';
 import { toast } from 'sonner';
+
+const CompanyDuty = lazy(() => import('@/pages/CompanyDuty'));
 
 interface VolunteerMembership {
   organization_id: string;
@@ -163,6 +165,7 @@ export default function VoluntarioApp() {
       <Routes>
         <Route index element={<VoluntarioFeed organizationId={membership.organization_id} orgName={membership.org_name} orgLogoUrl={membership.org_logo_url} />} />
         <Route path="historial" element={<VoluntarioHistory organizationId={membership.organization_id} />} />
+        <Route path="guardias" element={<Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-emergency" /></div>}><CompanyDuty personal /></Suspense>} />
         <Route path="mapa" element={<VoluntarioMap />} />
         <Route path="perfil" element={<VoluntarioProfile organizationId={membership.organization_id} orgName={membership.org_name} />} />
         <Route path="emergencia/:id" element={<VoluntarioDetail organizationId={membership.organization_id} orgName={membership.org_name} orgLogoUrl={membership.org_logo_url} />} />

@@ -6,6 +6,9 @@
 
 - Mount native push registration inside the shared authenticated-provider/router tree, not only AppRoutes, so volunteer routes and legacy mobile deep-link redirects keep the existing native registration lifecycle.
 - Route legacy `/mobile/*` links to the existing volunteer application before desktop/native guards; use the same volunteer views rather than maintaining a second mobile interface.
+- Mount the shared CompanyDuty personal view at `/voluntario/guardias`, preserving assignment query parameters so native notification taps reach existing authenticated confirmation commands.
+- Browser console access depends on existing role checks, never viewport width; Capacitor native access retains its volunteer-only routing.
+- Volunteer feed cache fallback is separate from browser connectivity; transient server failures must not disable emergency or notes polling.
 
 - Synchronize the dispatch theme through `useScreenTheme` for the page, app shell, and dispatch dialog; each has a separate DOM root, and the sidebar must share the console's chosen palette.
 - Render the finalization dialog in a body portal above operational cards and keep its personnel pickers above the dialog overlay; card stacking contexts must not obscure closure confirmation.

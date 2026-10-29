@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Corregir avisos confirmados: ruta personal de Guardias, recuperación del feed tras fallo temporal y acceso autorizado desde navegadores de teléfono; 40 pruebas específicas aprobadas y compilación automática correcta, sin escrituras ni publicación.
+- [ ] Comprobar estos recorridos con la sesión real de Susana: no se pudo obtener su sesión propia; no confirmar asignaciones reales sin autorización.
+
 - [x] Guardias, cierre acotado: complemento atómico turno/cupos y matriz concreta de cuatro sesiones preparados; 13 comprobaciones PostgreSQL locales y 2 pruebas de contrato nuevas aprobadas; sin SQL aplicado al destino ni escrituras habilitadas.
 - [x] Guardias, contratos v3 preparados sin transporte ni cambios de diseño/destino; pruebas de integración segura nuevas ejecutadas.
 - [ ] Guardias, conectar consultas y operaciones reales: único bloqueo de habilitación es instalación autorizada 01→02→03→complemento atómico 05 y validación de permisos con sesiones reales en entorno aislado; no encadenar creación de turno/cupos.
