@@ -588,6 +588,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
           </div>
         </div>
         </div>
+        </div>
       </div>
     </div>
   );
