@@ -260,41 +260,25 @@ export default function LocationRequestPanel({ phone, requestId, onRequestCreate
         </div>
       )}
 
-      {/* Estado de ubicación: solo cuando hay una solicitud */}
-      {status !== 'idle' && (
-      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-        <p className="mb-1.5 font-medium text-muted-foreground">Estado de ubicación</p>
-        <p className={`flex items-center gap-1.5 font-mono ${meta.text}`}>
-          <span className={`h-2 w-2 rounded-full ${meta.dot} ${status === 'received' ? 'pulse-live' : ''}`} />
-          {meta.label}
-        </p>
-        {status === 'waiting' && expiresAt && (
-          <p className="mt-1 font-mono text-muted-foreground">
-            Enlace vigente hasta {new Date(expiresAt).toLocaleTimeString('es-CL')}
-          </p>
-        )}
-        {status === 'expired' && (
-          <p className="mt-1 text-muted-foreground">Genere un enlace nuevo para volver a solicitar la ubicación.</p>
-        )}
-        {fix && (
-          <div className="mt-1.5 space-y-1 font-mono text-foreground">
-            <p>Precisión: {fix.accuracy != null ? `${Math.round(fix.accuracy)} metros` : '—'}</p>
-            <p>Última actualización: {new Date(fix.receivedAt).toLocaleTimeString('es-CL')}</p>
-            <p>Latitud: {fix.latitude.toFixed(6)}</p>
-            <p>Longitud: {fix.longitude.toFixed(6)}</p>
-            {fix.address && <p className="whitespace-pre-wrap font-sans">{fix.address}</p>}
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="mt-1.5 h-7 gap-1 text-xs"
-              onClick={() => navigate('/mapa')}
-            >
-              <Navigation className="h-3 w-3" /> Ir al mapa
-            </Button>
-          </div>
-        )}
-      </div>
+      {/* Estado de ubicación compacto: solo cuando se envió una solicitud por enlace */}
+      {requestId && status !== 'idle' && (
+        <div
+          className={`flex flex-wrap items-center gap-x-1.5 rounded-md border border-border bg-muted/30 px-2 py-1 font-mono text-[11px] ${meta.text}`}
+          title={fix?.address ?? undefined}
+        >
+          <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot} ${status === 'received' ? 'pulse-live' : ''}`} />
+          <span className="font-semibold">{status === 'received' ? 'Ubicación compartida recibida' : meta.label}</span>
+          {status === 'waiting' && expiresAt && (
+            <span className="text-muted-foreground">· vigente hasta {new Date(expiresAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+          )}
+          {status === 'expired' && <span className="text-muted-foreground">· genere un enlace nuevo</span>}
+          {status === 'received' && fix && (
+            <span className="text-muted-foreground">
+              · {new Date(fix.receivedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} h
+              {fix.accuracy != null && ` · ±${Math.round(fix.accuracy)} m`}
+            </span>
+          )}
+        </div>
       )}
 
       {modalOpen && link && (

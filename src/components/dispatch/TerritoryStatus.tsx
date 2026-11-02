@@ -59,21 +59,23 @@ export default function TerritoryStatus({ latitude, longitude, homeLatitude, hom
   if (outsideOwn) cls = 'border-warning/40 bg-warning/10';
 
   return (
-    <div className={`rounded-md border p-2 text-[11px] text-foreground ${cls}`} data-testid="territory-status">
-      <p className="mb-0.5 flex items-center gap-1 font-semibold"><MapPinned className="h-3.5 w-3.5" /> Cobertura territorial</p>
-      <p>Territorio: <span className="font-semibold">{territory}</span></p>
-      {quadrantFor(latitude!, longitude!) && <p>Cuadrante: <span className="font-mono font-semibold">{quadrantFor(latitude!, longitude!)}</span></p>}
-      {status && <p>Estado: <span className="font-semibold">{status}</span></p>}
-      {homeNames && (
-        <p>Territorio del cuerpo: <span className="font-semibold">{homeNames.join(' / ')}</span></p>
-      )}
+    <div
+      className={`rounded-md border px-2 py-1 text-[11px] text-foreground ${cls}`}
+      data-testid="territory-status"
+      title={`Fuente: ${TERRITORY_SOURCE} · Informativo, no asigna recursos.${homeNames ? ` Territorio del cuerpo: ${homeNames.join(' / ')}` : ''}`}
+    >
+      <p className="flex flex-wrap items-center gap-x-1.5">
+        <MapPinned className="h-3.5 w-3.5 shrink-0" />
+        <span>Territorio: <span className="font-semibold">{territory}</span></span>
+        {quadrantFor(latitude!, longitude!) && <span>· Cuadrante: <span className="font-mono font-semibold">{quadrantFor(latitude!, longitude!)}</span></span>}
+        {status && <span>· <span className="font-semibold">{status}</span></span>}
+      </p>
       {outsideOwn && (
         <p className="mt-0.5 flex items-start gap-1 font-semibold text-warning">
           <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
-          Fuera del territorio de tu cuerpo. Verifica la ubicación antes de despachar.
+          Fuera del territorio de tu cuerpo. Verifica antes de despachar.
         </p>
       )}
-      <p className="text-[10px] text-muted-foreground">Fuente: {TERRITORY_SOURCE} · Informativo, no asigna recursos.</p>
     </div>
   );
 }
