@@ -1936,6 +1936,66 @@ export type Database = {
           },
         ]
       }
+      operational_sectors: {
+        Row: {
+          code: string | null
+          color: string
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          name: string
+          organization_id: string
+          polygons: Json
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          color?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          name: string
+          organization_id: string
+          polygons: Json
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          color?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          name?: string
+          organization_id?: string
+          polygons?: Json
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_sectors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_sectors_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invitations: {
         Row: {
           accepted_at: string | null
