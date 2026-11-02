@@ -23,6 +23,9 @@ import { TERRITORIAL_LAYERS, type TerritorialLayerId } from '@/lib/territorialLa
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { isHydrantStatus, isOwnHydrant, parseHydrantOutlets, type HydrantStatus } from '@/lib/hydrants';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { lookupTerritory } from '@/lib/territoryLookup';
+import { quadrantFor } from '@/lib/quadrantGrid';
+import { Grid3x3, MapPinned } from 'lucide-react';
 
 
 
@@ -54,6 +57,21 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
   const [compatibilityMode, setCompatibilityMode] = useState(false);
   // Capas territoriales: todas apagadas por defecto (mapa limpio)
   const [territorialLayers, setTerritorialLayers] = useState<TerritorialLayerId[]>([]);
+  const [showQuadrants, setShowQuadrants] = useState(false);
+  const showSectors = territorialLayers.includes('territory');
+  const [sectorById, setSectorById] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const list = (emergencies ?? []).filter((e) => e.latitude != null && e.longitude != null);
+    Promise.all(list.map(async (e) => {
+      const r = await lookupTerritory(e.latitude!, e.longitude!);
+      const name = r.status === 'inside' ? r.territory.shortName
+        : r.status === 'outside' ? 'No identificado'
+        : r.territories.map((t) => t.shortName).join(' / ') + (r.status === 'boundary' ? ' (límite)' : ' (compartido)');
+      return [e.id, name] as const;
+    })).then((pairs) => { if (!cancelled) setSectorById(Object.fromEntries(pairs)); });
+    return () => { cancelled = true; };
+  }, [emergencies]);
   const toggleTerritorial = (id: TerritorialLayerId, on: boolean) =>
     setTerritorialLayers((prev) => (on ? [...prev.filter((x) => x !== id), id] : prev.filter((x) => x !== id)));
 
@@ -220,8 +238,10 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           statusColor: e.emergency_keys?.color ?? 'hsl(var(--emergency))',
           color: e.emergency_keys?.color ?? '#dc2626',
           vehicleCodes: e.vehicleCodes,
+          sector: sectorById[e.id] ?? null,
+          quadrant: quadrantFor(e.latitude!, e.longitude!),
         })),
-    [emergencies]
+    [emergencies, sectorById]
   );
 
   const mapHydrants = useMemo<MapHydrant[]>(() => {
@@ -316,6 +336,8 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
             { key: 'h', on: showHydrants, set: setShowHydrants, icon: <Droplets className="h-3.5 w-3.5 text-info" />, label: showHydrants ? `Grifos ${filteredHydrants.length}` : 'Grifos' },
             { key: 's', on: showStations, set: setShowStations, icon: <Building2 className="h-3.5 w-3.5 text-warning" />, label: 'Cuarteles' },
             { key: 'v', on: showVehicles, set: setShowVehicles, icon: <Truck className="h-3.5 w-3.5 text-success" />, label: 'Móviles' },
+            { key: 'sec', on: showSectors, set: (v: boolean) => toggleTerritorial('territory', v), icon: <MapPinned className="h-3.5 w-3.5 text-info" />, label: 'Sectores' },
+            { key: 'q', on: showQuadrants, set: setShowQuadrants, icon: <Grid3x3 className="h-3.5 w-3.5 text-warning" />, label: 'Cuadrantes' },
           ].map((c) => (
             <button
               key={c.key}
@@ -365,6 +387,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           onLocateResult={handleLocateResult}
           liveLocation={liveLocation}
           territorialLayers={territorialLayers}
+          showQuadrants={showQuadrants}
           landmarks={localLandmarks}
           onLandmarkEdit={screen ? undefined : handleLandmarkEdit}
         />
