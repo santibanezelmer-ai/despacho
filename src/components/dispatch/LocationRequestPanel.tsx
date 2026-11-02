@@ -260,7 +260,8 @@ export default function LocationRequestPanel({ phone, requestId, onRequestCreate
         </div>
       )}
 
-      {/* Estado de ubicación */}
+      {/* Estado de ubicación: solo cuando hay una solicitud */}
+      {status !== 'idle' && (
       <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
         <p className="mb-1.5 font-medium text-muted-foreground">Estado de ubicación</p>
         <p className={`flex items-center gap-1.5 font-mono ${meta.text}`}>
@@ -294,6 +295,7 @@ export default function LocationRequestPanel({ phone, requestId, onRequestCreate
           </div>
         )}
       </div>
+      )}
 
       {modalOpen && link && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
