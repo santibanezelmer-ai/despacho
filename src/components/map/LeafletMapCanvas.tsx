@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { addBaseTileLayer, OSM_TILE_URL } from '@/lib/mapTiles';
+import { drawQuadrantGrid } from '@/lib/quadrantGrid';
 import { buildTerritorialLayerGroups, loadTerritorialDataset, type TerritorialLayerId } from '@/lib/territorialLayers';
 import { HYDRANT_STATUS, type HydrantOutlet, type HydrantStatus } from '@/lib/hydrants';
 import type { LocalLandmark } from '@/lib/localLandmarks';
@@ -28,6 +29,8 @@ export type MapEmergency = {
   statusColor: string;
   color: string;
   vehicleCodes: string[];
+  sector?: string | null;
+  quadrant?: string | null;
 };
 
 export type MapHydrant = {
@@ -95,6 +98,8 @@ type LeafletMapCanvasProps = {
   liveLocation?: { lat: number; lng: number; accuracy: number | null; ts: number } | null;
   /** Capas territoriales visibles (solo visualización, Fase 5) */
   territorialLayers?: TerritorialLayerId[];
+  /** Cuadrícula táctica de cuadrantes */
+  showQuadrants?: boolean;
   /** Puntos locales del CB (nombres coloquiales), siempre visibles */
   landmarks?: LocalLandmark[];
   onLandmarkEdit?: (l: LocalLandmark) => void;
@@ -158,6 +163,7 @@ const buildEmergencyPopup = (emergency: MapEmergency) => {
       <div style="font-weight:700;">${escapeHtml(emergency.code)} - ${escapeHtml(emergency.name)}</div>
       <div style="font-size:12px;">${escapeHtml(emergency.folio)}</div>
       <div style="font-size:12px;">${escapeHtml(emergency.address)}</div>
+      ${emergency.sector || emergency.quadrant ? `<div style="font-size:12px;font-weight:600;">Sector: ${escapeHtml(emergency.sector ?? 'No identificado')}${emergency.quadrant ? ` · Cuadrante ${escapeHtml(emergency.quadrant)}` : ''}</div>` : ''}
       <div style="font-size:12px;font-weight:700;color:${emergency.statusColor};margin-top:2px;">${escapeHtml(emergency.statusLabel)}</div>
       <div style="font-size:12px;color:hsl(var(--muted-foreground));">Móviles: ${escapeHtml(vehicles)}</div>
     </div>
@@ -261,6 +267,7 @@ export default function LeafletMapCanvas({
   onLocateResult,
   liveLocation,
   territorialLayers = [],
+  showQuadrants = false,
   landmarks = EMPTY_LANDMARKS,
   onLandmarkEdit,
 }: LeafletMapCanvasProps) {
@@ -534,6 +541,17 @@ export default function LeafletMapCanvas({
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [territorialKey]);
+
+  // Cuadrícula de cuadrantes: se redibuja al mover el mapa
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !showQuadrants) return;
+    const group = L.layerGroup().addTo(map);
+    const redraw = () => drawQuadrantGrid(map, group);
+    redraw();
+    map.on('moveend zoomend', redraw);
+    return () => { map.off('moveend zoomend', redraw); group.remove(); };
+  }, [showQuadrants]);
 
   // Geolocation
 

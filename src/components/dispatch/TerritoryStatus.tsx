@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapPinned, TriangleAlert } from 'lucide-react';
+import { quadrantFor } from '@/lib/quadrantGrid';
 import { lookupTerritory, TERRITORY_SOURCE, type TerritoryResult } from '@/lib/territoryLookup';
 
 /**
@@ -61,6 +62,7 @@ export default function TerritoryStatus({ latitude, longitude, homeLatitude, hom
     <div className={`rounded-md border p-2 text-[11px] text-foreground ${cls}`} data-testid="territory-status">
       <p className="mb-0.5 flex items-center gap-1 font-semibold"><MapPinned className="h-3.5 w-3.5" /> Cobertura territorial</p>
       <p>Territorio: <span className="font-semibold">{territory}</span></p>
+      {quadrantFor(latitude!, longitude!) && <p>Cuadrante: <span className="font-mono font-semibold">{quadrantFor(latitude!, longitude!)}</span></p>}
       {status && <p>Estado: <span className="font-semibold">{status}</span></p>}
       {homeNames && (
         <p>Territorio del cuerpo: <span className="font-semibold">{homeNames.join(' / ')}</span></p>
