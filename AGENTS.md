@@ -27,3 +27,4 @@
 
 - Geographic acceptance of any searched/auto-geocoded coordinate goes only through src/lib/geoJurisdiction.ts (50 km safety radius + commune/region coherence); only status ok auto-accepts, anything else needs explicit operator confirmation logged as an operational exception.
 - Guard push: DB triggers enqueue guard_notification_outbox (deduped by event_key+recipient, only for propuesto assignments on publicado shifts); the guard-push function drains it per org with its own Android channel guard_requests, never the emergency channel or send-push-notification.
+- Organization sectors/quadrants (operational_sectors, src/lib/operationalSectors.ts, /sectores) are drawn or imported (KML/KMZ/GeoJSON) per org, rendered via src/lib/sectorLayer.ts under the map's Sectores toggle, and take precedence over the KML territory name for informative detection — they never assign resources.
