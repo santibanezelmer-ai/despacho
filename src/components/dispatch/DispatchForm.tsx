@@ -398,7 +398,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
 
   return (
     <div data-theme={theme} className="theme-screen fixed inset-0 z-50 flex items-center justify-center bg-background/80 text-foreground backdrop-blur-sm">
-      <div className="console-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+      <div className="console-panel w-full max-w-6xl max-h-[92vh] overflow-y-auto m-4 flex flex-col">
         {/* Header */}
         <div
           className="flex items-center justify-between p-4 border-b border-border"
@@ -433,7 +433,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         )}
 
         {/* Form */}
-        <div className="p-4 space-y-4">
+        <div className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="space-y-4 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -557,8 +558,10 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             />
           </div>
 
+        </div>
+        <div className="flex min-w-0 flex-col gap-3 lg:border-l lg:border-border lg:pl-4">
           {/* Vehicle selection */}
-          <div>
+          <div className="flex-1">
             <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Truck className="h-3.5 w-3.5" /> Asignar Móviles ({selectedVehicleIds.length} seleccionados)
             </label>
@@ -566,7 +569,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="sticky bottom-0 flex gap-3 border-t border-border bg-card pt-3 pb-1">
             <Button variant="outline" onClick={() => { clearDraft(); onClose(); }} className="flex-1" disabled={submitting}>
               Cancelar
             </Button>
