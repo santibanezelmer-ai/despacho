@@ -26,6 +26,8 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { lookupTerritory } from '@/lib/territoryLookup';
 import { quadrantFor } from '@/lib/quadrantGrid';
 import { Grid3x3, MapPinned } from 'lucide-react';
+import { useOperationalSectors } from '@/hooks/useOperationalSectors';
+import { describeSectorsAt } from '@/lib/operationalSectors';
 
 
 
@@ -60,10 +62,13 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
   const [showQuadrants, setShowQuadrants] = useState(false);
   const showSectors = territorialLayers.includes('territory');
   const [sectorById, setSectorById] = useState<Record<string, string>>({});
+  const { data: orgSectors } = useOperationalSectors();
   useEffect(() => {
     let cancelled = false;
     const list = (emergencies ?? []).filter((e) => e.latitude != null && e.longitude != null);
     Promise.all(list.map(async (e) => {
+      const own = describeSectorsAt(e.latitude!, e.longitude!, orgSectors);
+      if (own) return [e.id, own] as const;
       const r = await lookupTerritory(e.latitude!, e.longitude!);
       const name = r.status === 'inside' ? r.territory.shortName
         : r.status === 'outside' ? 'No identificado'
@@ -71,7 +76,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
       return [e.id, name] as const;
     })).then((pairs) => { if (!cancelled) setSectorById(Object.fromEntries(pairs)); });
     return () => { cancelled = true; };
-  }, [emergencies]);
+  }, [emergencies, orgSectors]);
   const toggleTerritorial = (id: TerritorialLayerId, on: boolean) =>
     setTerritorialLayers((prev) => (on ? [...prev.filter((x) => x !== id), id] : prev.filter((x) => x !== id)));
 
@@ -389,6 +394,7 @@ export default function OperativeMap({ screen = false }: { screen?: boolean }) {
           territorialLayers={territorialLayers}
           showQuadrants={showQuadrants}
           landmarks={localLandmarks}
+          orgSectors={showSectors ? orgSectors : undefined}
           onLandmarkEdit={screen ? undefined : handleLandmarkEdit}
         />
 

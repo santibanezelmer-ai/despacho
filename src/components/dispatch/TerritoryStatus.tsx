@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { MapPinned, TriangleAlert } from 'lucide-react';
 import { quadrantFor } from '@/lib/quadrantGrid';
+import { describeSectorsAt } from '@/lib/operationalSectors';
+import { useOperationalSectors } from '@/hooks/useOperationalSectors';
 import { lookupTerritory, TERRITORY_SOURCE, type TerritoryResult } from '@/lib/territoryLookup';
 
 /**
@@ -17,6 +19,7 @@ export default function TerritoryStatus({ latitude, longitude, homeLatitude, hom
 }) {
   const valid = latitude != null && longitude != null && Number.isFinite(latitude) && Number.isFinite(longitude);
   const homeValid = homeLatitude != null && homeLongitude != null && Number.isFinite(homeLatitude) && Number.isFinite(homeLongitude);
+  const { data: orgSectors } = useOperationalSectors();
   const [result, setResult] = useState<{ key: string; value: TerritoryResult; home: TerritoryResult | null } | null>(null);
   const key = valid ? `${latitude},${longitude}|${homeValid ? `${homeLatitude},${homeLongitude}` : ''}` : '';
 
@@ -67,6 +70,7 @@ export default function TerritoryStatus({ latitude, longitude, homeLatitude, hom
       <p className="flex flex-wrap items-center gap-x-1.5">
         <MapPinned className="h-3.5 w-3.5 shrink-0" />
         <span>Territorio: <span className="font-semibold">{territory}</span></span>
+        {describeSectorsAt(latitude!, longitude!, orgSectors) && <span>· Sector: <span className="font-semibold">{describeSectorsAt(latitude!, longitude!, orgSectors)}</span></span>}
         {quadrantFor(latitude!, longitude!) && <span>· Cuadrante: <span className="font-mono font-semibold">{quadrantFor(latitude!, longitude!)}</span></span>}
         {status && <span>· <span className="font-semibold">{status}</span></span>}
       </p>
