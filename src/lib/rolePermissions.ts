@@ -27,6 +27,7 @@ const SYSTEM_PATHS = [
   '/notificaciones',
   '/admin',
   '/admin/onboarding',
+  '/sectores',
 ];
 
 const DISPATCH_PATH = '/';
