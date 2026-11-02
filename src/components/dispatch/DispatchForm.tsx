@@ -466,19 +466,38 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         {/* Form */}
         <div className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="space-y-4 min-w-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" /> Dirección *
-              </label>
+          <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
+            <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" /> Ubicación del incidente
+            </h3>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Dirección *</label>
               <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Ej: Av. Libertador B. O'Higgins 1234" className="bg-muted/50" required spellCheck lang="es-CL" autoCorrect="off" />
             </div>
             <div>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" /> Referencia
-              </label>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Referencia</label>
               <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="Ej: Frente al mall" className="bg-muted/50" spellCheck lang="es-CL" autoCorrect="off" />
             </div>
+            <MapPointPicker
+              latitude={locationFix?.latitude ?? null}
+              longitude={locationFix?.longitude ?? null}
+              centerLat={orgGeo?.latitude ?? null}
+              centerLng={orgGeo?.longitude ?? null}
+              onPick={handleManualCoords}
+            />
+            <ManualCoordsInput
+              latitude={locationFix?.latitude ?? null}
+              longitude={locationFix?.longitude ?? null}
+              onSubmit={handleManualCoords}
+            />
+            {locationFix && <TerritoryStatus latitude={locationFix.latitude} longitude={locationFix.longitude} />}
+          </section>
+
+          <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
+            <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <User className="h-3.5 w-3.5" /> Contacto
+            </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <User className="h-3.5 w-3.5" /> {isServiceKey ? 'Autorizado por' : 'Solicitante'}
@@ -537,38 +556,20 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Phone className="h-3.5 w-3.5" /> Teléfono
               </label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50 sm:flex-1" />
-                <div className="sm:w-[190px]">
-                  <LocationRequestPanel
-                    phone={callerPhone}
-                    requestId={locationRequestId}
-                    onRequestCreated={setLocationRequestId}
-                    fix={locationFix}
-                    onFix={handleLocationFix}
-                  />
-                </div>
-              </div>
+              <Input value={callerPhone} onChange={e => setCallerPhone(e.target.value)} placeholder="+56 9 XXXX XXXX" className="bg-muted/50" />
             </div>
-
-            <div className="md:col-span-2 space-y-2">
-              <MapPointPicker
-                latitude={locationFix?.latitude ?? null}
-                longitude={locationFix?.longitude ?? null}
-                centerLat={orgGeo?.latitude ?? null}
-                centerLng={orgGeo?.longitude ?? null}
-                onPick={handleManualCoords}
+            <div className="md:col-span-2">
+              <LocationRequestPanel
+                phone={callerPhone}
+                requestId={locationRequestId}
+                onRequestCreated={setLocationRequestId}
+                fix={locationFix}
+                onFix={handleLocationFix}
               />
-              <ManualCoordsInput
-                latitude={locationFix?.latitude ?? null}
-                longitude={locationFix?.longitude ?? null}
-                onSubmit={handleManualCoords}
-              />
-              {locationFix && <div className="mt-2"><TerritoryStatus latitude={locationFix.latitude} longitude={locationFix.longitude} /></div>}
             </div>
-
 
           </div>
+          </section>
 
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
