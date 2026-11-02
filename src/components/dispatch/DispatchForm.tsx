@@ -22,6 +22,7 @@ import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailability
 import { useScreenTheme } from '@/hooks/useScreenTheme';
 import LocationRequestPanel, { type LocationFix } from './LocationRequestPanel';
 import ManualCoordsInput from './ManualCoordsInput';
+import MapPointPicker from './MapPointPicker';
 import TerritoryStatus from './TerritoryStatus';
 import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
 
@@ -518,7 +519,14 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               </div>
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
+              <MapPointPicker
+                latitude={locationFix?.latitude ?? null}
+                longitude={locationFix?.longitude ?? null}
+                centerLat={orgGeo?.latitude ?? null}
+                centerLng={orgGeo?.longitude ?? null}
+                onPick={handleManualCoords}
+              />
               <ManualCoordsInput
                 latitude={locationFix?.latitude ?? null}
                 longitude={locationFix?.longitude ?? null}
