@@ -211,6 +211,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     toast.success('Ubicación recibida correctamente.', { id: 'location-received' });
   }, []);
 
+  const reverseSeq = useRef(0);
   const handleManualCoords = useCallback((lat: number, lng: number) => {
     setLocationFix({
       latitude: lat,
@@ -219,8 +220,27 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       receivedAt: new Date().toISOString(),
       address: null,
     });
-    setAddress(prev => (prev.trim() ? prev : `${lat.toFixed(6)}, ${lng.toFixed(6)}`));
-    toast.success('Coordenadas manuales asignadas');
+    const coordText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    const isAuto = (s: string) => !s.trim() || /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(s.trim()) || s === 'Obteniendo dirección…';
+    setAddress(prev => (isAuto(prev) ? 'Obteniendo dirección…' : prev));
+    const seq = ++reverseSeq.current;
+    void (async () => {
+      let text: string | null = null;
+      let place: string | null = null;
+      try {
+        const { findNearestRouteKm, formatRouteKmAddress } = await import('@/lib/routeKilometer');
+        const r = await findNearestRouteKm(lat, lng);
+        if (r) text = formatRouteKmAddress(r);
+      } catch { /* sin ruta */ }
+      try {
+        const { data } = await supabase.functions.invoke('google-places', { body: { action: 'reverse', lat, lng } });
+        if (!text) text = data?.address ?? null;
+        place = [data?.sector, data?.locality].filter(Boolean).join(', ') || null;
+      } catch { /* sin servicio */ }
+      if (seq !== reverseSeq.current) return;
+      setAddress(prev => (isAuto(prev) ? text ?? coordText : prev));
+      if (place) setReference(prev => (prev.trim() ? prev : place!));
+    })();
   }, []);
 
 

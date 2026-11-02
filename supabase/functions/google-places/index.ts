@@ -22,6 +22,11 @@ const Body = z.discriminatedUnion('action', [
     placeId: z.string().min(5).max(300).regex(/^[A-Za-z0-9_-]+$/),
     sessionToken: z.string().uuid().optional(),
   }),
+  z.object({
+    action: z.literal('reverse'),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+  }),
 ]);
 
 async function gatewayError(res: Response) {
@@ -59,6 +64,26 @@ Deno.serve(async (req) => {
   };
 
   try {
+    if (body.action === 'reverse') {
+      const res = await fetch(
+        `${GATEWAY_URL}/maps/api/geocode/json?latlng=${body.lat},${body.lng}&language=es&region=cl`,
+        { headers },
+      );
+      if (!res.ok) return await gatewayError(res);
+      const data = await res.json();
+      const results: any[] = data?.results ?? [];
+      const best = results.find((r) => (r.types ?? []).some((t: string) => ['street_address', 'premise', 'route', 'intersection'].includes(t))) ?? results[0];
+      if (!best) return json({ address: null, street: null, locality: null });
+      const comp = (type: string) =>
+        (best.address_components ?? []).find((c: any) => (c.types ?? []).includes(type))?.long_name ?? null;
+      const route = comp('route');
+      const num = comp('street_number');
+      const locality = comp('locality') ?? comp('administrative_area_level_3');
+      const sector = comp('sublocality') ?? comp('neighborhood');
+      const short = route ? [route + (num ? ` ${num}` : ''), locality].filter(Boolean).join(', ') : null;
+      return json({ address: short ?? best.formatted_address ?? null, street: route, locality, sector });
+    }
+
     if (body.action === 'autocomplete') {
       const payload: Record<string, unknown> = {
         input: body.input,
