@@ -15,6 +15,17 @@ interface Props {
 
 const FALLBACK: [number, number] = [-40.5739, -73.1335]; // Osorno
 
+/** Pin propio (SVG) para no depender de las imágenes por defecto de Leaflet. */
+const PIN_ICON = L.divIcon({
+  className: '',
+  html: `<svg width="34" height="46" viewBox="0 0 34 46" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))">
+    <path d="M17 1C8.2 1 1 8 1 16.7 1 28.5 17 45 17 45s16-16.5 16-28.3C33 8 25.8 1 17 1z" fill="hsl(0 84% 52%)" stroke="white" stroke-width="2.5"/>
+    <circle cx="17" cy="16.5" r="6" fill="white"/>
+  </svg>`,
+  iconSize: [34, 46],
+  iconAnchor: [17, 45],
+});
+
 /** Mapa para fijar la ubicación de la emergencia con un clic o arrastrando el pin. */
 export default function MapPointPicker({ latitude, longitude, centerLat, centerLng, onPick }: Props) {
   const [open, setOpen] = useState(false);
@@ -47,7 +58,7 @@ export default function MapPointPicker({ latitude, longitude, centerLat, centerL
     }
     const pos: [number, number] = [latitude, longitude];
     if (!markerRef.current) {
-      markerRef.current = L.marker(pos, { draggable: true }).addTo(map);
+      markerRef.current = L.marker(pos, { draggable: true, icon: PIN_ICON, autoPan: true }).addTo(map);
       markerRef.current.on('dragend', () => {
         const p = markerRef.current!.getLatLng();
         onPickRef.current(p.lat, p.lng);
