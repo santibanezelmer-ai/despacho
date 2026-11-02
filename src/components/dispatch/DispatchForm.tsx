@@ -212,6 +212,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   }, []);
 
   const reverseSeq = useRef(0);
+  const autoAddressRef = useRef<string | null>(null);
+  const autoReferenceRef = useRef<string | null>(null);
   const handleManualCoords = useCallback((lat: number, lng: number) => {
     setLocationFix({
       latitude: lat,
@@ -221,7 +223,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       address: null,
     });
     const coordText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    const isAuto = (s: string) => !s.trim() || /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(s.trim()) || s === 'Obteniendo dirección…';
+    const isAuto = (s: string) => !s.trim() || /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(s.trim()) || s === 'Obteniendo dirección…' || (autoAddressRef.current !== null && s === autoAddressRef.current);
     setAddress(prev => (isAuto(prev) ? 'Obteniendo dirección…' : prev));
     const seq = ++reverseSeq.current;
     void (async () => {
@@ -238,8 +240,17 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         place = [data?.sector, data?.locality].filter(Boolean).join(', ') || null;
       } catch { /* sin servicio */ }
       if (seq !== reverseSeq.current) return;
-      setAddress(prev => (isAuto(prev) ? text ?? coordText : prev));
-      if (place) setReference(prev => (prev.trim() ? prev : place!));
+      const next = text ?? coordText;
+      setAddress(prev => {
+        if (!isAuto(prev)) return prev;
+        autoAddressRef.current = next;
+        return next;
+      });
+      if (place) setReference(prev => {
+        if (prev.trim() && prev !== autoReferenceRef.current) return prev;
+        autoReferenceRef.current = place;
+        return place!;
+      });
     })();
   }, []);
 
