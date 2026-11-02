@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { addBaseTileLayer, OSM_TILE_URL } from '@/lib/mapTiles';
 import { drawQuadrantGrid } from '@/lib/quadrantGrid';
+import { renderSectorLayer, type OperationalSectorLayerInput as OperationalSector } from '@/lib/sectorLayer';
 import { buildTerritorialLayerGroups, loadTerritorialDataset, type TerritorialLayerId } from '@/lib/territorialLayers';
 import { HYDRANT_STATUS, type HydrantOutlet, type HydrantStatus } from '@/lib/hydrants';
 import type { LocalLandmark } from '@/lib/localLandmarks';
@@ -103,9 +104,12 @@ type LeafletMapCanvasProps = {
   /** Puntos locales del CB (nombres coloquiales), siempre visibles */
   landmarks?: LocalLandmark[];
   onLandmarkEdit?: (l: LocalLandmark) => void;
+  /** Sectores/cuadrantes propios de la organización */
+  orgSectors?: OperationalSector[];
 };
 
 const EMPTY_LANDMARKS: LocalLandmark[] = [];
+const EMPTY_SECTORS: OperationalSector[] = [];
 const landmarkIcon = L.divIcon({
   className: '',
   html: `<div style="width:22px;height:22px;transform:rotate(45deg);background:hsl(var(--warning));border:2px solid white;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
@@ -270,6 +274,7 @@ export default function LeafletMapCanvas({
   showQuadrants = false,
   landmarks = EMPTY_LANDMARKS,
   onLandmarkEdit,
+  orgSectors = EMPTY_SECTORS,
 }: LeafletMapCanvasProps) {
 
   const hydrantsRef = useRef(hydrants);
@@ -541,6 +546,14 @@ export default function LeafletMapCanvas({
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [territorialKey]);
+
+  // Sectores/cuadrantes propios del cuerpo
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !orgSectors.length) return;
+    const layer = renderSectorLayer(orgSectors).addTo(map);
+    return () => { layer.remove(); };
+  }, [orgSectors]);
 
   // Cuadrícula de cuadrantes: se redibuja al mover el mapa
   useEffect(() => {
