@@ -141,6 +141,13 @@
       "when": 1793102787277,
       "tag": "0019_create_app_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793582417817,
+      "tag": "0020_create_operational_sectors",
+      "breakpoints": true
     }
   ]
 }

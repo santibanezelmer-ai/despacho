@@ -27,6 +27,7 @@ const navItems = [
   { path: '/comunicados', label: 'Comunicados / Notas', icon: StickyNote, section: 'Operaciones' },
   { path: '/historial', label: 'Historial', icon: Archive, section: 'Operaciones' },
   { path: '/mapa', label: 'Mapa Operativo', icon: MapPin, section: 'Operaciones' },
+  { path: '/sectores', label: 'Sectores y cuadrantes', icon: MapPin, section: 'Sistema' },
   { path: '/voluntarios', label: 'Voluntarios', icon: Users, section: 'Recursos' },
   { path: '/moviles', label: 'Móviles', icon: Truck, section: 'Recursos' },
   { path: '/companias', label: 'Compañías', icon: ClipboardList, section: 'Recursos' },

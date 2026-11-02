@@ -467,3 +467,14 @@
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+
+/* Etiquetas de sectores propios en mapas Leaflet */
+.leaflet-tooltip.sector-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: hsl(var(--foreground));
+  font: 700 11px ui-monospace, monospace;
+  text-shadow: 0 0 3px hsl(var(--background)), 0 0 3px hsl(var(--background));
+}
+.leaflet-tooltip.sector-label::before { display: none; }
