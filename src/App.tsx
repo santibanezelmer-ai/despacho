@@ -26,6 +26,7 @@ import EmergencyKeysAdmin from "@/pages/EmergencyKeysAdmin";
 import PlaceholderPage from "@/components/shared/PlaceholderPage";
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const OperativeMap = lazy(() => import("@/pages/OperativeMap"));
+const SectorsAdmin = lazy(() => import("@/pages/SectorsAdmin"));
 const TvScreen = lazy(() => import("@/pages/TvScreen"));
 const EquipmentPage = lazy(() => import("@/pages/Equipment"));
 const CentralScreen = lazy(() => import("@/pages/CentralScreen"));
@@ -226,6 +227,7 @@ function AppRoutes() {
         <Route path="/comunicados" element={<DispatchNotes />} />
         <Route path="/historial" element={<EmergencyHistory />} />
         <Route path="/mapa" element={<OperativeMap />} />
+        <Route path="/sectores" element={<SectorsAdmin />} />
         <Route path="/voluntarios" element={<Volunteers />} />
         <Route path="/moviles" element={<Vehicles />} />
         <Route path="/companias" element={<Companies />} />
