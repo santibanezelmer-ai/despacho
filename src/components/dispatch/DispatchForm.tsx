@@ -25,6 +25,7 @@ import ManualCoordsInput from './ManualCoordsInput';
 import MapPointPicker from './MapPointPicker';
 import TerritoryStatus from './TerritoryStatus';
 import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
+import { usableDispatchAddress } from '@/lib/dispatchAddress';
 
 import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
 
@@ -45,7 +46,9 @@ function loadDraft(keyId: string): Partial<DispatchDraft> {
     const raw = sessionStorage.getItem(DISPATCH_DRAFT_KEY);
     if (!raw) return {};
     const d = JSON.parse(raw) as DispatchDraft;
-    return d.keyId === keyId ? d : {};
+    return d.keyId === keyId
+      ? { ...d, address: usableDispatchAddress(d.address ?? '', d.locationFix ?? null) }
+      : {};
   } catch {
     // Borrador corrupto o almacenamiento no disponible: se abre limpio
     return {};
@@ -178,6 +181,8 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   const [authorizerJustPicked, setAuthorizerJustPicked] = useState(false);
   const [locationRequestId, setLocationRequestId] = useState<string | null>(draft.locationRequestId ?? null);
   const [locationFix, setLocationFix] = useState<LocationFix | null>(draft.locationFix ?? null);
+  const [resolvingAddress, setResolvingAddress] = useState(false);
+  const dispatchAddress = usableDispatchAddress(address, locationFix).trim();
 
   // Mantener el borrador de la ventana aunque se navegue o se cierre el navegador
   useEffect(() => {
@@ -187,7 +192,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         JSON.stringify({
           keyId: emergencyKey.id,
           selectedVehicleIds,
-          address,
+          address: usableDispatchAddress(address, locationFix),
           reference,
           callerName,
           callerPhone,
@@ -224,7 +229,13 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     });
     const coordText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     const isAuto = (s: string) => !s.trim() || /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(s.trim()) || s === 'Obteniendo dirección…' || (autoAddressRef.current !== null && s === autoAddressRef.current);
-    setAddress(prev => (isAuto(prev) ? 'Obteniendo dirección…' : prev));
+    // Keep a usable coordinate fallback in state and drafts while lookup runs.
+    setAddress(prev => {
+      if (!isAuto(prev)) return prev;
+      autoAddressRef.current = coordText;
+      return coordText;
+    });
+    setResolvingAddress(true);
     const seq = ++reverseSeq.current;
     void (async () => {
       let text: string | null = null;
@@ -240,6 +251,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         place = [data?.sector, data?.locality].filter(Boolean).join(', ') || null;
       } catch { /* sin servicio */ }
       if (seq !== reverseSeq.current) return;
+      setResolvingAddress(false);
       const next = text ?? coordText;
       setAddress(prev => {
         if (!isAuto(prev)) return prev;
@@ -323,7 +335,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!address.trim()) {
+    if (!dispatchAddress) {
       toast.error('La dirección es obligatoria');
       return;
     }
@@ -345,7 +357,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         ? { lat: Number(orgGeo.latitude), lng: Number(orgGeo.longitude) } : null;
       const origin = near ? { ...near, commune: orgGeo?.commune ?? null, region: (orgGeo as any)?.region ?? null } : null;
       const outcome = await Promise.race([
-        autoGeocodeDetailed(address, { landmarks: localLandmarks, near, defaultContext: orgGeo?.commune ?? null, origin }),
+        autoGeocodeDetailed(dispatchAddress, { landmarks: localLandmarks, near, defaultContext: orgGeo?.commune ?? null, origin }),
         new Promise<null>(r => setTimeout(() => r(null), 6000)),
       ]).catch(() => null);
       const found = outcome?.result ?? null;
@@ -367,7 +379,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
       keyId: emergencyKey.id,
       keyCode: emergencyKey.code,
       keyName: emergencyKey.name,
-      address: address.trim(),
+      address: dispatchAddress,
       reference: reference.trim() || null,
       callerName: callerName.trim() || null,
       callerPhone: callerPhone.trim() || null,
@@ -473,6 +485,11 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Dirección *</label>
               <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Ej: Av. Libertador B. O'Higgins 1234" className="bg-muted/50" required spellCheck lang="es-CL" autoCorrect="off" />
+              {resolvingAddress && (
+                <span role="status" className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" /> Obteniendo dirección…
+                </span>
+              )}
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Referencia</label>
@@ -607,7 +624,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={submitting || !address.trim()}
+              disabled={submitting || !dispatchAddress}
               className="flex-1 bg-emergency text-emergency-foreground hover:bg-emergency/90"
             >
               {submitting ? (
