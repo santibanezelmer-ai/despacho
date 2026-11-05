@@ -17,3 +17,5 @@ project_id = "ratbcyvzdlokcqyxdvvg"
     verify_jwt = false
   [functions.screen-display]
     verify_jwt = false
+  [functions.volunteer-activation]
+    verify_jwt = false

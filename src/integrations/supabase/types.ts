@@ -3369,6 +3369,57 @@ export type Database = {
           },
         ]
       }
+      volunteer_activation_challenges: {
+        Row: {
+          attempts: number
+          code_hash: string | null
+          consent_at: string
+          consumed_at: string | null
+          created_at: string
+          email_norm: string
+          expires_at: string
+          id: string
+          ip_hash: string
+          matched: boolean
+          org_slug: string
+          organization_id: string | null
+          rut_norm: string
+          volunteer_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash?: string | null
+          consent_at: string
+          consumed_at?: string | null
+          created_at?: string
+          email_norm: string
+          expires_at: string
+          id?: string
+          ip_hash: string
+          matched?: boolean
+          org_slug: string
+          organization_id?: string | null
+          rut_norm: string
+          volunteer_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string | null
+          consent_at?: string
+          consumed_at?: string | null
+          created_at?: string
+          email_norm?: string
+          expires_at?: string
+          id?: string
+          ip_hash?: string
+          matched?: boolean
+          org_slug?: string
+          organization_id?: string | null
+          rut_norm?: string
+          volunteer_id?: string | null
+        }
+        Relationships: []
+      }
       volunteer_records: {
         Row: {
           created_at: string

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'npm:react@18.3.1'
 import { template as backendHealthAlertTemplate } from './backend-health-alert.tsx'
 import { template as organizationInvitationTemplate } from './organization-invitation.tsx'
+import { template as volunteerActivationCodeTemplate } from './volunteer-activation-code.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -18,4 +19,5 @@ export interface TemplateEntry {
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'backend-health-alert': backendHealthAlertTemplate,
   'organization-invitation': organizationInvitationTemplate,
+  'volunteer-activation-code': volunteerActivationCodeTemplate,
 }
