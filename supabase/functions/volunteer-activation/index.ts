@@ -18,7 +18,7 @@ const CODE_TTL_MIN = 10;
 const RequestSchema = z.object({
   action: z.literal('request'),
   org: z.string().trim().min(1).max(100),
-  rut: z.string().trim().min(7).max(15),
+  rut: z.string().trim().max(15).optional().default(''),
   email: z.string().trim().email().max(255),
   consent: z.literal(true),
 });
@@ -53,8 +53,9 @@ Deno.serve(async (req) => {
     if (!p.success) return json({ status: 'invalid' }, 400);
     const rut = normRut(p.data.rut);
     const email = p.data.email.toLowerCase();
-    if (rut.length < 7 || rut.length > 10) return json({ status: 'invalid' }, 400);
-    const rutHash = await sha256(`${pepper()}:${rut}`);
+    if (rut && (rut.length < 7 || rut.length > 10)) return json({ status: 'invalid' }, 400);
+    // RUT optional: when omitted, the per-identity limit keys on the email.
+    const rutHash = await sha256(`${pepper()}:${rut || 'email:' + email}`);
 
     const [{ count: ipCount }, { count: rutCount }] = await Promise.all([
       admin.from('volunteer_activation_challenges').select('id', { count: 'exact', head: true }).eq('ip_hash', ipHash).gte('created_at', since),
@@ -70,7 +71,9 @@ Deno.serve(async (req) => {
     if (org) {
       orgId = org.id; orgName = org.name ?? '';
       const { data: vols } = await admin.from('volunteers').select('id,rut,email,user_id,status').eq('organization_id', org.id).ilike('email', email);
-      const v = (vols ?? []).find((x: any) => normRut(x.rut ?? '') === rut && (x.email ?? '').trim().toLowerCase() === email);
+      const matches = (vols ?? []).filter((x: any) => (x.email ?? '').trim().toLowerCase() === email && (!rut || normRut(x.rut ?? '') === rut));
+      // Email alone must identify exactly one volunteer; duplicates never match.
+      const v = matches.length === 1 ? matches[0] : null;
       if (v && !v.user_id && v.status !== 'inactivo') volId = v.id;
     }
 
@@ -107,9 +110,7 @@ Deno.serve(async (req) => {
     const ok = ch.matched && ch.code_hash === (await sha256(`${pepper()}:${p.data.code}`));
     if (!ok) return json({ status: 'invalid_code', remaining: Math.max(0, MAX_CODE_ATTEMPTS - ch.attempts - 1) }, 400);
 
-    const { data: vol } = await admin.from('volunteers').select('rut,email').eq('id', ch.volunteer_id).maybeSingle();
-    if (!vol) return json({ status: 'expired' }, 400);
-    const { data: res, error } = await admin.rpc('claim_volunteer_activation', { _org_slug: ch.org_slug, _rut: vol.rut, _email: vol.email });
+    const { data: res, error } = await admin.rpc('claim_volunteer_activation_by_id', { _volunteer_id: ch.volunteer_id });
     if (error) return json({ status: 'error' }, 500);
     await admin.from('volunteer_activation_challenges').update({ consumed_at: new Date().toISOString() }).eq('id', ch.id);
     return json(res);

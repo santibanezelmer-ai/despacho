@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 const schema = z.object({
   org: z.string().trim().min(1, 'Enlace incompleto: falta el código del Cuerpo').max(100),
-  rut: z.string().trim().min(7, 'RUT inválido').max(15),
+  rut: z.string().trim().max(15).refine(v => v === '' || v.replace(/[^0-9kK]/g, '').length >= 7, 'RUT inválido'),
   email: z.string().trim().email('Correo inválido').max(255),
 });
 
@@ -69,7 +69,7 @@ export default function ActivateVolunteer() {
           </div>
           <h1 className="text-xl font-bold text-foreground">Activa tu acceso a Operix Voluntario</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {challenge ? 'Revisa tu correo e ingresa el código de 6 dígitos.' : 'Ingresa tu RUT y el correo registrado en tu compañía.'}
+            {challenge ? 'Revisa tu correo e ingresa el código de 6 dígitos.' : 'Ingresa el correo registrado en tu compañía.'}
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export default function ActivateVolunteer() {
           <form onSubmit={request} className="console-panel p-6 space-y-4">
             {!org && <p className="text-xs text-destructive">Este enlace está incompleto. Pide el enlace oficial a tu compañía.</p>}
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">RUT</label>
+              <label className="mb-1 block text-xs text-muted-foreground">RUT (opcional)</label>
               <Input value={rut} onChange={e => setRut(e.target.value)} placeholder="12.345.678-9" autoComplete="off" className="bg-muted/50" />
             </div>
             <div>
