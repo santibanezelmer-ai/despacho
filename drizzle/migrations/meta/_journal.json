@@ -148,6 +148,13 @@
       "when": 1793582417817,
       "tag": "0020_create_operational_sectors",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793848712984,
+      "tag": "0021_volunteer_self_activation",
+      "breakpoints": true
     }
   ]
 }

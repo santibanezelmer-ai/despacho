@@ -14,6 +14,7 @@ import RegisterOrganization from "@/pages/RegisterOrganization";
 import PendingApproval from "@/pages/PendingApproval";
 import ResetPassword from "@/pages/ResetPassword";
 import AcceptInvitation from "@/pages/AcceptInvitation";
+import ActivateVolunteer from "@/pages/ActivateVolunteer";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
 import DispatchNotes from "@/pages/DispatchNotes";
@@ -121,6 +122,7 @@ function AppRoutes() {
         <Route path="/register" element={<RegisterOrganization />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/invite/:token" element={<AcceptInvitation />} />
+        <Route path="/activar" element={<ActivateVolunteer />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -269,6 +271,7 @@ const App = () => (
               <Routes>
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/invite/:token" element={<AcceptInvitation />} />
+        <Route path="/activar" element={<ActivateVolunteer />} />
                 <Route path="/location/:token" element={<SharedLocationPage />} />
                 <Route path="/tv" element={<Suspense fallback={<PageFallback />}><TvScreen /></Suspense>} />
                 <Route path="/terminos" element={<TermsPage />} />

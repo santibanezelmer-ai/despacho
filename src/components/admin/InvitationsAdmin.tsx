@@ -234,6 +234,25 @@ export default function InvitationsAdmin() {
 
       <div className="console-panel p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1">
+          <p className="text-sm font-semibold text-foreground">Activación por WhatsApp</p>
+          <p className="text-xs text-muted-foreground">
+            Comparte un solo enlace en el grupo de la compañía. Cada voluntario se activa con su RUT y correo registrados en la nómina.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => {
+          const url = `${window.location.origin}/activar?org=${encodeURIComponent(currentOrg?.organization?.slug ?? '')}`;
+          const text = `Estimados voluntarios: activen su acceso a Operix Voluntario para recibir despachos, emergencias y guardias. Ingresen con su RUT y correo registrado: ${url}`;
+          navigator.clipboard?.writeText(text).catch(() => {});
+          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+          toast.success('Mensaje copiado · abriendo WhatsApp');
+        }} disabled={!currentOrg?.organization?.slug}>
+          <Send className="h-4 w-4 mr-2" />
+          Compartir por WhatsApp
+        </Button>
+      </div>
+
+      <div className="console-panel p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
           <p className="text-sm font-semibold text-foreground">Invitación masiva a voluntarios</p>
           <p className="text-xs text-muted-foreground">
             {bulkRunning

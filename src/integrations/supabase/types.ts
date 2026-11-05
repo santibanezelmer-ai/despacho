@@ -3515,6 +3515,10 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
       can_write_in_org: { Args: { _org_id: string }; Returns: boolean }
+      claim_volunteer_activation: {
+        Args: { _email: string; _org_slug: string; _rut: string }
+        Returns: Json
+      }
       demo_emergency_count: { Args: { _org_id: string }; Returns: number }
       get_demo_limits: { Args: never; Returns: Json }
       get_invitation_preview: { Args: { _token: string }; Returns: Json }
