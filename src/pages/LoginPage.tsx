@@ -108,6 +108,10 @@ export default function LoginPage() {
           <p className="text-xs font-mono text-muted-foreground mt-1">v4.0 — Sistema de Despacho</p>
         </div>
 
+        <Link to="/activar?org=org-inicial" className="mb-4 block rounded-lg border border-emergency/40 bg-emergency/10 p-3 text-center text-sm font-semibold text-foreground">
+          ¿Eres voluntario y no tienes cuenta? Activa tu acceso aquí
+        </Link>
+
         <form onSubmit={handleSubmit} className="console-panel p-6 space-y-4">
           <h2 className="text-sm font-semibold text-foreground">Iniciar Sesión</h2>
 

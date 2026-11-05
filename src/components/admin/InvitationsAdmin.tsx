@@ -241,7 +241,7 @@ export default function InvitationsAdmin() {
         </div>
         <Button variant="outline" onClick={() => {
           const url = `${window.location.origin}/activar?org=${encodeURIComponent(currentOrg?.organization?.slug ?? '')}`;
-          const text = `Estimados voluntarios: activen su acceso a Operix Voluntario para recibir despachos, emergencias y guardias. Ingresen con su RUT y correo registrado: ${url}`;
+          const text = `Estimados voluntarios: activen su acceso a Operix Voluntario para recibir despachos, emergencias y guardias. Ingresen con su correo registrado.\n\nToquen este enlace (no la vista previa):\n${url}`;
           navigator.clipboard?.writeText(text).catch(() => {});
           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
           toast.success('Mensaje copiado · abriendo WhatsApp');

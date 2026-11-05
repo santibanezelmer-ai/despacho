@@ -16,6 +16,11 @@ export default function LandingHeader() {
           <span className="text-base font-bold tracking-tight">Operix</span>
         </div>
         <div className="flex items-center gap-2.5">
+          <Link to="/activar?org=org-inicial">
+            <Button variant="outline" size="sm" className="text-xs px-2 sm:px-3">
+              Soy voluntario
+            </Button>
+          </Link>
           <Link to="/login">
             <Button variant="ghost" size="sm" className="text-xs hover:bg-secondary/80 px-2 sm:px-3">
               Iniciar sesión
