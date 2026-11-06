@@ -24,6 +24,7 @@ async function call(body: Record<string, unknown>) {
 export default function ActivateVolunteer() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const [org, setOrg] = useState(() => params.get('org') ?? '');
   const [rut, setRut] = useState('');
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
@@ -31,7 +32,6 @@ export default function ActivateVolunteer() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const org = params.get('org') ?? '';
 
   const request = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +75,12 @@ export default function ActivateVolunteer() {
 
         {!challenge ? (
           <form onSubmit={request} className="console-panel p-6 space-y-4">
-            {!org && <p className="text-xs text-destructive">Este enlace está incompleto. Pide el enlace oficial a tu compañía.</p>}
+            <div>
+              <label htmlFor="activation-org" className="mb-1 block text-xs text-muted-foreground">Código de tu Cuerpo</label>
+              <Input id="activation-org" value={org} onChange={e => setOrg(e.target.value)} required maxLength={100}
+                autoComplete="off" autoCapitalize="none" spellCheck={false} className="bg-muted/50" />
+              <p className="mt-1 text-xs text-muted-foreground">Solicita este código o el enlace de activación a tu compañía.</p>
+            </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">RUT (opcional)</label>
               <Input value={rut} onChange={e => setRut(e.target.value)} placeholder="12.345.678-9" autoComplete="off" className="bg-muted/50" />
@@ -93,7 +98,7 @@ export default function ActivateVolunteer() {
               </span>
             </label>
             {msg && <p className="text-xs text-warning">{msg}</p>}
-            <Button type="submit" disabled={busy || !org || !consent} className="w-full bg-emergency text-emergency-foreground hover:bg-emergency/90">
+            <Button type="submit" disabled={busy || !org.trim() || !consent} className="w-full bg-emergency text-emergency-foreground hover:bg-emergency/90">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar código a mi correo'}
             </Button>
             <p className="text-center text-xs text-muted-foreground">

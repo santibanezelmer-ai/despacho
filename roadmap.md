@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Corregir los accesos genéricos de activación de voluntarios para no elegir una organización fija; código explícito o enlace de compañía, 4 pruebas y navegación en computadora/teléfono verificadas, sin cambios de datos ni permisos ni envío de correos reales.
+
 - [x] Corregir avisos confirmados: ruta personal de Guardias, recuperación del feed tras fallo temporal y acceso autorizado desde navegadores de teléfono; 40 pruebas específicas aprobadas y compilación automática correcta, sin escrituras ni publicación.
 - [ ] Comprobar estos recorridos con la sesión real de Susana: no se pudo obtener su sesión propia; no confirmar asignaciones reales sin autorización.
 
