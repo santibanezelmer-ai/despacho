@@ -72,7 +72,7 @@ export default function PricingSection() {
 
           <a href="#contacto" className="mt-6 block">
             <Button className="w-full gap-2 h-12 font-semibold bg-emergency text-emergency-foreground hover:bg-emergency/90 shadow-[0_0_25px_hsl(0_85%_55%/0.35)]">
-              Agendar reunión y activar prueba <ArrowRight className="h-4 w-4" />
+              Solicitar reunión y prueba de 15 días <ArrowRight className="h-4 w-4" />
             </Button>
           </a>
         </motion.div>

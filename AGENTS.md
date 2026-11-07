@@ -34,3 +34,5 @@
 - Serve the complete current privacy policy as independent HTML in public/privacidad/index.html, excluded from the SPA service-worker fallback; keep its twelve sections synchronized with PrivacyPage so non-JavaScript clients can read the same policy.
 - Organization activation codes (slug) are always derived server-side from the organization name by the organizations_set_slug trigger; previous codes stay valid via legacy_slugs so shared links never break.
 - Volunteer career (ANB catalog, malla levels, exact service time, honors, quinquennia) is computed only in src/lib/volunteerCareer.ts and shared by the profile dialog and PDF; position history lives in volunteer_positions.
+
+- Landing commercial CTAs come only from src/components/landing/landingCtas.ts and the single demo form stores into the existing leads table via demoRequest.ts (extra fields packed into message) — one consistent funnel without schema changes.

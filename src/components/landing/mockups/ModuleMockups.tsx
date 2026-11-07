@@ -52,9 +52,9 @@ export function DispatchMock() {
     <Frame label="Consola de Despacho">
       <div className="mb-2 grid grid-cols-3 gap-1.5">
         {[
-          { l: 'Activas', v: '3', i: Siren },
-          { l: 'Móviles', v: '7/9', i: Truck },
-          { l: 'Personal', v: '24', i: Users },
+          { l: 'Activas', v: '—', i: Siren },
+          { l: 'Móviles', v: '—', i: Truck },
+          { l: 'Personal', v: '—', i: Users },
         ].map((s) => (
           <div key={s.l} className="rounded-lg border border-border/40 bg-card/60 px-2 py-1.5">
             <s.i className="h-3 w-3 text-emergency" />
@@ -225,7 +225,7 @@ export function TvScreenMock() {
         <div className="col-span-2 rounded-lg border border-emergency/40 bg-emergency/10 p-2">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] font-bold text-emergency">10-0</span>
-            <span className="font-mono text-sm font-bold text-foreground">00:07:42</span>
+            <span className="font-mono text-sm font-bold text-foreground">--:--:--</span>
           </div>
           <p className="mt-1 text-[9px] text-foreground">Incendio Estructural</p>
           <p className="text-[8px] text-muted-foreground">Av. Libertad 1420</p>

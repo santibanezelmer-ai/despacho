@@ -13,7 +13,7 @@ export default function LandingHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-3.5">
         <div className="flex items-center gap-2.5">
           <img src="/favicon.png" alt="Operix" className="h-9 w-9 rounded-lg object-cover shadow-[0_0_12px_hsl(0_85%_55%/0.2)]" />
-          <span className="text-base font-bold tracking-tight">Operix</span>
+          <span className="hidden text-base font-bold tracking-tight min-[420px]:inline">Operix</span>
         </div>
         <div className="flex items-center gap-2.5">
           <Link to="/activar">
@@ -31,7 +31,8 @@ export default function LandingHeader() {
               size="sm"
               className="bg-emergency text-emergency-foreground hover:bg-emergency/90 text-xs font-semibold shadow-[0_0_15px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_25px_hsl(0_85%_55%/0.35)] transition-all"
             >
-              Probar demo gratis
+              <span className="sm:hidden">Reunión</span>
+              <span className="hidden sm:inline">Solicitar reunión y prueba de 15 días</span>
             </Button>
           </a>
         </div>

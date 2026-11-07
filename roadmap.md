@@ -1,5 +1,10 @@
 # Roadmap
 
+- [x] Portada Fase 2 en vista previa: 5 módulos oficiales, portada nueva, Entre Lagos, formulario único, botones unificados, teléfono sin superposiciones, banner limpio; 5 pruebas y envío real verificados.
+- [ ] Borrar las 2 solicitudes de prueba (qa-fase2@operixdispatch.com) de la tabla de solicitudes: requiere permiso de escritura no disponible desde aquí.
+- [ ] Reemplazar ilustraciones por capturas reales de Operix: espera capturas de Susana.
+- [ ] Publicar la portada: espera autorización expresa de Susana.
+
 - [x] Publicar la política estática independiente con las 12 secciones intactas: /privacidad, /privacidad/ y /privacidad/index.html responden HTTP 200 con texto íntegro en HTML; lectura sin JavaScript verificada en producción, sin cambios de DNS ni otros módulos. La aceptación de Google Play Console requiere una nueva revisión de Google.
 
 - [x] Corregir los accesos genéricos de activación de voluntarios para no elegir una organización fija; código explícito o enlace de compañía, 4 pruebas y navegación en computadora/teléfono verificadas, sin cambios de datos ni permisos ni envío de correos reales.

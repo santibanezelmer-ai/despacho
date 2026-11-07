@@ -30,16 +30,16 @@ export default function FinalCTASection() {
 
           <h2 className="text-2xl sm:text-4xl font-bold">Lleva tu despacho al siguiente nivel</h2>
           <p className="mt-4 text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Agenda una demostración y descubre cómo Operix puede transformar la respuesta de tu institución — implementación guiada y capacitación incluida.
+            Solicita una reunión de coordinación y conoce nuestra prueba institucional gratuita de 15 días.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="#demo" className="w-full sm:w-auto">
+            <a href="#contacto" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2.5 w-full sm:w-auto text-base sm:text-lg px-10 h-12 sm:h-14 font-bold shadow-[0_0_45px_hsl(0_85%_55%/0.45),0_4px_20px_hsl(0_85%_55%/0.25)] hover:shadow-[0_0_65px_hsl(0_85%_55%/0.55)] hover:scale-[1.03] transition-all duration-300"
               >
-                Solicitar una demostración <ArrowRight className="h-5 w-5" />
+                Solicitar reunión y prueba de 15 días <ArrowRight className="h-5 w-5" />
               </Button>
             </a>
           </div>

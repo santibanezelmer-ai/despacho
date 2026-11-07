@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageCircle, X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -60,9 +60,21 @@ const GENERAL_MSG = 'Hola, tengo una consulta sobre Operix Dispatch.';
 export default function LandingAssistant() {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState<Topic | null>(null);
+  // En teléfonos se oculta sobre el formulario para no tapar sus campos.
+  const [overForm, setOverForm] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const r = document.getElementById('contacto')?.getBoundingClientRect();
+      setOverForm(!!r && r.top < window.innerHeight && r.bottom > 0);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => { window.removeEventListener('scroll', check); window.removeEventListener('resize', check); };
+  }, []);
 
   return (
-    <div className="fixed right-4 bottom-24 sm:bottom-6 z-50 flex flex-col items-end gap-3">
+    <div className={`${overForm && !open ? 'max-sm:hidden ' : ''}fixed right-3 bottom-3 sm:right-4 sm:bottom-6 z-50 flex flex-col items-end gap-3`}>
       {open && (
         <div
           role="dialog"

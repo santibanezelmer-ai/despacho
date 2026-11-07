@@ -1,187 +1,111 @@
 import { useState } from 'react';
-import { Send, Loader2, CheckCircle2, User, Mail, MapPin, Users, MessageSquare } from 'lucide-react';
+import { Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { motion } from 'framer-motion';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { buildDemoLead, validateDemoRequest, EMPTY_DEMO_REQUEST, type DemoRequest } from './demoRequest';
 
-const stationSizes = [
-  { value: '1-20', label: '1 – 20 voluntarios' },
-  { value: '21-50', label: '21 – 50 voluntarios' },
-  { value: '51-100', label: '51 – 100 voluntarios' },
-  { value: '100+', label: 'Más de 100 voluntarios' },
+const FIELDS: { key: keyof DemoRequest; label: string; type?: string; optional?: boolean; autoComplete?: string; max: number }[] = [
+  { key: 'name', label: 'Nombre completo', autoComplete: 'name', max: 100 },
+  { key: 'position', label: 'Cargo institucional', autoComplete: 'organization-title', max: 100 },
+  { key: 'department', label: 'Cuerpo de Bomberos', autoComplete: 'organization', max: 120 },
+  { key: 'company', label: 'Compañía', optional: true, max: 100 },
+  { key: 'location', label: 'Ciudad y región', max: 120 },
+  { key: 'phone', label: 'Teléfono / WhatsApp', type: 'tel', autoComplete: 'tel', max: 30 },
+  { key: 'email', label: 'Correo electrónico', type: 'email', autoComplete: 'email', max: 255 },
 ];
 
 export default function ContactFormSection() {
-  const [form, setForm] = useState({ name: '', email: '', city: '', station_size: '', message: '' });
+  const [form, setForm] = useState<DemoRequest>(EMPTY_DEMO_REQUEST);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const update = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
-
-  const validate = () => {
-    const { name, email, city } = form;
-    if (!name.trim() || name.trim().length < 2) { toast.error('Ingresa tu nombre'); return false; }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast.error('Ingresa un correo válido'); return false; }
-    if (email.trim().length > 255) { toast.error('El correo es demasiado largo'); return false; }
-    if (!city.trim()) { toast.error('Ingresa tu ciudad o comuna'); return false; }
-    if (form.message.length > 1000) { toast.error('El mensaje es demasiado largo'); return false; }
-    return true;
-  };
+  const update = (field: keyof DemoRequest, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    const problem = validateDemoRequest(form);
+    if (problem) { toast.error(problem); return; }
     setLoading(true);
     try {
-      const { error } = await supabase.from('leads').insert({
-        email: form.email.trim(),
-        source: 'contact_form',
-        name: form.name.trim(),
-        city: form.city.trim(),
-        station_size: form.station_size || null,
-        message: form.message.trim() || null,
-      } as any);
+      const { error } = await supabase.from('leads').insert(buildDemoLead(form));
       if (error) throw error;
       setSent(true);
-      toast.success('¡Mensaje enviado! Te contactaremos a la brevedad para coordinar una demostración.');
+      toast.success('Solicitud enviada. Te contactaremos para coordinar la reunión.');
     } catch {
-      toast.error('Error al enviar. Intenta nuevamente.');
+      toast.error('No se pudo enviar. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section id="contacto" className="px-4 sm:px-6 py-16 sm:py-24">
+    <section id="contacto" className="scroll-mt-24 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-2xl sm:text-4xl font-bold">¿Tienes preguntas? Contáctanos</h2>
-          <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
-            Cuéntanos sobre tu organización y te enviaremos una propuesta personalizada.
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold sm:text-4xl">Solicita una reunión</h2>
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+            Solicita una reunión de coordinación y conoce nuestra prueba institucional gratuita de 15 días.
           </p>
+        </div>
 
-          <a
-            href="mailto:contacto@operixdispatch.com"
-            className="inline-block mt-6"
-            aria-label="Contactar a Operix: contacto@operixdispatch.com"
-          >
-            <Button
-              size="lg"
-              className="bg-emergency text-emergency-foreground hover:bg-emergency/90 h-12 px-8 gap-2 font-bold shadow-[0_0_25px_hsl(0_85%_55%/0.35)] hover:shadow-[0_0_40px_hsl(0_85%_55%/0.45)] transition-all duration-300 text-sm"
-            >
-              <Mail className="h-4 w-4" /> Contactar a Operix
-            </Button>
-          </a>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 25, scale: 0.97 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="rounded-2xl border border-border/40 bg-card/70 backdrop-blur-xl p-6 sm:p-10 shadow-[0_8px_32px_hsl(0_0%_0%/0.3)] relative overflow-hidden"
-        >
-          <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-emergency/8 blur-[80px] pointer-events-none" />
-
+        <div className="rounded-2xl border border-border/40 bg-card/70 p-6 shadow-[0_8px_32px_hsl(0_0%_0%/0.3)] sm:p-10">
           {sent ? (
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="py-10 flex flex-col items-center gap-3 relative"
-            >
-              <div className="h-14 w-14 rounded-full bg-success/15 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3 py-10 text-center" role="status">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/15">
                 <CheckCircle2 className="h-7 w-7 text-success" />
               </div>
-              <p className="text-lg font-bold text-success">¡Mensaje recibido!</p>
-              <p className="text-sm text-muted-foreground">Te contactaremos para coordinar la reunión y preparar tu prueba gratuita de 15 días.</p>
-            </motion.div>
+              <p className="text-lg font-bold text-success">¡Solicitud recibida!</p>
+              <p className="text-sm text-muted-foreground">Te contactaremos para coordinar la reunión y tu prueba gratuita de 15 días.</p>
+            </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5 relative">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Nombre completo"
-                    value={form.name}
-                    onChange={(e) => update('name', e.target.value)}
-                    className="pl-10 h-12 bg-secondary/50 border-border/50 text-sm"
-                    maxLength={100}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="correo@tubrigada.cl"
-                    value={form.email}
-                    onChange={(e) => update('email', e.target.value)}
-                    className="pl-10 h-12 bg-secondary/50 border-border/50 text-sm"
-                    maxLength={255}
-                    disabled={loading}
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {FIELDS.map((f) => (
+                  <div key={f.key} className="space-y-1.5">
+                    <Label htmlFor={`demo-${f.key}`} className="text-xs">
+                      {f.label} {f.optional && <span className="text-muted-foreground">(opcional)</span>}
+                    </Label>
+                    <Input
+                      id={`demo-${f.key}`}
+                      type={f.type ?? 'text'}
+                      autoComplete={f.autoComplete}
+                      value={form[f.key]}
+                      onChange={(e) => update(f.key, e.target.value)}
+                      maxLength={f.max}
+                      required={!f.optional}
+                      disabled={loading}
+                      className="h-11 border-border/50 bg-secondary/50"
+                    />
+                  </div>
+                ))}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Ciudad o comuna"
-                    value={form.city}
-                    onChange={(e) => update('city', e.target.value)}
-                    className="pl-10 h-12 bg-secondary/50 border-border/50 text-sm"
-                    maxLength={100}
-                    disabled={loading}
-                  />
-                </div>
-                <Select value={form.station_size} onValueChange={(v) => update('station_size', v)}>
-                  <SelectTrigger aria-label="Tamaño del cuartel" className="h-12 bg-secondary/50 border-border/50 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Tamaño del cuartel" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stationSizes.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="relative">
-                <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <div className="space-y-1.5">
+                <Label htmlFor="demo-message" className="text-xs">
+                  Mensaje <span className="text-muted-foreground">(opcional)</span>
+                </Label>
                 <Textarea
-                  placeholder="Mensaje (opcional)"
+                  id="demo-message"
                   value={form.message}
                   onChange={(e) => update('message', e.target.value)}
-                  className="pl-10 min-h-[100px] bg-secondary/50 border-border/50 text-sm resize-none"
                   maxLength={1000}
                   disabled={loading}
+                  className="min-h-[96px] resize-none border-border/50 bg-secondary/50"
                 />
               </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-emergency text-emergency-foreground hover:bg-emergency/90 h-12 gap-2 font-bold shadow-[0_0_25px_hsl(0_85%_55%/0.35)] hover:shadow-[0_0_40px_hsl(0_85%_55%/0.45)] transition-all duration-300 text-sm"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Enviar mensaje <Send className="h-4 w-4" /></>}
+              <Button type="submit" size="lg" disabled={loading} className="h-12 w-full gap-2 bg-emergency font-bold text-emergency-foreground hover:bg-emergency/90">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Solicitar reunión y prueba de 15 días
               </Button>
+              <p className="text-center text-[11px] text-muted-foreground">
+                Usamos estos datos solo para contactarte. Ver <a href="/privacidad" className="underline">política de privacidad</a>.
+              </p>
             </form>
           )}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

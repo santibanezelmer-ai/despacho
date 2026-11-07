@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { ArrowRight, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -78,14 +77,14 @@ export default function ComparisonSection() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mt-8 text-center"
         >
-          <Link to="/register">
+          <a href="#contacto">
             <Button
               size="lg"
               className="bg-emergency text-emergency-foreground hover:bg-emergency/90 gap-2 font-bold shadow-[0_0_30px_hsl(0_85%_55%/0.35)] hover:shadow-[0_0_50px_hsl(0_85%_55%/0.45)] transition-all duration-300 hover:scale-[1.03]"
             >
-              Comenzar con Operix <ArrowRight className="h-4 w-4" />
+              Solicitar reunión y prueba de 15 días <ArrowRight className="h-4 w-4" />
             </Button>
-          </Link>
+          </a>
         </motion.div>
       </div>
     </section>
