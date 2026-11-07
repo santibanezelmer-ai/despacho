@@ -67,7 +67,12 @@ Deno.serve(async (req) => {
 
     // Lookup (service role) — same normalization as claim_volunteer_activation.
     let orgId: string | null = null, volId: string | null = null, orgName = '';
-    const { data: org } = await admin.from('organizations').select('id,name').eq('slug', p.data.org.toLowerCase()).eq('status', 'active').maybeSingle();
+    const orgCode = p.data.org.toLowerCase();
+    let { data: org } = await admin.from('organizations').select('id,name').eq('slug', orgCode).eq('status', 'active').maybeSingle();
+    if (!org) {
+      // Previous codes keep working after a rename (links already shared).
+      ({ data: org } = await admin.from('organizations').select('id,name').contains('legacy_slugs', [orgCode]).eq('status', 'active').maybeSingle());
+    }
     if (org) {
       orgId = org.id; orgName = org.name ?? '';
       const { data: vols } = await admin.from('volunteers').select('id,rut,email,user_id,status').eq('organization_id', org.id).ilike('email', email);

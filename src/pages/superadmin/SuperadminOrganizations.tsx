@@ -211,7 +211,7 @@ export default function SuperadminOrganizations() {
 
     const { data: orgData, error: orgError } = await (supabase as any).from('organizations').insert({
       name: form.name.trim(),
-      slug,
+      slug, // overwritten server-side from the name (unique)
       commune: form.commune.trim() || null,
       region: form.region || null,
       status: form.status,

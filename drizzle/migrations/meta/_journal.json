@@ -169,6 +169,13 @@
       "when": 1793890440318,
       "tag": "0023_claim_volunteer_activation_by_id",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794020897940,
+      "tag": "0024_org_slug_from_name",
+      "breakpoints": true
     }
   ]
 }

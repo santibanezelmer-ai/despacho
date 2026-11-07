@@ -2211,6 +2211,7 @@ export type Database = {
           institution_email: string | null
           is_demo: boolean
           latitude: number | null
+          legacy_slugs: string[]
           logo_url: string | null
           longitude: number | null
           name: string
@@ -2234,6 +2235,7 @@ export type Database = {
           institution_email?: string | null
           is_demo?: boolean
           latitude?: number | null
+          legacy_slugs?: string[]
           logo_url?: string | null
           longitude?: number | null
           name: string
@@ -2257,6 +2259,7 @@ export type Database = {
           institution_email?: string | null
           is_demo?: boolean
           latitude?: number | null
+          legacy_slugs?: string[]
           logo_url?: string | null
           longitude?: number | null
           name?: string
@@ -3788,6 +3791,10 @@ export type Database = {
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_org_volunteer: { Args: { _org_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      org_slug_from_name: {
+        Args: { _exclude?: string; _name: string }
+        Returns: string
+      }
       purge_old_vehicle_positions: { Args: never; Returns: undefined }
       register_device_token: {
         Args: { _organization_id: string; _platform: string; _token: string }
