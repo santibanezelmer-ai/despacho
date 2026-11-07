@@ -36,7 +36,8 @@ export default function ActivateVolunteer() {
   const request = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg(null);
-    const parsed = schema.safeParse({ org, rut, email });
+    const orgCode = org.replace(/[\u200B-\u200D\uFEFF]/g, '').trim().toLowerCase().replace(/\s+/g, '-');
+    const parsed = schema.safeParse({ org: orgCode, rut, email });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     if (!consent) { toast.error('Debes aceptar el tratamiento de tus datos personales'); return; }
     setBusy(true);
