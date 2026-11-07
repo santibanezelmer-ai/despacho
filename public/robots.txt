@@ -1,16 +1,19 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /privacidad
+Allow: /terminos
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /invite/
+Disallow: /activar
+Disallow: /location/
+Disallow: /voluntario
+Disallow: /mobile
+Disallow: /tv
+Disallow: /pantalla-mapa
+Disallow: /superadmin
+Disallow: /admin
+Disallow: /~oauth
 
 Sitemap: https://operixdispatch.com/sitemap.xml
