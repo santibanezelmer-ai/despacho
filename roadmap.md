@@ -1,7 +1,9 @@
 # Roadmap
 
 - [x] Portada Fase 2 en vista previa: 5 módulos oficiales, portada nueva, Entre Lagos, formulario único, botones unificados, teléfono sin superposiciones, banner limpio; 5 pruebas y envío real verificados.
-- [ ] Borrar las 2 solicitudes de prueba (qa-fase2@operixdispatch.com) de la tabla de solicitudes: requiere permiso de escritura no disponible desde aquí.
+- [x] Cierre Fase 2 en vista previa: banner con logotipo oficial, consola más grande en computadora, asistente dentro de la barra inferior del teléfono, formulario con consentimiento obligatorio y campos ordenados; 7 pruebas y envío real en Android verificados.
+- [ ] Borrar las 3 solicitudes de prueba (qa-fase2@operixdispatch.com): espera autorización expresa de Susana.
+- [ ] Avisos por correo de nuevas solicitudes: no existen; espera autorización para implementarlos.
 - [ ] Reemplazar ilustraciones por capturas reales de Operix: espera capturas de Susana.
 - [ ] Publicar la portada: espera autorización expresa de Susana.
 

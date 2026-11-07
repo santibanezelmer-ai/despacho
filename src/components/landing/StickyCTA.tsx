@@ -26,7 +26,7 @@ export default function StickyCTA() {
   return (
     <div
       aria-hidden={!visible}
-      className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-background/90 p-2.5 pr-20 backdrop-blur-xl transition-transform duration-300 sm:hidden ${visible ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
+      className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-background/90 p-2.5 pr-[4.25rem] backdrop-blur-xl transition-transform duration-300 sm:hidden ${visible ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
     >
       <a
         href={CTA_PRIMARY_HREF}

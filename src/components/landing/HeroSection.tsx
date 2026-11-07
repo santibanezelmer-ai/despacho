@@ -17,12 +17,12 @@ export default function HeroSection() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+      <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.15fr] lg:gap-12">
         <div className="text-center lg:text-left">
           <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-emergency/25 bg-emergency/10 px-4 py-1.5 text-xs font-semibold text-emergency">
             Operix Central · Despacho para Cuerpos de Bomberos
           </p>
-          <h1 className="text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+          <h1 className="text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.1rem]">
             Despacho en tiempo real
             <span className="mt-1 block text-emergency">para instituciones bomberiles</span>
           </h1>
@@ -52,7 +52,7 @@ export default function HeroSection() {
           </ul>
         </div>
 
-        <figure className="mx-auto w-full max-w-lg">
+        <figure className="mx-auto w-full max-w-lg lg:max-w-none">
           <div className="rounded-2xl border border-border/50 bg-card/80 p-3 shadow-[0_20px_60px_hsl(0_0%_0%/0.45)]">
             <DispatchMock />
           </div>

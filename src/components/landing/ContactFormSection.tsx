@@ -4,18 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { buildDemoLead, validateDemoRequest, EMPTY_DEMO_REQUEST, type DemoRequest } from './demoRequest';
+import { buildDemoLead, validateDemoRequest, EMPTY_DEMO_REQUEST, PRIVACY_POLICY_PATH, type DemoRequest } from './demoRequest';
 
-const FIELDS: { key: keyof DemoRequest; label: string; type?: string; optional?: boolean; autoComplete?: string; max: number }[] = [
-  { key: 'name', label: 'Nombre completo', autoComplete: 'name', max: 100 },
-  { key: 'position', label: 'Cargo institucional', autoComplete: 'organization-title', max: 100 },
-  { key: 'department', label: 'Cuerpo de Bomberos', autoComplete: 'organization', max: 120 },
-  { key: 'company', label: 'Compañía', optional: true, max: 100 },
-  { key: 'location', label: 'Ciudad y región', max: 120 },
-  { key: 'phone', label: 'Teléfono / WhatsApp', type: 'tel', autoComplete: 'tel', max: 30 },
-  { key: 'email', label: 'Correo electrónico', type: 'email', autoComplete: 'email', max: 255 },
+type TextField = Exclude<keyof DemoRequest, 'consent'>;
+
+const FIELDS: { key: TextField; label: string; placeholder: string; type?: string; inputMode?: 'tel' | 'email'; optional?: boolean; autoComplete?: string; max: number }[] = [
+  { key: 'name', label: 'Nombre completo', placeholder: 'Nombre y apellido', autoComplete: 'name', max: 100 },
+  { key: 'position', label: 'Cargo institucional', placeholder: 'Ej.: Comandante, Secretario/a', autoComplete: 'organization-title', max: 100 },
+  { key: 'department', label: 'Cuerpo de Bomberos', placeholder: 'Nombre de tu Cuerpo', autoComplete: 'organization', max: 120 },
+  { key: 'company', label: 'Compañía', placeholder: 'Si aplica', optional: true, max: 100 },
+  { key: 'location', label: 'Ciudad y región', placeholder: 'Ciudad, Región', max: 120 },
+  { key: 'phone', label: 'Teléfono / WhatsApp', type: 'tel', inputMode: 'tel', placeholder: '+56 9 …', autoComplete: 'tel', max: 30 },
+  { key: 'email', label: 'Correo electrónico', type: 'email', inputMode: 'email', placeholder: 'nombre@correo.cl', autoComplete: 'email', max: 255 },
 ];
 
 export default function ContactFormSection() {
@@ -23,7 +26,7 @@ export default function ContactFormSection() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const update = (field: keyof DemoRequest, value: string) => setForm((f) => ({ ...f, [field]: value }));
+  const update = (field: TextField, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +76,8 @@ export default function ContactFormSection() {
                       id={`demo-${f.key}`}
                       type={f.type ?? 'text'}
                       autoComplete={f.autoComplete}
+                      inputMode={f.inputMode}
+                      placeholder={f.placeholder}
                       value={form[f.key]}
                       onChange={(e) => update(f.key, e.target.value)}
                       maxLength={f.max}
@@ -92,17 +97,29 @@ export default function ContactFormSection() {
                   value={form.message}
                   onChange={(e) => update('message', e.target.value)}
                   maxLength={1000}
+                  placeholder="Cuéntanos qué necesita tu Cuerpo (opcional)"
                   disabled={loading}
                   className="min-h-[96px] resize-none border-border/50 bg-secondary/50"
                 />
+              </div>
+              <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-secondary/30 p-3">
+                <Checkbox
+                  id="demo-consent"
+                  checked={form.consent}
+                  onCheckedChange={(v) => setForm((f) => ({ ...f, consent: v === true }))}
+                  disabled={loading}
+                  aria-required="true"
+                  className="mt-0.5"
+                />
+                <Label htmlFor="demo-consent" className="text-xs font-normal leading-relaxed text-muted-foreground">
+                  Acepto el tratamiento de mis datos personales para que Operix me contacte por esta solicitud, según la{' '}
+                  <a href={PRIVACY_POLICY_PATH} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground underline">política de privacidad</a>.
+                </Label>
               </div>
               <Button type="submit" size="lg" disabled={loading} className="h-12 w-full gap-2 bg-emergency font-bold text-emergency-foreground hover:bg-emergency/90">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 Solicitar reunión y prueba de 15 días
               </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                Usamos estos datos solo para contactarte. Ver <a href="/privacidad" className="underline">política de privacidad</a>.
-              </p>
             </form>
           )}
         </div>

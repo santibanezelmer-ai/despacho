@@ -60,12 +60,14 @@ const GENERAL_MSG = 'Hola, tengo una consulta sobre Operix Dispatch.';
 export default function LandingAssistant() {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState<Topic | null>(null);
-  // En teléfonos se oculta sobre el formulario para no tapar sus campos.
-  const [overForm, setOverForm] = useState(false);
+  // En teléfonos el botón solo aparece dentro de la barra inferior (mismas
+  // condiciones que StickyCTA), así nunca tapa imágenes, campos ni botones.
+  const [inBar, setInBar] = useState(false);
   useEffect(() => {
     const check = () => {
       const r = document.getElementById('contacto')?.getBoundingClientRect();
-      setOverForm(!!r && r.top < window.innerHeight && r.bottom > 0);
+      const overForm = !!r && r.top < window.innerHeight && r.bottom > 0;
+      setInBar(window.scrollY > 600 && !overForm);
     };
     check();
     window.addEventListener('scroll', check, { passive: true });
@@ -74,7 +76,7 @@ export default function LandingAssistant() {
   }, []);
 
   return (
-    <div className={`${overForm && !open ? 'max-sm:hidden ' : ''}fixed right-3 bottom-3 sm:right-4 sm:bottom-6 z-50 flex flex-col items-end gap-3`}>
+    <div className={`${!inBar && !open ? 'max-sm:hidden ' : ''}fixed right-3 bottom-2.5 sm:right-4 sm:bottom-6 z-50 flex flex-col items-end gap-3`}>
       {open && (
         <div
           role="dialog"
@@ -148,9 +150,9 @@ export default function LandingAssistant() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Cerrar asistente' : 'Abrir asistente'}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-emergency text-emergency-foreground shadow-xl hover:scale-105 transition-transform"
+        className="flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-emergency text-emergency-foreground shadow-xl hover:scale-105 transition-transform"
       >
-        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {open ? <X className="h-5 w-5 sm:h-6 sm:w-6" /> : <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />}
       </button>
     </div>
   );
