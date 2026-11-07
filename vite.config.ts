@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
       devOptions: { enabled: false },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/activar/, /^\/invite\//],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/activar/, /^\/invite\//, /^\/privacidad(?:\/|$)/],
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
