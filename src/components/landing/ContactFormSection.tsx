@@ -103,7 +103,7 @@ export default function ContactFormSection() {
                 <CheckCircle2 className="h-7 w-7 text-success" />
               </div>
               <p className="text-lg font-bold text-success">¡Mensaje recibido!</p>
-              <p className="text-sm text-muted-foreground">Te contactaremos a la brevedad para coordinar una demostración.</p>
+              <p className="text-sm text-muted-foreground">Te contactaremos para coordinar la reunión y preparar tu prueba gratuita de 15 días.</p>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5 relative">

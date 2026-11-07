@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 const microBenefits = [
-  { icon: Zap, text: 'Activación rápida' },
+  { icon: Zap, text: '15 días gratis previa reunión' },
   { icon: Shield, text: 'Sin instalación compleja' },
   { icon: Wifi, text: 'Acceso desde cualquier dispositivo' },
 ];

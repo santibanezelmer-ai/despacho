@@ -65,9 +65,14 @@ export default function PricingSection() {
             ))}
           </ul>
 
-          <a href="#contacto" className="mt-8 block">
+          <div className="mt-8 rounded-xl border border-emergency/30 bg-emergency/10 p-4 text-sm">
+            <p className="font-semibold text-foreground">15 días de prueba gratuita</p>
+            <p className="mt-1 text-muted-foreground">Primero coordinamos una reunión de demostración; luego habilitamos tu institución con acceso completo por 15 días, sin costo ni compromiso.</p>
+          </div>
+
+          <a href="#contacto" className="mt-6 block">
             <Button className="w-full gap-2 h-12 font-semibold bg-emergency text-emergency-foreground hover:bg-emergency/90 shadow-[0_0_25px_hsl(0_85%_55%/0.35)]">
-              Solicitar cotización <ArrowRight className="h-4 w-4" />
+              Agendar reunión y activar prueba <ArrowRight className="h-4 w-4" />
             </Button>
           </a>
         </motion.div>

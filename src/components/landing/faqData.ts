@@ -15,7 +15,7 @@ export const LANDING_FAQS = [
   },
   {
     q: '¿Cómo solicito una demo?',
-    a: 'Completa el formulario de contacto o escríbenos a contacto@operixdispatch.com. Coordinamos una demostración guiada con tu institución y, luego, habilitamos un acceso de prueba.',
+    a: 'Completa el formulario de contacto o escríbenos a contacto@operixdispatch.com. Coordinamos una reunión de demostración con tu institución y, luego, habilitamos 15 días de prueba gratuita con acceso completo, sin costo ni compromiso.',
   },
   {
     q: '¿Cómo se contrata Operix?',
