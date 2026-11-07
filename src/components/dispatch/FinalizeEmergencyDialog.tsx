@@ -6,21 +6,27 @@ import VehicleReturnManager from './VehicleReturnManager';
 import VehiclePersonnelManager from './VehiclePersonnelManager';
 import { useEmergencyReturnVehicles } from '@/hooks/useEmergencyReturnVehicles';
 import { useEmergencyCrewRoles } from '@/hooks/useEmergencyCrewRoles';
+import { missingCrewRoles } from '@/lib/serviceKey';
 
 interface Props {
   emergencyId: string;
   emergencyStatus: string;
   folio: string;
+  /** Clave 10-9 / salida autorizada: basta el conductor. */
+  serviceKey?: boolean;
+  authorizedBy?: string | null;
   onConfirm: () => void | Promise<void>;
   onClose: () => void;
 }
+
+const authorizerLabel = (v?: string | null) => v?.trim() || 'No registrado';
 
 /**
  * Valida el cierre de una emergencia: obliga a registrar conductor y oficial a
  * cargo en cada móvil y a enviar todos los móviles a cuartel (con kilometraje),
  * reutilizando VehiclePersonnelManager y VehicleReturnManager.
  */
-export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, folio, onConfirm, onClose }: Props) {
+export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, folio, serviceKey = false, authorizedBy, onConfirm, onClose }: Props) {
   const { data: vehicles, isLoading } = useEmergencyReturnVehicles(emergencyId);
   const { data: crew, isLoading: crewLoading } = useEmergencyCrewRoles(emergencyId);
   const [saving, setSaving] = useState(false);
@@ -30,9 +36,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
   const missingCrew = (vehicles ?? [])
     .map(v => {
       const roles = (crew ?? []).filter(c => c.emergency_vehicle_id === v.id).map(c => c.role);
-      const missing: string[] = [];
-      if (!roles.includes('conductor')) missing.push('Conductor');
-      if (!roles.includes('oficial_a_cargo')) missing.push('Oficial a Cargo');
+      const missing = missingCrewRoles(roles, serviceKey);
       return { code: v.vehicles?.code ?? 'Móvil', missing };
     })
     .filter(v => v.missing.length > 0);
@@ -53,7 +57,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
             ) : missingCrew.length > 0 ? (
               <p className="mt-1 flex items-start gap-1.5 text-xs font-medium text-warning">
                 <Users className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Falta registrar conductor u oficial a cargo.
+                {serviceKey ? 'Falta registrar el conductor.' : 'Falta registrar conductor u oficial a cargo.'}
               </p>
             ) : pending.length > 0 ? (
               <p className="mt-1 flex items-start gap-1.5 text-xs font-medium text-warning">
@@ -72,6 +76,12 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+          {serviceKey && (
+            <div className="rounded-md border border-border bg-secondary/40 p-3 text-xs text-foreground">
+              Autorizado en despacho por: <span className="font-semibold">{authorizerLabel(authorizedBy)}</span>
+              <p className="mt-1 text-muted-foreground">Salida autorizada: basta registrar el conductor; el oficial a cargo es opcional.</p>
+            </div>
+          )}
           {missingCrew.length > 0 && (
             <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
               <p className="text-xs font-semibold text-warning">Tripulación incompleta</p>

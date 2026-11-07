@@ -26,6 +26,7 @@ import MapPointPicker from './MapPointPicker';
 import TerritoryStatus from './TerritoryStatus';
 import { isValidLatLng, coordRangeMessage } from '@/lib/coords';
 import { usableDispatchAddress } from '@/lib/dispatchAddress';
+import { isAuthorizedServiceKey } from '@/lib/serviceKey';
 
 import { DISPATCH_DRAFT_KEY } from '@/contexts/DispatchFormContext';
 
@@ -116,14 +117,6 @@ function stopGlobalTones() {
 }
 
 // ── Claves de salida autorizada / otros servicios (10-9 y similares) ──
-const AUTHORIZED_SERVICE_TERMS = [
-  'otros servicios',
-  'otro servicio',
-  'servicio especial',
-  'servicios especiales',
-  'traslado',
-  'salida autorizada',
-];
 
 const AUTHORIZER_RANKS = [
   'Superintendente',
@@ -133,12 +126,6 @@ const AUTHORIZER_RANKS = [
   'Oficial de Guardia',
 ];
 
-function isAuthorizedServiceKey(key: { code: string; name: string }): boolean {
-  const code = (key.code ?? '').replace(/\s/g, '').toLowerCase();
-  if (code === '10-9' || code === '109') return true;
-  const name = (key.name ?? '').toLowerCase();
-  return AUTHORIZED_SERVICE_TERMS.some(term => name.includes(term));
-}
 
 interface Props {
   emergencyKey: EmergencyKeyRow;

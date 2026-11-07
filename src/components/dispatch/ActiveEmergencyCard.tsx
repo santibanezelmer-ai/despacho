@@ -5,6 +5,7 @@ import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross,
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
+import { isAuthorizedServiceKey } from '@/lib/serviceKey';
 import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
 import {
   SELECTABLE_VEHICLE_STATUSES,
@@ -46,6 +47,7 @@ interface EmergencyCardProps {
     folio: string;
     address: string;
     caller_phone: string | null;
+    caller_name?: string | null;
     status: string;
     created_at: string;
     latitude?: number | null;
@@ -166,6 +168,12 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{emergency.address}</span>
             </div>
+            {isAuthorizedServiceKey(ek) && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Autorizado por: <span className="font-medium text-foreground">{emergency.caller_name?.trim() || 'No registrado'}</span></span>
+              </div>
+            )}
             {emergency.caller_phone && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -356,6 +364,8 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
           emergencyId={emergency.id}
           emergencyStatus={emergency.status}
           folio={emergency.folio}
+          serviceKey={isAuthorizedServiceKey(ek)}
+          authorizedBy={emergency.caller_name ?? null}
           onClose={() => setShowFinalize(false)}
           onConfirm={async () => {
             const ok = await advance('finalizada');
