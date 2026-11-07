@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Publicar la política estática independiente con las 12 secciones intactas; comprobar HTTP y HTML sin JavaScript en producción, sin cambios de DNS ni otros módulos.
+- [x] Publicar la política estática independiente con las 12 secciones intactas: /privacidad, /privacidad/ y /privacidad/index.html responden HTTP 200 con texto íntegro en HTML; lectura sin JavaScript verificada en producción, sin cambios de DNS ni otros módulos. La aceptación de Google Play Console requiere una nueva revisión de Google.
 
 - [x] Corregir los accesos genéricos de activación de voluntarios para no elegir una organización fija; código explícito o enlace de compañía, 4 pruebas y navegación en computadora/teléfono verificadas, sin cambios de datos ni permisos ni envío de correos reales.
 
