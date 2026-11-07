@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { seniority } from '@/hooks/useVolunteerProfile';
+import { anbProgress, serviceTime, MALLA_LABEL } from '@/lib/volunteerCareer';
 
 const CONDITION_LABEL: Record<string, string> = {
   bueno: 'Bueno', regular: 'Regular', malo: 'Malo', fuera_servicio: 'Fuera de servicio',
@@ -24,13 +25,14 @@ export interface VolunteerPdfInput {
   equipment: any[];
   attendance: any[];
   records: any[];
+  positions?: any[];
   orgName: string;
 }
 
 /** Ficha imprimible del voluntario con todos los módulos (datos, especialidades,
  *  capacitaciones, equipamiento, asistencia operacional y hoja de vida). */
 export function buildVolunteerPdf({
-  volunteer, training, equipment, attendance, records, orgName,
+  volunteer, training, equipment, attendance, records, positions = [], orgName,
 }: VolunteerPdfInput): jsPDF {
   const doc = new jsPDF({ unit: 'mm', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -54,7 +56,7 @@ export function buildVolunteerPdf({
   doc.setFontSize(13);
   doc.text(doc.splitTextToSize(orgName.toUpperCase(), contentW - 60)[0], M + 3, y + 7);
   doc.setFontSize(10);
-  doc.text('FICHA DE VOLUNTARIO', M + 3, y + 13.5);
+  doc.text('HOJA DE VIDA DEL VOLUNTARIO', M + 3, y + 13.5);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.text(`Emitida: ${dt(new Date().toISOString())}`, pageW - M - 3, y + 13.5, { align: 'right' });
@@ -77,7 +79,11 @@ export function buildVolunteerPdf({
     ['Cargo / Jerarquía', volunteer.ranks?.name || '—'],
     ['Estado', volunteer.status || '—'],
     ['Fecha de ingreso', d(volunteer.join_date)],
-    ['Antigüedad', seniority(volunteer.join_date) ?? '—'],
+    ['Años de servicio', serviceTime(volunteer.join_date)?.label ?? seniority(volunteer.join_date) ?? '—'],
+    ['Jerarquía honoraria', serviceTime(volunteer.join_date)?.honor ?? '—'],
+    ['Próximo quinquenio', (() => { const s = serviceTime(volunteer.join_date); return s ? `${s.nextQuinquennium} años · ${s.nextDate.toLocaleDateString('es-CL')}` : '—'; })()],
+    ['N° Registro ANB', volunteer.anb_registry || '—'],
+    ['Nivel ANB', anbProgress(training).level],
     ['Disponible', volunteer.available ? 'Sí' : 'No'],
   ];
   const colW = contentW / 3;
@@ -182,11 +188,27 @@ export function buildVolunteerPdf({
     y += 5;
   };
 
+  section('Formación ANB');
+  table(
+    ['Malla', 'Cursos aprobados', 'Avance'],
+    [contentW * 0.5, contentW * 0.3, contentW * 0.2],
+    anbProgress(training).progress.map(p => [MALLA_LABEL[p.malla], `${p.done} de ${p.total}`, `${p.pct}%`]),
+    '—',
+  );
+
+  section('Historial de cargos');
+  table(
+    ['Cargo', 'Compañía', 'Desde', 'Hasta'],
+    [contentW * 0.4, contentW * 0.28, contentW * 0.16, contentW * 0.16],
+    positions.map(p => [p.position ?? '—', p.company_name ?? '—', d(p.start_date), p.end_date ? d(p.end_date) : 'A la fecha']),
+    'Sin cargos registrados.',
+  );
+
   section('Capacitaciones');
   table(
-    ['Curso', 'Certificación', 'Completado', 'Vence'],
+    ['Curso', 'Malla', 'Completado', 'Vence'],
     [contentW * 0.4, contentW * 0.28, contentW * 0.16, contentW * 0.16],
-    training.map(t => [t.course_name ?? '—', t.certification ?? '—', d(t.date_completed), d(t.expiry_date)]),
+    training.map(t => [t.course_name ?? '—', t.malla ? MALLA_LABEL[t.malla as keyof typeof MALLA_LABEL] ?? t.malla : (t.certification ?? '—'), d(t.date_completed), d(t.expiry_date)]),
     'Sin capacitaciones registradas.',
   );
 

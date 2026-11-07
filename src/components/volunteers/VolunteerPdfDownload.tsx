@@ -11,9 +11,10 @@ interface Props {
   equipment: any[];
   attendance: any[];
   records: any[];
+  positions?: any[];
 }
 
-export default function VolunteerPdfDownload({ volunteer, training, equipment, attendance, records }: Props) {
+export default function VolunteerPdfDownload({ volunteer, training, equipment, attendance, records, positions = [] }: Props) {
   const { currentOrg } = useOrganization();
   const [busy, setBusy] = useState(false);
 
@@ -26,6 +27,7 @@ export default function VolunteerPdfDownload({ volunteer, training, equipment, a
         equipment,
         attendance,
         records,
+        positions,
         orgName: currentOrg?.organization?.name ?? 'Organización',
       });
       doc.save(volunteerPdfFileName(volunteer?.name));

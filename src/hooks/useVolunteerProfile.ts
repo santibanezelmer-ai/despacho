@@ -71,7 +71,21 @@ export function useVolunteerProfile(volunteerId?: string | null) {
     },
   });
 
-  return { training, equipment, attendance, records };
+  const positions = useQuery({
+    queryKey: ['volunteer-positions', volunteerId],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('volunteer_positions')
+        .select('*')
+        .eq('volunteer_id', volunteerId!)
+        .order('start_date', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  return { training, equipment, attendance, records, positions };
 }
 
 /** Antigüedad legible a partir de la fecha de ingreso. */

@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVolunteerProfile, seniority } from '@/hooks/useVolunteerProfile';
 import VolunteerPdfDownload from './VolunteerPdfDownload';
+import VolunteerCareerPanel from './VolunteerCareerPanel';
+import { serviceTime } from '@/lib/volunteerCareer';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { toast } from 'sonner';
 import {
@@ -45,7 +47,7 @@ export default function VolunteerProfileDialog({ open, onClose, volunteer }: Pro
   const canWrite = orgCanWrite || appCanWrite;
   const qc = useQueryClient();
   const { formatDateTime } = useTimeFormat();
-  const { training, equipment, attendance, records } = useVolunteerProfile(open ? volunteer?.id : null);
+  const { training, equipment, attendance, records, positions } = useVolunteerProfile(open ? volunteer?.id : null);
 
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -108,14 +110,16 @@ export default function VolunteerProfileDialog({ open, onClose, volunteer }: Pro
                 equipment={(equipment.data as any[]) ?? []}
                 attendance={att}
                 records={(records.data as any[]) ?? []}
+                positions={(positions.data as any[]) ?? []}
               />
             </span>
           </DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="datos">
-          <TabsList className="grid w-full grid-cols-5 text-[11px]">
+          <TabsList className="grid w-full grid-cols-6 text-[11px]">
             <TabsTrigger value="datos">Datos</TabsTrigger>
+            <TabsTrigger value="carrera">Carrera ANB</TabsTrigger>
             <TabsTrigger value="capacitaciones">Capacitaciones</TabsTrigger>
             <TabsTrigger value="equipamiento">Equipamiento</TabsTrigger>
             <TabsTrigger value="asistencia">Asistencia</TabsTrigger>
@@ -132,7 +136,7 @@ export default function VolunteerProfileDialog({ open, onClose, volunteer }: Pro
               <Field label="Cargo / Jerarquía" value={volunteer.ranks?.name} />
               <Field label="Estado" value={volunteer.status} />
               <Field label="Fecha de ingreso" value={date(volunteer.join_date)} />
-              <Field label="Antigüedad" value={seniority(volunteer.join_date) ?? '—'} />
+              <Field label="Antigüedad" value={serviceTime(volunteer.join_date)?.label ?? seniority(volunteer.join_date) ?? '—'} />
               <Field label="Disponible" value={volunteer.available ? 'Sí' : 'No'} />
             </div>
             <div>
@@ -150,6 +154,11 @@ export default function VolunteerProfileDialog({ open, onClose, volunteer }: Pro
               <Stat label="Capacitaciones" value={(training.data ?? []).length} />
               <Stat label="Equipos a cargo" value={(equipment.data ?? []).length} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="carrera" className="pt-4">
+            <VolunteerCareerPanel volunteer={volunteer} training={(training.data as any[]) ?? []}
+              positions={(positions.data as any[]) ?? []} canWrite={canWrite} />
           </TabsContent>
 
           {/* CAPACITACIONES (módulo Capacitaciones) */}

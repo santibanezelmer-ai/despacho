@@ -1,3 +1,4 @@
+import { ANB_CATALOG, MALLA_LABEL, type Malla } from '@/lib/volunteerCareer';
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,6 +72,8 @@ export default function TrainingPage() {
   const [form, setForm] = useState({
     volunteer_id: '',
     course_name: '',
+    anb_course_code: '',
+    malla: '',
     certification: '',
     date_completed: '',
     expiry_date: '',
@@ -78,7 +81,7 @@ export default function TrainingPage() {
   });
 
   const resetForm = () => {
-    setForm({ volunteer_id: '', course_name: '', certification: '', date_completed: '', expiry_date: '', notes: '' });
+    setForm({ volunteer_id: '', course_name: '', anb_course_code: '', malla: '', certification: '', date_completed: '', expiry_date: '', notes: '' });
     setEditing(null);
   };
 
@@ -88,6 +91,8 @@ export default function TrainingPage() {
     setForm({
       volunteer_id: r.volunteer_id,
       course_name: r.course_name,
+      anb_course_code: (r as any).anb_course_code ?? '',
+      malla: (r as any).malla ?? '',
       certification: r.certification ?? '',
       date_completed: r.date_completed ?? '',
       expiry_date: r.expiry_date ?? '',
@@ -102,6 +107,8 @@ export default function TrainingPage() {
         organization_id: orgId!,
         volunteer_id: form.volunteer_id,
         course_name: form.course_name.trim(),
+        anb_course_code: form.anb_course_code || null,
+        malla: form.malla || null,
         certification: form.certification.trim() || null,
         date_completed: form.date_completed || null,
         expiry_date: form.expiry_date || null,
@@ -231,7 +238,30 @@ export default function TrainingPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Curso *</Label>
+              <Label>Curso ANB</Label>
+              <Select
+                value={form.anb_course_code || 'otro'}
+                onValueChange={v => {
+                  const c = ANB_CATALOG.find(x => x.code === v);
+                  setForm(f => c
+                    ? { ...f, anb_course_code: c.code, malla: c.malla, course_name: c.name }
+                    : { ...f, anb_course_code: '', malla: 'externo' });
+                }}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="otro">Otro curso / Capacitación externa</SelectItem>
+                  {(['inicial', 'operativa', 'profesional', 'especialidad'] as Malla[]).flatMap(m => [
+                    <SelectItem key={m} value={`__${m}`} disabled>— {MALLA_LABEL[m]} —</SelectItem>,
+                    ...ANB_CATALOG.filter(c => c.malla === m).map(c => (
+                      <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                    )),
+                  ])}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre del curso *</Label>
               <Input value={form.course_name} onChange={e => setForm(f => ({ ...f, course_name: e.target.value }))} required />
             </div>
             <div className="space-y-2">

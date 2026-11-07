@@ -33,3 +33,4 @@
 - Generic volunteer activation links use /activar without a fixed organization; the form takes the organization code from explicit input or the shared org parameter so matching remains scoped to the intended organization without exposing an anonymous directory.
 - Serve the complete current privacy policy as independent HTML in public/privacidad/index.html, excluded from the SPA service-worker fallback; keep its twelve sections synchronized with PrivacyPage so non-JavaScript clients can read the same policy.
 - Organization activation codes (slug) are always derived server-side from the organization name by the organizations_set_slug trigger; previous codes stay valid via legacy_slugs so shared links never break.
+- Volunteer career (ANB catalog, malla levels, exact service time, honors, quinquennia) is computed only in src/lib/volunteerCareer.ts and shared by the profile dialog and PDF; position history lives in volunteer_positions.

@@ -2666,34 +2666,40 @@ export type Database = {
       }
       training: {
         Row: {
+          anb_course_code: string | null
           certification: string | null
           course_name: string
           created_at: string
           date_completed: string | null
           expiry_date: string | null
           id: string
+          malla: string | null
           notes: string | null
           organization_id: string
           volunteer_id: string
         }
         Insert: {
+          anb_course_code?: string | null
           certification?: string | null
           course_name: string
           created_at?: string
           date_completed?: string | null
           expiry_date?: string | null
           id?: string
+          malla?: string | null
           notes?: string | null
           organization_id: string
           volunteer_id: string
         }
         Update: {
+          anb_course_code?: string | null
           certification?: string | null
           course_name?: string
           created_at?: string
           date_completed?: string | null
           expiry_date?: string | null
           id?: string
+          malla?: string | null
           notes?: string | null
           organization_id?: string
           volunteer_id?: string
@@ -3423,6 +3429,60 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_positions: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          position: string
+          start_date: string | null
+          volunteer_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          position: string
+          start_date?: string | null
+          volunteer_id: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          position?: string
+          start_date?: string | null
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_positions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_positions_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteer_records: {
         Row: {
           created_at: string
@@ -3479,6 +3539,7 @@ export type Database = {
       }
       volunteers: {
         Row: {
+          anb_registry: string | null
           available: boolean
           code: string | null
           company_id: string | null
@@ -3499,6 +3560,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          anb_registry?: string | null
           available?: boolean
           code?: string | null
           company_id?: string | null
@@ -3519,6 +3581,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          anb_registry?: string | null
           available?: boolean
           code?: string | null
           company_id?: string | null
