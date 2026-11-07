@@ -6,6 +6,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import StickyCTA from '@/components/landing/StickyCTA';
 import LandingSEO from '@/components/landing/LandingSEO';
 import PartnersCarousel from '@/components/landing/PartnersCarousel';
+import LandingAssistant from '@/components/landing/LandingAssistant';
 
 const ProblemSolutionSection = lazy(() => import('@/components/landing/ProblemSolutionSection'));
 const ComparisonSection = lazy(() => import('@/components/landing/ComparisonSection'));
@@ -48,6 +49,7 @@ export default function LandingPage() {
       </Suspense>
       <LandingFooter />
       <StickyCTA />
+      <LandingAssistant />
     </div>
   );
 }
