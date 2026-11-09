@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { logClientError } from "@/lib/clientErrorLogger";
+import { isStaleChunkError, reloadForStaleChunk } from "@/lib/staleChunk";
 
 interface Props {
   children: ReactNode;
@@ -23,6 +24,7 @@ export default class RouteErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    if (isStaleChunkError(error.message) && reloadForStaleChunk()) return;
     this.setState({ info });
     logClientError({
       kind: "route_error_boundary",
@@ -44,6 +46,23 @@ export default class RouteErrorBoundary extends Component<Props, State> {
   render() {
     const { error, info } = this.state;
     if (!error) return this.props.children;
+
+    if (isStaleChunkError(error.message)) {
+      return (
+        <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center p-6">
+          <div className="max-w-md w-full rounded-lg border border-border bg-card p-6 text-center space-y-4">
+            <p className="text-base font-semibold">Hay una nueva versión de Operix</p>
+            <p className="text-sm text-muted-foreground">Actualizando a la última versión…</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-3 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90"
+            >
+              Actualizar ahora
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     const isContextError = /must be used within|Provider/i.test(error.message);
 

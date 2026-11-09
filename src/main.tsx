@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
+import { reloadForStaleChunk } from "./lib/staleChunk";
 
 // Guard PWA service worker against preview/iframe contexts
 const isInIframe = (() => {
@@ -16,6 +17,10 @@ if (isPreviewHost || isInIframe) {
     regs.forEach((r) => r.unregister());
   });
 }
+
+window.addEventListener("vite:preloadError", (event) => {
+  if (reloadForStaleChunk()) event.preventDefault();
+});
 
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
