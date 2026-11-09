@@ -4,7 +4,7 @@ import VehicleAvailabilityPicker from '@/components/dispatch/VehicleAvailability
 import L from 'leaflet';
 import { addBaseTileLayer } from '@/lib/mapTiles';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone } from 'lucide-react';
+import { MapPin, Truck, Shield, Megaphone, Cross, Save, X, Loader2, Navigation, FileText, Ban, Crosshair, Phone, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +59,8 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     emergency.latitude && emergency.longitude ? { lat: emergency.latitude, lng: emergency.longitude } : null
   );
   const [preReport, setPreReport] = useState(emergency.pre_report ?? '');
+  const [improving, setImproving] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [savingPre, setSavingPre] = useState(false);
   const [locating, setLocating] = useState(false);
   const [callerPhone, setCallerPhone] = useState('');
@@ -377,6 +379,19 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
     }
   };
 
+  const handleImprovePreReport = async () => {
+    setImproving(true);
+    const { data, error } = await supabase.functions.invoke('improve-pre-report', {
+      body: { text: preReport, address: emergency.address },
+    });
+    setImproving(false);
+    if (error || !data?.text) {
+      toast.error(data?.error ?? 'No se pudo mejorar la redacción');
+      return;
+    }
+    setAiSuggestion(data.text);
+  };
+
   const handleSavePreReport = async () => {
     setSavingPre(true);
     const { error } = await supabase
@@ -595,7 +610,21 @@ export default function EmergencyActionsPanel({ emergency, assignedVehicleIds, o
               lang="es-CL"
               autoCorrect="off"
             />
-            <div className="flex justify-end mt-2">
+            {aiSuggestion && (
+              <div className="mt-2 rounded-md border border-info/40 bg-info/10 p-3">
+                <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-info"><Sparkles className="h-3.5 w-3.5" /> Sugerencia de redacción (revisa antes de usar)</p>
+                <p className="whitespace-pre-wrap text-sm text-foreground">{aiSuggestion}</p>
+                <div className="mt-2 flex justify-end gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setAiSuggestion(null)}>Descartar</Button>
+                  <Button size="sm" variant="outline" onClick={() => { setPreReport(aiSuggestion); setAiSuggestion(null); }}>Usar texto</Button>
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-2">
+              <Button size="sm" variant="outline" onClick={handleImprovePreReport} disabled={improving || preReport.trim().length < 3}>
+                {improving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
+                Mejorar redacción
+              </Button>
               <Button size="sm" onClick={handleSavePreReport} disabled={savingPre || preReport === (emergency.pre_report ?? '')}>
                 {savingPre ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
                 Guardar preinforme
