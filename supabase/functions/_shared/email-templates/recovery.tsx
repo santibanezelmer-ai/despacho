@@ -14,12 +14,14 @@ import {
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
+export interface RecoveryContext { location?: string | null; network?: string | null; device?: string | null; ip?: string | null; when?: string | null }
 interface RecoveryEmailProps {
   siteName: string
   confirmationUrl: string
+  context?: RecoveryContext | null
 }
 
-export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps) => (
+export const RecoveryEmail = ({ siteName, confirmationUrl, context }: RecoveryEmailProps) => (
   <Html lang="es" dir="ltr">
     <Head />
     <Preview>Restablece tu contraseña de {siteName}</Preview>
@@ -37,7 +39,18 @@ export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps)
           <Button style={button} href={confirmationUrl}>
             Restablecer contraseña
           </Button>
+          {context ? (
+            <Section style={box}>
+              <Text style={boxTitle}>Detalles de la solicitud</Text>
+              {context.when ? <Text style={boxLine}><b>Fecha y hora:</b> {context.when}</Text> : null}
+              <Text style={boxLine}><b>Ubicación aproximada:</b> {context.location || 'No disponible'}</Text>
+              {context.network ? <Text style={boxLine}><b>Red:</b> {context.network}</Text> : null}
+              {context.device ? <Text style={boxLine}><b>Dispositivo:</b> {context.device}</Text> : null}
+              {context.ip ? <Text style={boxLine}><b>IP:</b> {context.ip}</Text> : null}
+            </Section>
+          ) : null}
           <Text style={footer}>
+            Si no fuiste tú, no hagas clic en el enlace y avisa a tu oficial de compañía o administrador.
             Si no solicitaste este cambio, ignora este correo. Tu contraseña seguirá igual.
           </Text>
         </Section>
@@ -66,3 +79,6 @@ const button = {
   display: 'inline-block',
 }
 const footer = { fontSize: '12px', color: '#9CA3AF', margin: '28px 0 0', lineHeight: '1.5' }
+const box = { backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '12px 16px', margin: '24px 0 0' }
+const boxTitle = { fontSize: '13px', fontWeight: 700 as const, color: '#0F1419', margin: '0 0 8px' }
+const boxLine = { fontSize: '13px', color: '#4B5563', margin: '2px 0' }

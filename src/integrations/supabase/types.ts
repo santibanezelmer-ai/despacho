@@ -2273,6 +2273,39 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_context: {
+        Row: {
+          created_at: string
+          device: string | null
+          email: string
+          id: string
+          ip_masked: string | null
+          location: string | null
+          network: string | null
+          requested_at_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          device?: string | null
+          email: string
+          id?: string
+          ip_masked?: string | null
+          location?: string | null
+          network?: string | null
+          requested_at_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          device?: string | null
+          email?: string
+          id?: string
+          ip_masked?: string | null
+          location?: string | null
+          network?: string | null
+          requested_at_label?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

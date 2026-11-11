@@ -1,6 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createAuthEmailHandler } from 'npm:@lovable.dev/email-js@0.1.0'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 import { SignupEmail } from '../_shared/email-templates/signup.tsx'
 import { InviteEmail } from '../_shared/email-templates/invite.tsx'
 import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
@@ -120,6 +121,18 @@ async function handlePreview(req: Request): Promise<Response> {
   })
 }
 
+async function recoveryContext(email: string) {
+  try {
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const since = new Date(Date.now() - 10 * 60_000).toISOString()
+    const { data } = await admin.from('password_reset_context')
+      .select('location, network, device, ip_masked, requested_at_label')
+      .eq('email', (email ?? '').toLowerCase()).gte('created_at', since)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+    return data ? { location: data.location, network: data.network, device: data.device, ip: data.ip_masked, when: data.requested_at_label } : null
+  } catch { return null }
+}
+
 // The SDK handler owns verification, dispatch, and retry semantics; this file
 // owns only the email decisions: subjects, templates, and per-type props.
 const handler = createAuthEmailHandler({
@@ -156,11 +169,12 @@ const handler = createAuthEmailHandler({
         }),
     },
     recovery: {
-      subject: 'Reset your password',
-      render: (data) =>
+      subject: 'Restablece tu contraseña',
+      render: async (data) =>
         React.createElement(RecoveryEmail, {
           siteName: SITE_NAME,
           confirmationUrl: data.url,
+          context: await recoveryContext(data.email),
         }),
     },
     email_change: {
