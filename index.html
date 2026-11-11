@@ -74,66 +74,11 @@
     </script>
   </head>
 
-  <body class="notranslate" translate="no">
+  <body class="notranslate" translate="no" style="background:#111317;margin:0">
     <div id="root" translate="no">
-      <!-- Contenido inicial indexable de la portada. React lo reemplaza al cargar. -->
-      <main id="static-landing" style="font-family:system-ui,sans-serif;background:#111317;color:#f2f2f2;min-height:100vh;padding:48px 20px;line-height:1.6">
-        <div style="max-width:960px;margin:0 auto">
-          <header>
-            <p><strong>Operix Dispatch</strong></p>
-            <nav aria-label="Principal">
-              <a href="/#modulos" style="color:#ff8a65">Módulos</a> ·
-              <a href="/#planes" style="color:#ff8a65">Precios</a> ·
-              <a href="/#preguntas" style="color:#ff8a65">Preguntas frecuentes</a> ·
-              <a href="/#contacto" style="color:#ff8a65">Solicitar reunión y prueba de 15 días</a> ·
-              <a href="/login" style="color:#ff8a65">Iniciar sesión</a> ·
-              <a href="/activar" style="color:#ff8a65">Soy voluntario</a>
-            </nav>
-          </header>
-          <h1>Sistema de despacho de emergencias para Cuerpos de Bomberos</h1>
-          <p>Operix Dispatch es una plataforma chilena que centraliza el despacho, el seguimiento de claves por móvil, el mapa operativo y la gestión del personal voluntario. Se usa desde el navegador en la central y desde la app Operix Voluntario en terreno.</p>
-          <p><a href="/#contacto" style="color:#ff8a65">Solicitar reunión y prueba de 15 días</a> · <a href="/#modulos" style="color:#ff8a65">Conocer los 5 módulos</a> — 15 días de prueba gratuita previa reunión de coordinación.</p>
-
-          <section id="modulos">
-            <h2>Los 5 módulos de Operix</h2>
-            <h3>Operix Central</h3>
-            <p>Consola de despacho: emergencias con claves y tonos, asignación de carros, búsqueda de direcciones y kilómetros, mapa operativo con grifos, sectores y cuadrantes.</p>
-            <h3>Operix Móvil</h3>
-            <p>Claves 6-3 a 6-10 enviadas desde el carro y aceptadas por la central, con kilometraje de salida y regreso.</p>
-            <h3>Operix Voluntario</h3>
-            <p>App para Android, iOS y navegador: alertas de despacho, detalle de la emergencia, historial, guardias asignadas y hoja de vida con carrera ANB.</p>
-            <h3>Operix Pantalla Central</h3>
-            <p>Pantalla de cuartel vinculada con PIN: emergencias activas, cronómetros, estado de los carros y mapa.</p>
-            <h3>Operix Gestión</h3>
-            <p>Administración del Cuerpo: voluntarios, compañías, cargos, planificación de guardias, carros, inventario, reportes y auditoría.</p>
-          </section>
-
-          <section id="entre-lagos">
-            <h2>Operix en el Cuerpo de Bomberos de Entre Lagos</h2>
-            <p>El Cuerpo de Bomberos de Entre Lagos y sus compañías, Primera Compañía y Segunda Compañía, usan Operix Dispatch en su operación diaria.</p>
-          </section>
-
-          <section>
-            <h2>Seguridad y continuidad</h2>
-            <p>Cada organización ve solo su propia información y los accesos se controlan por roles. Operix complementa la radio; no la reemplaza.</p>
-          </section>
-
-          <section id="contacto">
-            <h2>Solicita una reunión</h2>
-            <p>Solicita una reunión de coordinación y conoce nuestra prueba institucional gratuita de 15 días.</p>
-            <p>Escríbenos a <a href="mailto:contacto@operixdispatch.com" style="color:#ff8a65">contacto@operixdispatch.com</a>.</p>
-          </section>
-
-          <footer>
-            <p><a href="/privacidad" style="color:#ff8a65">Política de privacidad</a> · <a href="/terminos" style="color:#ff8a65">Términos</a></p>
-            <p>© Comercial Hels SpA</p>
-          </footer>
-        </div>
-      </main>
-      <script>
-        // Solo la portada muestra el contenido inicial; otras rutas no lo pintan antes de cargar.
-        if (location.pathname !== "/") { var s = document.getElementById("static-landing"); if (s) s.remove(); }
-      </script>
+      <div id="boot-splash" aria-hidden="true" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#111317">
+        <img src="/pwa-192x192.png" alt="" width="72" height="72" style="opacity:.9" />
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
