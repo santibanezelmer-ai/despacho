@@ -99,6 +99,94 @@ export default function CompanyDuty({ personal = false }: { personal?: boolean }
   const headers = scope === 'own' ? ['Fecha y horario', 'Compañía', 'Turno y función', 'Mi asignación', 'Acciones'] : ['Fecha y horario', 'Compañía', 'Turno', 'Cupos', 'Estado'];
   const errMsg = active.error ? ((active.error as { message?: string }).message?.includes('denied') ? 'No tiene autorización para consultar estas guardias.' : 'No se pudieron consultar las guardias.') : '';
 
+  // En el entorno móvil (personal = true), ocultamos por completo los botones y alertas administrativas.
+  if (personal) {
+    return (
+      <section className="space-y-4 px-2 pb-24 pt-4">
+        <header className="px-3 pb-2 border-b border-border/40">
+          <h1 className="flex items-center gap-2 text-2xl font-display uppercase leading-tight text-foreground">
+            <CalendarDays className="h-6 w-6 text-amber-500" /> Mis Guardias
+          </h1>
+          <p className="mt-1 text-xs font-cond uppercase tracking-widest text-muted-foreground">{currentOrg?.organization.name}</p>
+        </header>
+
+        <div className="px-2">
+          {active.isLoading ? (
+            <div className="flex h-32 items-center justify-center">
+              <RefreshCw className="h-6 w-6 animate-spin text-amber-500" />
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center bg-card/30 border border-border/50 rounded-2xl">
+              <CalendarDays className="mb-3 h-10 w-10 text-muted-foreground/50" />
+              <p className="font-semibold text-foreground">No tienes guardias asignadas</p>
+              <p className="mt-2 text-[11px] text-muted-foreground max-w-[200px]">
+                Cuando un Oficial te asigne un turno, aparecerá aquí para que lo confirmes.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {rows.map(r => {
+                const mineRow = (mine.data ?? []).find(a => a.assignment_id === r.id);
+                const canAnswer = mineRow && mineRow.assignment_status === 'propuesto' && (mineRow.shift_status === 'publicado' || mineRow.shift_status === 'en_curso');
+                const isConfirmed = mineRow?.assignment_status === 'confirmado';
+                const isRejected = mineRow?.assignment_status === 'rechazado';
+
+                return (
+                  <div key={r.id} id={`duty-row-${r.id}`} className="bg-card border-2 border-border/60 rounded-2xl p-4 shadow-sm flex flex-col relative overflow-hidden">
+                    {/* Borde izquierdo de color para indicar estado */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isConfirmed ? 'bg-emerald-500' : isRejected ? 'bg-destructive' : canAnswer ? 'bg-amber-500' : 'bg-muted-foreground'}`} />
+
+                    <div className="flex items-start justify-between gap-3 pl-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-display uppercase text-lg leading-tight truncate">{r.name}</h3>
+                        <p className="text-[11px] font-cond uppercase tracking-widest text-muted-foreground mt-0.5">{names.get(r.company_id) ?? '—'}</p>
+                        <div className="flex items-center gap-1.5 mt-2 text-sm text-foreground/80">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>{fmt(r.starts_at).split(' ')[1]} – {fmt(r.ends_at).split(' ')[1]}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {fmt(r.starts_at).split(' ')[0]}
+                        </div>
+                      </div>
+
+                      <Badge variant={isConfirmed ? 'default' : isRejected ? 'destructive' : 'outline'} className={isConfirmed ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/30' : ''}>
+                        {r.extra}
+                      </Badge>
+                    </div>
+
+                    {canAnswer && (
+                      <div className="mt-4 pt-4 border-t border-border/40 pl-2">
+                        {rejecting?.id === r.id ? (
+                          <div className="space-y-3">
+                            <Input aria-label="Motivo del rechazo" placeholder="Motivo del rechazo (Obligatorio)..." className="text-sm h-10" value={rejecting.reason} onChange={e => setRejecting({ id: r.id, reason: e.target.value })} />
+                            <div className="flex gap-2">
+                              <Button variant="ghost" className="flex-1" onClick={() => setRejecting(null)}>Cancelar</Button>
+                              <Button variant="destructive" className="flex-1" disabled={cmd.isPending || rejecting.reason.trim().length < 3} onClick={() => cmd.mutate({ kind: 'confirm', assignmentId: r.id, accept: false, reason: rejecting.reason.trim() }, { onSuccess: () => { toast.success('Guardia rechazada.'); setRejecting(null); } })}>Rechazar turno</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold h-11" disabled={cmd.isPending} onClick={() => cmd.mutate({ kind: 'confirm', assignmentId: r.id, accept: true, reason: '' }, { onSuccess: () => toast.success('Guardia confirmada.') })}>
+                              <CheckCircle2 className="w-4 h-4 mr-2" /> Confirmar Asistencia
+                            </Button>
+                            <Button variant="outline" className="px-4 border-destructive/30 text-destructive hover:bg-destructive/10 h-11" disabled={cmd.isPending} onClick={() => setRejecting({ id: r.id, reason: '' })}>
+                              Rechazar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // --- INTERFAZ ADMINISTRATIVA (Versión Web / Escritorio) ---
   return <section className="space-y-5 p-4 md:p-6">
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div><h1 className="flex items-center gap-2 text-lg font-bold"><CalendarDays className="h-5 w-5 text-info" />{personal ? 'Mis guardias' : 'Guardias por Compañía'}</h1>

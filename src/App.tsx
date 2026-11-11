@@ -46,6 +46,7 @@ import SuperadminOrganizations from "@/pages/superadmin/SuperadminOrganizations"
 import SuperadminRequests from "@/pages/superadmin/SuperadminRequests";
 import SuperadminSupport from "@/pages/superadmin/SuperadminSupport";
 import SuperadminHealth from "@/pages/superadmin/SuperadminHealth";
+import SuperadminFeedback from "@/pages/superadmin/SuperadminFeedback";
 import SupportPage from "@/pages/SupportPage";
 import NotFound from "./pages/NotFound";
 import OnboardingPage from "@/pages/admin/OnboardingPage";
@@ -53,7 +54,8 @@ import VoluntarioApp from "@/pages/voluntario/VoluntarioApp";
 import SharedLocationPage from "@/pages/SharedLocationPage";
 import TermsPage from "@/pages/legal/TermsPage";
 import PrivacyPage from "@/pages/legal/PrivacyPage";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useIsNativeMobile } from "@/hooks/useIsNativeMobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import SecurityGuard from "@/components/security/SecurityGuard";
@@ -88,10 +90,26 @@ function LegacyMobileEmergencyRedirect() {
 }
 
 function AppRoutes() {
-  const { user, loading: authLoading, isSuperadmin } = useAuth();
+  const { user, loading: authLoading, isSuperadmin, isPendingValidation, retryValidation, signOut } = useAuth();
   const orgCtx = useOrganizationOptional();
   const location = useLocation();
   const isNativeMobile = useIsNativeMobile();
+
+  if (isPendingValidation && !user) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center bg-background space-y-4 text-center p-6">
+        <AlertTriangle className="h-10 w-10 text-warning" />
+        <h2 className="text-lg font-semibold">Validación pendiente</h2>
+        <p className="text-sm text-muted-foreground">
+          Se encontraron credenciales guardadas, pero no hay conexión a internet para verificarlas en este momento.
+        </p>
+        <div className="flex flex-col w-full max-w-xs space-y-2 mt-4">
+          <Button onClick={retryValidation}>Reintentar conexión</Button>
+          <Button variant="outline" onClick={signOut}>Cerrar sesión</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!orgCtx) {
     return (
@@ -171,6 +189,7 @@ function AppRoutes() {
           <Route path="/superadmin/solicitudes" element={<SuperadminRequests />} />
           <Route path="/superadmin/soporte" element={<SuperadminSupport />} />
           <Route path="/superadmin/salud" element={<SuperadminHealth />} />
+          <Route path="/superadmin/feedback" element={<SuperadminFeedback />} />
           <Route path="*" element={<Navigate to="/superadmin" replace />} />
         </Routes>
       </SuperadminLayout>

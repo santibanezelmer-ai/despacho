@@ -13,6 +13,7 @@ export interface PushPayload {
   type?: string;
   assignment_id?: string;
   path?: string;
+  android_channel_id?: string;
 }
 
 // Guardias por Compañía: own channel, never the emergency dispatch tone.
@@ -20,15 +21,22 @@ const GUARD_CHANNEL_ID = 'guard_requests';
 const isGuardPayload = (p?: PushPayload | null) => p?.type === 'guard_assignment' && !!p.assignment_id;
 const guardPath = (p: PushPayload) => `/voluntario/guardias?asignacion=${encodeURIComponent(p.assignment_id!)}`;
 
-// v2 channel: Android channels are immutable once created, so a new id is
-// required to switch the sound to the custom MP3 (res/raw/dispatch_tone.mp3).
-const CHANNEL_ID = 'emergency_alerts_v2';
+const DEFAULT_CHANNEL_ID = 'emergency_alerts_v2';
 const LEGACY_CHANNEL_IDS = ['emergency_alerts'];
-const CHANNEL_SOUND = 'dispatch_tone';
-// Android reads res/raw/dispatch_tone.mp3, iOS reads the bundled
-// dispatch_tone.caf (ios/App/App/Sounds/dispatch_tone.caf).
-const LOCAL_SOUND_FILE =
-  Capacitor.getPlatform() === 'ios' ? 'dispatch_tone.caf' : `${CHANNEL_SOUND}.mp3`;
+
+const CHANNEL_SOUNDS: Record<string, string> = {
+  'emergency_alerts_v2': 'dispatch_tone',
+  'alerts_fire': 'tone_fire',
+  'alerts_rescue': 'tone_rescue',
+  'alerts_notes': 'tone_notes'
+};
+
+const getLocalSoundFile = (channelId: string) => {
+  if (channelId === GUARD_CHANNEL_ID) return Capacitor.getPlatform() === 'ios' ? 'default' : 'default';
+  const soundName = CHANNEL_SOUNDS[channelId] || 'dispatch_tone';
+  return Capacitor.getPlatform() === 'ios' ? `${soundName}.caf` : `${soundName}.mp3`;
+};
+
 let channelCreated = false;
 let listenersSetup = false;
 let registrationListenersSetup = false;
@@ -70,16 +78,10 @@ async function ensureNotificationChannel(): Promise<void> {
       }
     }
 
-    await LocalNotifications.createChannel({
-      id: CHANNEL_ID,
-      name: 'Emergencias',
-      description: 'Alertas de emergencia con tono de despacho',
-      importance: 5,       // IMPORTANCE_HIGH = heads-up
-      visibility: 1,       // PUBLIC
-      sound: CHANNEL_SOUND, // res/raw/dispatch_tone.mp3 — suena con app cerrada
-      vibration: true,
-      lights: true,
-    });
+    // Los canales de emergencias ahora se crean nativamente en MainApplication.java
+    // para poder inyectar USAGE_ALARM (alarmas del sistema).
+    // Aquí solo creamos el canal de "Guardias" que es un aviso estándar.
+
     await LocalNotifications.createChannel({
       id: GUARD_CHANNEL_ID,
       name: 'Solicitudes de guardia',
@@ -88,8 +90,8 @@ async function ensureNotificationChannel(): Promise<void> {
       visibility: 1,
       vibration: true,
     });
+
     channelCreated = true;
-    console.log(`[Push] Channel "${CHANNEL_ID}" created with sound "${CHANNEL_SOUND}"`);
   } catch (err: any) {
     console.error('[Push] Channel creation error:', err);
   }
@@ -206,33 +208,44 @@ export async function ensureRegistrationListeners(): Promise<void> {
   }
 }
 
-/** Retries saving a token that arrived before the session was available. */
-export async function flushPendingToken(): Promise<void> {
-  const token = pendingTokenToSave ?? lastRegisteredToken;
-  if (!token) return;
-  const saved = await saveTokenToSupabase(token, Capacitor.getPlatform());
-  if (saved) pendingTokenToSave = null;
-}
-
 /**
  * Removes the current device's token from device_tokens (called on sign-out,
  * before the session is destroyed so RLS can still match auth.uid()).
  */
 export async function unregisterDeviceToken(): Promise<void> {
   const token = lastRegisteredToken ?? pendingTokenToSave;
-  lastRegisteredToken = null;
-  pendingTokenToSave = null;
-  if (!token) return;
+  if (!token) {
+    console.log('[Push] No active token in memory to unregister.');
+    return;
+  }
+
+  console.log(`[Push] Unregistering token from Supabase: ${token.slice(0, 20)}...`);
   try {
     const { error } = await (supabase as any)
       .from('device_tokens')
       .delete()
       .eq('token', token);
-    if (error) console.warn('[Push] Could not unregister token:', error.message);
-    else console.log('[Push] Device token unregistered');
+
+    if (error) {
+      console.warn('[Push] DB error removing token during logout:', error.message);
+    } else {
+      console.log('[Push] Token successfully removed from DB.');
+    }
   } catch (err: any) {
-    console.warn('[Push] Unregister exception:', err?.message || err);
+    console.warn('[Push] Exception during token removal:', err?.message || err);
+  } finally {
+    // Garantizamos un registro limpio la próxima vez que alguien inicie sesión en este dispositivo
+    lastRegisteredToken = null;
+    pendingTokenToSave = null;
   }
+}
+
+/** Retries saving a token that arrived before the session was available. */
+export async function flushPendingToken(): Promise<void> {
+  const token = pendingTokenToSave ?? lastRegisteredToken;
+  if (!token) return;
+  const saved = await saveTokenToSupabase(token, Capacitor.getPlatform());
+  if (saved) pendingTokenToSave = null;
 }
 
 /* ── Registration ── */
@@ -338,19 +351,20 @@ async function markNotificationOpened(emergencyId: string): Promise<void> {
 
 /* ── Local notification for foreground ── */
 
-async function showLocalNotification(title: string, body: string, data: Record<string, string>): Promise<void> {
+async function showLocalNotification(title: string, body: string, data: Record<string, string>, overrideChannelId?: string): Promise<void> {
   try {
-    console.log(`[Push] Firing local notification channel=${CHANNEL_ID}`);
+    const channelIdToUse = overrideChannelId || DEFAULT_CHANNEL_ID;
+    console.log(`[Push] Firing local notification channel=${channelIdToUse}`);
     await LocalNotifications.schedule({
       notifications: [{
         title,
         body,
         id: Math.floor(Math.random() * 2147483647), // Random int32 to avoid collisions
-        channelId: CHANNEL_ID,
+        channelId: channelIdToUse,
         extra: data,
         smallIcon: 'ic_notification', // White silhouette for status bar
         largeIcon: 'ic_launcher',
-        sound: LOCAL_SOUND_FILE,
+        sound: getLocalSoundFile(channelIdToUse),
       }],
     });
     console.log('[Push] Local notification scheduled OK');
@@ -393,11 +407,12 @@ export async function setupPushListeners(navigate: NavigateFunction): Promise<vo
       const title = notification.title || payload.title || 'Nueva emergencia';
       const body = notification.body || payload.body || '';
       const emergencyId = payload.emergencyId || payload.emergency_id || '';
+      const channelId = payload.android_channel_id || notification.notification?.android?.channelId || DEFAULT_CHANNEL_ID;
 
       await showLocalNotification(title, body, {
         type: payload.type || 'new_emergency',
         emergencyId,
-      });
+      }, channelId);
     });
 
     // Background/closed: user tapped the system notification

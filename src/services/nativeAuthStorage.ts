@@ -28,22 +28,27 @@ export async function clearNativeAuthSession(): Promise<void> {
   await Preferences.remove({ key: NATIVE_AUTH_SESSION_KEY });
 }
 
-export async function restoreNativeAuthSession(): Promise<Session | null> {
-  if (!isNativeAuthStorageEnabled()) return null;
+export type AuthRestoreResult = {
+  state: 'AUTHENTICATED' | 'PENDING_VALIDATION' | 'UNAUTHENTICATED';
+  session: Session | null;
+};
+
+export async function restoreNativeAuthSession(): Promise<AuthRestoreResult> {
+  if (!isNativeAuthStorageEnabled()) return { state: 'UNAUTHENTICATED', session: null };
 
   const { value } = await Preferences.get({ key: NATIVE_AUTH_SESSION_KEY });
-  if (!value) return null;
+  if (!value) return { state: 'UNAUTHENTICATED', session: null };
 
   try {
     const savedSession = JSON.parse(value) as Session | null;
     if (!savedSession?.access_token || !savedSession?.refresh_token) {
       await clearNativeAuthSession();
-      return null;
+      return { state: 'UNAUTHENTICATED', session: null };
     }
 
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (currentSession?.refresh_token === savedSession.refresh_token) {
-      return currentSession;
+      return { state: 'AUTHENTICATED', session: currentSession };
     }
 
     const { data, error } = await supabase.auth.setSession({
@@ -52,25 +57,27 @@ export async function restoreNativeAuthSession(): Promise<Session | null> {
     });
 
     if (error) {
-      // Si el token fue revocado (p. ej. cierre de sesión), el respaldo ya no
-      // sirve y debe eliminarse. Ante fallos de red se conserva para reintentar.
       const status = (error as any).status as number | undefined;
-      const revoked = status === 400 || status === 401 || status === 403 ||
+      const isNetworkError = error.message.includes('fetch') || error.message.includes('network');
+
+      const isRevoked = status === 400 || status === 401 || status === 403 ||
         /invalid|revoked|expired|not found/i.test(error.message ?? '');
-      if (revoked) {
-        console.warn('[Auth] Native session backup potentially revoked, but keeping it to force persistence.');
-        // Ya no borramos la sesión nativa aquí para evitar falsos positivos de red
+
+      if (isNetworkError || !isRevoked) {
+        console.warn('[Auth] Native session restore failed due to network. Pending validation.');
+        return { state: 'PENDING_VALIDATION', session: savedSession };
       } else {
-        console.warn('[Auth] Native session restore failed (backup kept):', error.message);
+        console.warn('[Auth] Native session backup discarded (token genuinely revoked/invalid)', error.message);
+        await clearNativeAuthSession();
+        return { state: 'UNAUTHENTICATED', session: null };
       }
-      return null;
     }
 
-    console.log('[Auth] Native session restored');
-    return data.session;
+    console.log('[Auth] Native session restored successfully via setSession');
+    return { state: 'AUTHENTICATED', session: data.session };
   } catch (error) {
-    console.warn('[Auth] Native session payload invalid:', error);
+    console.warn('[Auth] Native session payload invalid/corrupt:', error);
     await clearNativeAuthSession();
-    return null;
+    return { state: 'UNAUTHENTICATED', session: null };
   }
 }

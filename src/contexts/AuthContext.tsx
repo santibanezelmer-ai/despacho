@@ -14,11 +14,13 @@ interface AuthContextType {
   roles: AppRole[];
   loading: boolean;
   isSuperadmin: boolean;
+  isPendingValidation: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
   canWrite: boolean;
+  retryValidation: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [isPendingValidation, setIsPendingValidation] = useState(false);
   const authBootstrappedRef = useRef(false);
+  const manualLogoutRef = useRef(false);
 
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase.rpc('get_user_roles', { _user_id: userId });
@@ -45,34 +49,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsSuperadmin(!!data);
   };
 
+  const bootstrapAuth = async () => {
+    if (manualLogoutRef.current) return;
+
+    let { data: { session: currentSession } } = await supabase.auth.getSession();
+
+    if (!currentSession && !manualLogoutRef.current) {
+      const restoreResult = await restoreNativeAuthSession();
+      if (manualLogoutRef.current) return; // Abort if user logged out during restore
+
+      if (restoreResult.state === 'AUTHENTICATED' && restoreResult.session) {
+        currentSession = restoreResult.session;
+        setIsPendingValidation(false);
+      } else if (restoreResult.state === 'PENDING_VALIDATION') {
+        setIsPendingValidation(true);
+        currentSession = null;
+      } else {
+        setIsPendingValidation(false);
+        currentSession = null;
+      }
+    } else {
+      setIsPendingValidation(false);
+    }
+
+    if (currentSession) {
+      await persistNativeAuthSession(currentSession);
+    } else if (!authBootstrappedRef.current && !isPendingValidation) {
+      console.warn('[Auth] No active session found during bootstrap');
+    }
+
+    if (manualLogoutRef.current) return;
+
+    setSession(currentSession);
+    setUser(currentSession?.user ?? null);
+
+    if (currentSession?.user) {
+      fetchRoles(currentSession.user.id);
+      fetchSuperadmin(currentSession.user.id);
+    } else {
+      setRoles([]);
+      setIsSuperadmin(false);
+    }
+
+    authBootstrappedRef.current = true;
+    setLoading(false);
+  };
+
+  const retryValidation = async () => {
+    if (!isPendingValidation) return;
+    setLoading(true);
+    await bootstrapAuth();
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      // Al volver a la pestaña llegan TOKEN_REFRESHED/SIGNED_IN con un objeto
-      // user nuevo del mismo usuario: conservarlo evita recargar toda la app.
-      const nextUser = session?.user ?? null;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, changedSession) => {
+      if (manualLogoutRef.current) {
+         // Ignore all auth state changes if we are explicitly logged out, until a new SIGNED_IN
+         if (event === 'SIGNED_IN') {
+           manualLogoutRef.current = false;
+         } else {
+           return;
+         }
+      }
+
+      setSession(changedSession);
+      const nextUser = changedSession?.user ?? null;
       setUser(prev => (prev && nextUser && prev.id === nextUser.id ? prev : nextUser));
-      // Persistir siempre (incluido TOKEN_REFRESHED): el refresh token rota y el
-      // respaldo nativo debe tener el vigente para poder restaurar la sesión.
-      if (session) {
-        // Now handled by Supabase storage natively, but kept for legacy sync just in case
-        void persistNativeAuthSession(session);
+
+      if (changedSession) {
+        void persistNativeAuthSession(changedSession);
+        setIsPendingValidation(false);
       }
 
       if (event === 'TOKEN_REFRESHED' && authBootstrappedRef.current) {
         return;
       }
 
-      if (session) {
-        // ya persistida arriba
-      } else if (event === 'SIGNED_OUT') {
-        console.warn('[Auth] SIGNED_OUT recibido; se conserva el respaldo nativo');
+      if (event === 'SIGNED_OUT') {
+        console.warn('[Auth] SIGNED_OUT recibido. Se permite que Supabase limpie la sesión.');
+        await clearNativeAuthSession();
+        setIsPendingValidation(false);
       }
 
-      if (session?.user) {
+      if (changedSession?.user) {
         setTimeout(() => {
-          fetchRoles(session.user.id);
-          fetchSuperadmin(session.user.id);
+          if (manualLogoutRef.current) return;
+          fetchRoles(changedSession.user.id);
+          fetchSuperadmin(changedSession.user.id);
         }, 0);
       } else {
         setRoles([]);
@@ -83,38 +146,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    (async () => {
-      let { data: { session } } = await supabase.auth.getSession();
+    // Run bootstrap
+    bootstrapAuth();
 
-      if (!session) {
-        session = await restoreNativeAuthSession();
+    // Listen for network reconnection to retry validation
+    const handleOnline = () => {
+      if (isPendingValidation) {
+        retryValidation();
       }
+    };
+    window.addEventListener('online', handleOnline);
 
-      if (session) {
-        await persistNativeAuthSession(session);
-      } else if (!authBootstrappedRef.current) {
-        console.warn('[Auth] No active session found during bootstrap');
-      }
-
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRoles(session.user.id);
-        fetchSuperadmin(session.user.id);
-      }
-      authBootstrappedRef.current = true;
-      setLoading(false);
-    })();
-
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [isPendingValidation]);
 
   const signIn = async (email: string, password: string) => {
+    manualLogoutRef.current = false;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string, name: string) => {
+    manualLogoutRef.current = false;
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -124,30 +180,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // 1. Eliminar token de la base de datos ANTES de destruir la sesión
-    await unregisterDeviceToken();
+    manualLogoutRef.current = true; // 1. Señal explícita de cierre
+    setIsPendingValidation(false); // Invalidar restauraciones pendientes
 
-    // Permitir el borrado en el storage nativo
-    if (Capacitor.isNativePlatform()) {
-      await Preferences.set({ key: 'operix_intentional_logout', value: 'true' });
+    try {
+      await unregisterDeviceToken(); // No permitir que un error de FCM bloquee
+    } catch (e) {
+      console.warn('[Auth] Error in unregisterDeviceToken during logout:', e);
     }
 
-    // 2. Destruir sesión en Supabase y de forma local
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('[Auth] Error during Supabase signOut:', e);
+    }
+
     await clearNativeAuthSession();
+
+    setUser(null);
+    setSession(null);
     setRoles([]);
     setIsSuperadmin(false);
-
-    if (Capacitor.isNativePlatform()) {
-      await Preferences.remove({ key: 'operix_intentional_logout' });
-    }
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
   const canWrite = hasRole('admin') || hasRole('operador') || hasRole('oficial');
 
   return (
-    <AuthContext.Provider value={{ user, session, roles, loading, isSuperadmin, signIn, signUp, signOut, hasRole, canWrite }}>
+    <AuthContext.Provider value={{ user, session, roles, loading, isSuperadmin, isPendingValidation, signIn, signUp, signOut, hasRole, canWrite, retryValidation }}>
       {children}
     </AuthContext.Provider>
   );
@@ -158,3 +218,4 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
+

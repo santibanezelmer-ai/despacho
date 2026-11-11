@@ -57,29 +57,42 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
 
   const { data, isLoading } = useQuery({
     queryKey: ['vol-feed', organizationId],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       try {
-        const { data, error } = await (supabase as any)
-          .from('emergencies')
-          .select('id, folio, address, status, dispatched_at, created_at, observations, pre_report, declared, false_alarm, latitude, longitude, emergency_keys(code, name, color)')
-          .eq('organization_id', organizationId)
-          .not('status', 'in', '(finalizada,en_cuartel)')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        if (error) throw error;
-
-        const enriched = await Promise.all(
-          (data ?? []).map(async (e: any) => {
-            const { data: ev } = await (supabase as any)
-              .from('emergency_vehicles')
-              .select('vehicles(code)')
-              .eq('emergency_id', e.id);
-            return {
-              ...e,
-              vehicleCodes: (ev ?? []).map((r: any) => r.vehicles?.code).filter(Boolean),
-            };
-          }),
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Network timeout')), 4000)
         );
+
+        const fetchPromise = (async () => {
+          const { data, error } = await (supabase as any)
+            .from('emergencies')
+            .select('id, folio, address, status, dispatched_at, created_at, observations, pre_report, declared, false_alarm, latitude, longitude, emergency_keys(code, name, color)')
+            .eq('organization_id', organizationId)
+            .not('status', 'in', '(finalizada,en_cuartel)')
+            .order('created_at', { ascending: false })
+            .limit(50)
+            .abortSignal(signal);
+
+          if (error) throw error;
+
+          const enriched = await Promise.all(
+            (data ?? []).map(async (e: any) => {
+              const { data: ev } = await (supabase as any)
+                .from('emergency_vehicles')
+                .select('vehicles(code)')
+                .eq('emergency_id', e.id)
+                .abortSignal(signal);
+              return {
+                ...e,
+                vehicleCodes: (ev ?? []).map((r: any) => r.vehicles?.code).filter(Boolean),
+              };
+            }),
+          );
+          return enriched;
+        })();
+
+        // Competimos la llamada de red contra el timeout de 4 segundos
+        const enriched = await Promise.race([fetchPromise, timeoutPromise]) as any[];
 
         // Guardar en caché nativo de forma silenciosa
         await Preferences.set({ key: `operix_offline_feed_${organizationId}`, value: JSON.stringify(enriched) });

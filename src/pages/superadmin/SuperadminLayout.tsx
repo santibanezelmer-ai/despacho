@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAllSupportTickets } from '@/hooks/useSupportTickets';
-import { Shield, BarChart3, Building2, FileText, LogOut, ChevronLeft, Siren, LifeBuoy, Activity } from 'lucide-react';
+import { Shield, BarChart3, Building2, FileText, LogOut, ChevronLeft, Siren, LifeBuoy, Activity, MessageSquareWarning } from 'lucide-react';
 
 const navItems = [
   { path: '/superadmin', label: 'Dashboard', icon: BarChart3 },
@@ -11,6 +11,7 @@ const navItems = [
   { path: '/superadmin/solicitudes', label: 'Solicitudes', icon: FileText },
   { path: '/superadmin/salud', label: 'Salud', icon: Activity },
   { path: '/superadmin/soporte', label: 'Soporte', icon: LifeBuoy },
+  { path: '/superadmin/feedback', label: 'Feedback App', icon: MessageSquareWarning },
 ];
 
 export default function SuperadminLayout({ children }: { children: React.ReactNode }) {
