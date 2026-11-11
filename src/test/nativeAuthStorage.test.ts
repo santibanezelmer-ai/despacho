@@ -52,7 +52,7 @@ describe('Native Auth Storage', () => {
 
     // Simulate network error
     vi.mocked(supabase.auth.setSession).mockResolvedValue({
-      data: { session: null },
+      data: { user: null, session: null },
       error: { message: 'Failed to fetch', name: 'AuthError', status: 0 } as any
     });
 
@@ -68,7 +68,7 @@ describe('Native Auth Storage', () => {
 
     // Simulate revoked token error
     vi.mocked(supabase.auth.setSession).mockResolvedValue({
-      data: { session: null },
+      data: { user: null, session: null },
       error: { message: 'Invalid Refresh Token: Already Used', status: 400, name: 'AuthError' } as any
     });
 

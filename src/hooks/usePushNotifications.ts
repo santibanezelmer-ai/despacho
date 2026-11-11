@@ -23,7 +23,7 @@ export function usePushNotifications() {
       await setupPushListeners(navigate);
       let { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        session = await restoreNativeAuthSession();
+        session = (await restoreNativeAuthSession()).session;
       }
       if (!session?.user) return;
       await flushPendingToken();
