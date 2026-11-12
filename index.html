@@ -9,6 +9,7 @@
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Permissions-Policy" content="geolocation=(self), microphone=(), camera=()" />
     <meta name="theme-color" content="#111317" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Operix Dispatch — Sistema de despacho para Cuerpos de Bomberos</title>
     <meta name="description" content="Operix Dispatch: plataforma chilena de despacho de emergencias para Cuerpos de Bomberos. Claves por móvil, mapa operativo, guardias, voluntarios y app Operix Voluntario. 15 días de prueba previa reunión." />
     <meta name="author" content="Comercial Hels SpA" />
@@ -75,11 +76,7 @@
   </head>
 
   <body class="notranslate" translate="no" style="background:#111317;margin:0">
-    <div id="root" translate="no">
-      <div id="boot-splash" aria-hidden="true" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#111317">
-        <img src="/pwa-192x192.png" alt="" width="72" height="72" style="opacity:.9" />
-      </div>
-    </div>
+    <div id="root" translate="no"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

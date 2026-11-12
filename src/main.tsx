@@ -12,11 +12,13 @@ const isPreviewHost =
   window.location.hostname.includes("id-preview--") ||
   window.location.hostname.includes("lovableproject.com");
 
-if (isPreviewHost || isInIframe) {
-  navigator.serviceWorker?.getRegistrations().then((regs) => {
-    regs.forEach((r) => r.unregister());
+// Retira el antiguo service worker de caché de la app (no toca el de notificaciones /voluntario-sw.js).
+navigator.serviceWorker?.getRegistrations().then((regs) => {
+  regs.forEach((r) => {
+    const url = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
+    if (isPreviewHost || isInIframe || url.endsWith("/sw.js")) r.unregister();
   });
-}
+});
 
 window.addEventListener("vite:preloadError", (event) => {
   if (reloadForStaleChunk()) event.preventDefault();
