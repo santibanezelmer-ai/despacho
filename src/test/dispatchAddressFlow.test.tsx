@@ -15,7 +15,7 @@ vi.mock('@/hooks/useVehicles', () => ({ useVehicles: () => ({ data: [] }) }));
 vi.mock('@/hooks/useVolunteers', () => ({ useVolunteers: () => ({ data: [] }) }));
 vi.mock('@/hooks/useCompanies', () => ({ useCompanies: () => ({ data: [] }) }));
 vi.mock('@/hooks/useOrganizationLandmarks', () => ({ useOrganizationLandmarks: () => ({ data: [] }) }));
-vi.mock('@/lib/vehicleAvailability', () => ({ useVehicleAvailability: () => [], findVehicleConflicts: vi.fn() }));
+vi.mock('@/lib/vehicleAvailability', () => ({ useVehicleAvailability: () => [], findVehicleConflicts: vi.fn().mockResolvedValue([]) }));
 vi.mock('@/lib/routeKilometer', () => ({ findNearestRouteKm: async () => null, formatRouteKmAddress: vi.fn() }));
 vi.mock('@/services/offlineDispatchQueue', () => ({
   performDispatch: state.performDispatch, enqueueDispatch: vi.fn(), isNetworkError: () => false,
@@ -30,7 +30,8 @@ vi.mock('@/components/dispatch/ManualCoordsInput', () => ({ default: ({ onSubmit
   <button onClick={() => onSubmit(-40.730176, -72.585642)}>Move point</button> }));
 vi.mock('@/components/dispatch/TerritoryStatus', () => ({ default: () => null }));
 vi.mock('@/components/dispatch/LocationRequestPanel', () => ({ default: () => null }));
-vi.mock('@/components/dispatch/VehicleAvailabilityPicker', () => ({ default: () => null }));
+vi.mock('@/components/dispatch/VehicleAvailabilityPicker', () => ({ default: ({ onToggle }: { onToggle: (id: string) => void }) =>
+  <button onClick={() => onToggle('b1')}>Pick vehicle</button> }));
 
 const clients: QueryClient[] = [];
 function openForm() {
@@ -50,6 +51,17 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); });
 
+describe('dispatch requires vehicles', () => {
+  it('blocks dispatch and warns when no vehicle is assigned', async () => {
+    openForm();
+    fireEvent.click(screen.getByText('Pick point'));
+    expect(screen.getByText('⚠️ Falta asignar móvil(es)')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Despachar Emergencia' }));
+    await new Promise(r => setTimeout(r, 50));
+    expect(state.performDispatch).not.toHaveBeenCalled();
+  });
+});
+
 describe('dispatch during reverse lookup', () => {
   it('submits coordinates immediately while lookup is unresolved and saves a usable draft', async () => {
     openForm();
@@ -57,6 +69,7 @@ describe('dispatch during reverse lookup', () => {
     await waitFor(() => expect(state.invoke).toHaveBeenCalled());
     expect(addressInput().value).toBe('-40.720176, -72.575642');
     expect(JSON.parse(sessionStorage.getItem('dispatch-test-draft') ?? '{}').address).toBe('-40.720176, -72.575642');
+    fireEvent.click(screen.getByText('Pick vehicle'));
     fireEvent.click(screen.getByRole('button', { name: 'Despachar Emergencia' }));
     await waitFor(() => expect(state.performDispatch).toHaveBeenCalledWith(expect.objectContaining({
       address: '-40.720176, -72.575642', latitude: -40.720176, longitude: -72.575642,

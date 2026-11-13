@@ -321,9 +321,16 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
     );
   };
 
+  const [vehicleFlash, setVehicleFlash] = useState(false);
   const handleSubmit = async () => {
     if (!dispatchAddress) {
       toast.error('La dirección es obligatoria');
+      return;
+    }
+    if (selectedVehicleIds.length === 0) {
+      toast.error('ASIGNACIÓN OBLIGATORIA: selecciona al menos un móvil para despachar', { duration: 4000 });
+      setVehicleFlash(true);
+      setTimeout(() => setVehicleFlash(false), 1500);
       return;
     }
 
@@ -597,7 +604,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
         </div>
         <div className="flex min-w-0 flex-col gap-3 lg:border-l lg:border-border lg:pl-4">
           {/* Vehicle selection */}
-          <div className="flex-1">
+          <div className={`flex-1 rounded-md transition-shadow ${vehicleFlash ? 'animate-pulse ring-2 ring-emergency' : ''}`}>
             <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Truck className="h-3.5 w-3.5" /> Asignar Móviles ({selectedVehicleIds.length} seleccionados)
             </label>
@@ -605,7 +612,14 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
           </div>
 
           {/* Actions */}
-          <div className="sticky bottom-0 flex gap-3 border-t border-border bg-card pt-3 pb-1">
+          <div className="sticky bottom-0 border-t border-border bg-card pt-3 pb-1">
+          <div
+            role="status"
+            className={`mb-2 rounded-md border px-3 py-1.5 text-center text-sm font-bold ${selectedVehicleIds.length ? 'border-success/50 bg-success/15 text-success' : 'border-warning/60 bg-warning/15 text-warning'}`}
+          >
+            {selectedVehicleIds.length ? `✓ ${selectedVehicleIds.length} móvil(es) asignado(s)` : '⚠️ Falta asignar móvil(es)'}
+          </div>
+          <div className="flex gap-3">
             <Button variant="outline" onClick={() => { clearDraft(); onClose(); }} className="flex-1" disabled={submitting}>
               Cancelar
             </Button>
@@ -621,6 +635,7 @@ export default function DispatchForm({ emergencyKey, onClose }: Props) {
               )}
               Despachar Emergencia
             </Button>
+          </div>
           </div>
         </div>
         </div>

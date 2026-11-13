@@ -116,7 +116,7 @@ export default function VoluntarioFeed({ organizationId, orgName, orgLogoUrl }: 
     queryKey: ['vol-notes', organizationId],
     queryFn: async () => {
       try {
-        const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
         const { data, error } = await (supabase as any)
           .from('dispatch_notes')
           .select('id, title, content, created_at')

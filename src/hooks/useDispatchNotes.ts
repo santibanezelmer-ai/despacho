@@ -15,6 +15,12 @@ export interface DispatchNote {
   updated_at: string;
 }
 
+export const NOTE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+export function noteExpiresAt(createdAt: string) { return new Date(createdAt).getTime() + NOTE_TTL_MS; }
+export function isNoteCurrent(n: { active: boolean; created_at: string }, now = Date.now()) {
+  return n.active && noteExpiresAt(n.created_at) > now;
+}
+
 export function useDispatchNotes(onlyActive = true) {
   const { orgId } = useOrganization();
   return useQuery({
@@ -25,7 +31,8 @@ export function useDispatchNotes(onlyActive = true) {
         .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });
-      if (onlyActive) q = q.eq('active', true);
+      if (onlyActive) q = q.eq('active', true).gte('created_at', new Date(Date.now() - NOTE_TTL_MS).toISOString());
+      else q = q.limit(200);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as DispatchNote[];
