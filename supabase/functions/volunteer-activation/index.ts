@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     if (org) {
       orgId = org.id; orgName = org.name ?? '';
       const { data: vols } = await admin.from('volunteers').select('id,rut,email,user_id,status').eq('organization_id', org.id).ilike('email', email);
-      const matches = (vols ?? []).filter((x: any) => (x.email ?? '').trim().toLowerCase() === email && (!rut || normRut(x.rut ?? '') === rut));
+      const matches = (vols ?? []).filter((x: any) => (x.email ?? '').trim().toLowerCase() === email && (!rut || !normRut(x.rut ?? '') || normRut(x.rut ?? '') === rut));
       // Email alone must identify exactly one volunteer; duplicates never match.
       const v = matches.length === 1 ? matches[0] : null;
       if (v && !v.user_id && v.status !== 'inactivo') volId = v.id;
