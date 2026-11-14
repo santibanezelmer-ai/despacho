@@ -5,6 +5,7 @@ import EmergencyKeyGrid from '@/components/dispatch/EmergencyKeyGrid';
 import StatsCard from '@/components/dashboard/StatsCard';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useVolunteers } from '@/hooks/useVolunteers';
+import { useAvgResponseTime, formatMinSec } from '@/hooks/useAvgResponseTime';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { usePlaySystemSound } from '@/hooks/useSystemSounds';
@@ -19,6 +20,7 @@ export default function DispatchConsole() {
   const { openDispatch } = useDispatchForm();
   const { data: vehicles } = useVehicles();
   const { data: volunteers } = useVolunteers();
+  const { data: avgResp } = useAvgResponseTime();
   const playSystemSound = usePlaySystemSound();
   const { theme, toggleTheme } = useScreenTheme('operix.despacho.theme');
 
@@ -100,7 +102,7 @@ export default function DispatchConsole() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <StatsCard title="Móviles Disponibles" value={availableVehicles} subtitle={`de ${totalVehicles} total`} icon={Truck} color="hsl(145, 65%, 42%)" />
         <StatsCard title="Voluntarios Activos" value={activeVolunteers} icon={Users} color="hsl(35, 95%, 55%)" />
-        <StatsCard title="Tiempo Resp. Prom." value="—" subtitle="últimas 24h" icon={Clock} color="hsl(210, 85%, 55%)" />
+        <StatsCard title="Tiempo Resp. Prom." value={avgResp ? formatMinSec(avgResp.avgMs) : 'S/D'} subtitle={avgResp ? `prom. ${avgResp.count} llamado(s)${avgResp.window30d ? ' (30d)' : ''} · despacho a 6-3` : 'sin llegadas 6-3'} icon={Clock} color="hsl(210, 85%, 55%)" />
       </div>
 
       <div className="console-panel p-4">
