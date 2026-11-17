@@ -69,6 +69,8 @@ async function requestGeolocation(): Promise<{ lat: number; lng: number } | null
   });
 }
 
+const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
 export default function VoluntarioMap() {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -140,14 +142,15 @@ export default function VoluntarioMap() {
     const markers: L.Marker[] = [];
     const emgWithCoords = (emergencies ?? []).filter(e => e.latitude && e.longitude);
     emgWithCoords.forEach(e => {
-      const color = e.emergency_keys?.color || '#dc2626';
+      const rawColor = e.emergency_keys?.color || '';
+      const color = /^#[0-9a-fA-F]{3,8}$/.test(rawColor) ? rawColor : '#dc2626';
       const icon = emergencyIcon(color);
       const m = L.marker([e.latitude!, e.longitude!], { icon, zIndexOffset: 1000 })
         .bindPopup(`<div style="min-width:180px;font-family:system-ui">
-          <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:${color}">${e.emergency_keys?.code || '?'} — ${e.emergency_keys?.name || 'Emergencia'}</div>
-          <div style="font-size:12px;margin-bottom:2px">${e.address}</div>
-          <div style="font-size:11px;color:#999;margin-bottom:6px">Estado: ${statusLabels[e.status] || e.status}</div>
-          <a href="/voluntario/emergencia/${e.id}" onclick="event.preventDefault();window.__volMapNav && window.__volMapNav('${e.id}')" style="display:inline-block;padding:6px 14px;background:${color};color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer">Ver detalle</a>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:${color}">${esc(e.emergency_keys?.code || '?')} — ${esc(e.emergency_keys?.name || 'Emergencia')}</div>
+          <div style="font-size:12px;margin-bottom:2px">${esc(e.address)}</div>
+          <div style="font-size:11px;color:#999;margin-bottom:6px">Estado: ${esc(statusLabels[e.status] || e.status)}</div>
+          <a href="/voluntario/emergencia/${esc(e.id)}" onclick="event.preventDefault();window.__volMapNav && window.__volMapNav('${esc(e.id)}')" style="display:inline-block;padding:6px 14px;background:${color};color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer">Ver detalle</a>
         </div>`)
         .addTo(map);
       markers.push(m);
@@ -169,7 +172,7 @@ export default function VoluntarioMap() {
     ];
     allHydrants.forEach(h => {
       const icon = hydrantIcon(h.own);
-      const m = L.marker([h.lat, h.lng], { icon }).bindPopup(`<div style="font-size:12px;font-family:system-ui"><b>${h.name}</b></div>`).addTo(map);
+      const m = L.marker([h.lat, h.lng], { icon }).bindPopup(`<div style="font-size:12px;font-family:system-ui"><b>${esc(h.name)}</b></div>`).addTo(map);
       markers.push(m);
     });
     return () => { markers.forEach(m => m.remove()); };

@@ -11,9 +11,14 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+function csvSafe(v: string | null | undefined): string {
+  const s = String(v ?? '');
+  return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+}
+
 function downloadCSV(filename: string, headers: string[], rows: string[][]) {
   const bom = '\uFEFF';
-  const csv = bom + [headers.join(','), ...rows.map(r => r.map(c => `"${(c ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+  const csv = bom + [headers.join(','), ...rows.map(r => r.map(c => `"${csvSafe(c).replace(/"/g, '""')}"`).join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

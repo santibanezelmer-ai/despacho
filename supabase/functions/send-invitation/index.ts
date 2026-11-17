@@ -124,10 +124,9 @@ Deno.serve(async (req) => {
     }
 
     // Build redirect URL back to the invite acceptance page
-    const origin =
-      req.headers.get('origin') ||
-      req.headers.get('referer')?.replace(/\/$/, '') ||
-      'https://operixdispatch.com';
+    const ALLOWED_ORIGINS = ['https://operixdispatch.com', 'https://www.operixdispatch.com', 'https://despacho.lovable.app'];
+    const reqOrigin = req.headers.get('origin') ?? '';
+    const origin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://operixdispatch.com';
     const redirectTo = `${origin.replace(/\/$/, '')}/invite/${invitation.token}`;
 
     // Organization name for the email body
