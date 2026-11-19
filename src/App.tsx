@@ -146,6 +146,11 @@ function AppRoutes() {
     );
   }
 
+  // Recovery links sign the user in temporarily; never redirect away from the new-password form.
+  if (location.pathname === '/reset-password') {
+    return <ResetPassword />;
+  }
+
   // Si estamos en la app nativa (APK), SIEMPRE redirigimos a la interfaz de Voluntario
   // sin importar qué rol tenga (Oficial, Admin, etc.) porque la app móvil nativa
   // es de uso exclusivo para lectura operativa de emergencias.
