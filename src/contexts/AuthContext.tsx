@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearNativeAuthSession, persistNativeAuthSession, restoreNativeAuthSession } from '@/services/nativeAuthStorage';
 import { unregisterDeviceToken } from '@/services/pushService';
-import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 
 type AppRole = 'admin' | 'operador' | 'oficial' | 'visor';
@@ -34,6 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPendingValidation, setIsPendingValidation] = useState(false);
   const authBootstrappedRef = useRef(false);
   const manualLogoutRef = useRef(false);
+  const pendingRef = useRef(false);
+  const setPending = (v: boolean) => { pendingRef.current = v; setIsPendingValidation(v); };
 
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase.rpc('get_user_roles', { _user_id: userId });
@@ -60,21 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (restoreResult.state === 'AUTHENTICATED' && restoreResult.session) {
         currentSession = restoreResult.session;
-        setIsPendingValidation(false);
+        setPending(false);
       } else if (restoreResult.state === 'PENDING_VALIDATION') {
-        setIsPendingValidation(true);
+        setPending(true);
         currentSession = null;
       } else {
-        setIsPendingValidation(false);
+        setPending(false);
         currentSession = null;
       }
     } else {
-      setIsPendingValidation(false);
+      setPending(false);
     }
 
     if (currentSession) {
-      await persistNativeAuthSession(currentSession);
-    } else if (!authBootstrappedRef.current && !isPendingValidation) {
+      void persistNativeAuthSession(currentSession);
+    } else if (!authBootstrappedRef.current && !pendingRef.current) {
       console.warn('[Auth] No active session found during bootstrap');
     }
 
@@ -96,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const retryValidation = async () => {
-    if (!isPendingValidation) return;
+    if (!pendingRef.current) return;
     setLoading(true);
     await bootstrapAuth();
   };
@@ -118,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (changedSession) {
         void persistNativeAuthSession(changedSession);
-        setIsPendingValidation(false);
+        setPending(false);
       }
 
       if (event === 'TOKEN_REFRESHED' && authBootstrappedRef.current) {
@@ -126,9 +127,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === 'SIGNED_OUT') {
-        console.warn('[Auth] SIGNED_OUT recibido. Se permite que Supabase limpie la sesión.');
-        await clearNativeAuthSession();
-        setIsPendingValidation(false);
+        // Unexpected SIGNED_OUT (not a manual logout): keep the native backup and
+        // try the single shared restore path instead of destroying credentials.
+        if (Capacitor.isNativePlatform()) {
+          setTimeout(() => {
+            if (manualLogoutRef.current) return;
+            setLoading(true);
+            void bootstrapAuth();
+          }, 0);
+          return;
+        }
+        setPending(false);
       }
 
       if (changedSession?.user) {
@@ -151,8 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for network reconnection to retry validation
     const handleOnline = () => {
-      if (isPendingValidation) {
-        retryValidation();
+      if (pendingRef.current) {
+        void retryValidation();
       }
     };
     window.addEventListener('online', handleOnline);
@@ -161,7 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       window.removeEventListener('online', handleOnline);
     };
-  }, [isPendingValidation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     manualLogoutRef.current = false;
@@ -181,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     manualLogoutRef.current = true; // 1. Señal explícita de cierre
-    setIsPendingValidation(false); // Invalidar restauraciones pendientes
+    setPending(false); // Invalidar restauraciones pendientes
 
     try {
       await unregisterDeviceToken(); // No permitir que un error de FCM bloquee
@@ -189,13 +199,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('[Auth] Error in unregisterDeviceToken during logout:', e);
     }
 
+    await clearNativeAuthSession();
+
     try {
       await supabase.auth.signOut();
     } catch (e) {
       console.warn('[Auth] Error during Supabase signOut:', e);
     }
-
-    await clearNativeAuthSession();
 
     setUser(null);
     setSession(null);

@@ -1,0 +1,1 @@
+- nativeAuthStorage.ts is the only native session mirror: serialized monotonic writes, single-flight restore, cleared only on manual logout or definitive revocation; push registration follows AuthContext and never restores sessions — avoids refresh-token reuse races.

@@ -229,7 +229,7 @@ export default function AcceptInvitation() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={async () => { const { clearNativeAuthSession } = await import('@/services/nativeAuthStorage'); await supabase.auth.signOut(); await clearNativeAuthSession(); }}
+                    onClick={async () => { const { clearNativeAuthSession } = await import('@/services/nativeAuthStorage'); await clearNativeAuthSession(); await supabase.auth.signOut(); }}
                   >
                     Cerrar sesión
                   </Button>

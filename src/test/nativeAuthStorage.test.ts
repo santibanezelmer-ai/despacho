@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { persistNativeAuthSession, restoreNativeAuthSession, clearNativeAuthSession } from '../services/nativeAuthStorage';
+import { __resetNativeAuthStateForTests, persistNativeAuthSession, restoreNativeAuthSession, clearNativeAuthSession } from '../services/nativeAuthStorage';
 import { supabase } from '../integrations/supabase/client';
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
@@ -32,6 +32,7 @@ vi.mock('../integrations/supabase/client', () => ({
 describe('Native Auth Storage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetNativeAuthStateForTests();
   });
 
   it('Restauración online exitosa', async () => {
@@ -69,7 +70,7 @@ describe('Native Auth Storage', () => {
     // Simulate revoked token error
     vi.mocked(supabase.auth.setSession).mockResolvedValue({
       data: { user: null, session: null },
-      error: { message: 'Invalid Refresh Token: Already Used', status: 400, name: 'AuthError' } as any
+      error: { message: 'Invalid Refresh Token: Refresh Token Not Found', status: 400, code: 'refresh_token_not_found', name: 'AuthError' } as any
     });
 
     const result = await restoreNativeAuthSession();

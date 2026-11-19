@@ -2,59 +2,41 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { supabase } from '@/integrations/supabase/client';
 import { registerForPushNotifications, setupPushListeners, ensureRegistrationListeners, flushPendingToken } from '@/services/pushService';
-import { restoreNativeAuthSession } from '@/services/nativeAuthStorage';
+import { useAuth } from '@/contexts/AuthContext';
 
+/**
+ * Push registration follows the session owned by AuthContext. It never reads,
+ * restores or refreshes the auth session itself, so it cannot race the
+ * single restore path with the same refresh token.
+ */
 export function usePushNotifications() {
   const navigate = useNavigate();
-  const initialized = useRef(false);
+  const { user } = useAuth();
+  const userIdRef = useRef<string | null>(null);
+  userIdRef.current = user?.id ?? null;
 
+  const syncRef = useRef<(force: boolean) => Promise<void>>(async () => {});
+  syncRef.current = async (force: boolean) => {
+    await ensureRegistrationListeners();
+    await setupPushListeners(navigate);
+    if (!userIdRef.current) return;
+    await flushPendingToken();
+    await registerForPushNotifications({ force, silent: true });
+  };
+
+  // Register (or re-register) whenever the authenticated user changes.
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
     if (!Capacitor.isNativePlatform()) return;
+    void syncRef.current(false);
+  }, [user?.id]);
 
-    const syncRegistration = async (force = false, silent = true) => {
-      // Registration listeners first (already started eagerly at import), then
-      // the delivery listeners. Never register FCM before both are attached.
-      await ensureRegistrationListeners();
-      await setupPushListeners(navigate);
-      let { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        session = (await restoreNativeAuthSession()).session;
-      }
-      if (!session?.user) return;
-      await flushPendingToken();
-      await registerForPushNotifications({ force, silent });
-    };
-
-
-    const initializePush = async () => {
-      console.log('[Push][Hook] initializing push notifications');
-      // Aseguramos que sea completamente silencioso (silent = true)
-      await syncRegistration(false, true);
-    };
-
-    void initializePush();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (session?.user) void syncRegistration(false, true);
-      }
+  // Refresh registration when the app returns to the foreground.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const listener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive && userIdRef.current) void syncRef.current(true);
     });
-
-    const appStateListener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) void syncRegistration(true, true);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      void appStateListener.then((listener) => listener.remove());
-      // Push and registration listeners are process-lifetime singletons.
-      // They deliberately remain active across React unmounts and remounts.
-      initialized.current = false;
-    };
-  }, [navigate]);
+    return () => { void listener.then((l) => l.remove()); };
+  }, []);
 }

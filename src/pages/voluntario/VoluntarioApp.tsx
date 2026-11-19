@@ -398,8 +398,8 @@ export default function VoluntarioApp() {
                   '@/services/nativeAuthStorage'
                 );
 
-                await supabase.auth.signOut();
                 await clearNativeAuthSession();
+                await supabase.auth.signOut();
               }}
             >
               Cerrar sesión
