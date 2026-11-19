@@ -38,7 +38,8 @@ function useEquipment(vehicleId?: string) {
 }
 
 function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
+  const raw = v == null ? '' : String(v);
+  const s = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
