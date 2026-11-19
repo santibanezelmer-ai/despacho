@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
-import { LogIn, Loader2 } from 'lucide-react';
+import { LogIn, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +49,7 @@ export default function LoginPage() {
     const { error } = await signIn(email, password);
 
     if (error) {
-      toast.error('Credenciales incorrectas');
+      toast.error(/confirm/i.test(error.message) ? 'Primero confirma tu correo con el botón «Confirmar correo» del email que te enviamos' : 'Correo o contraseña incorrectos. Si no recuerdas la clave, usa «¿Olvidaste tu contraseña?»');
     } else {
       // Guardar o eliminar credenciales según el Checkbox
       try {
@@ -122,7 +123,7 @@ export default function LoginPage() {
 
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Contraseña</label>
-            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="bg-muted/50" />
+            <div className="relative"><Input type={showPwd ? 'text' : 'password'} autoCapitalize="none" autoCorrect="off" spellCheck={false} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="bg-muted/50 pr-10" /><button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Ocultar contraseña' : 'Ver contraseña'} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground">{showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>
           </div>
 
           <div className="flex items-center space-x-2 py-1">
