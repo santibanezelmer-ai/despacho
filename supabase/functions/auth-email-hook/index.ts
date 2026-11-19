@@ -121,6 +121,26 @@ async function handlePreview(req: Request): Promise<Response> {
   })
 }
 
+
+// Auth links must always land on the official domain, never on the *.lovable.app address.
+function officialUrl(raw: string): string {
+  try {
+    const u = new URL(raw)
+    const fix = (v: string | null) => {
+      if (!v) return SITE_URL
+      try {
+        const r = new URL(v)
+        if (r.hostname.endsWith('lovable.app') && !r.hostname.startsWith('id-preview')) {
+          return `${SITE_URL}${r.pathname}${r.search}${r.hash}`
+        }
+        return v
+      } catch { return SITE_URL }
+    }
+    u.searchParams.set('redirect_to', fix(u.searchParams.get('redirect_to')))
+    return u.toString()
+  } catch { return raw }
+}
+
 async function recoveryContext(email: string) {
   try {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -148,7 +168,7 @@ const handler = createAuthEmailHandler({
           siteName: SITE_NAME,
           siteUrl: SITE_URL,
           recipient: data.email,
-          confirmationUrl: data.url,
+          confirmationUrl: officialUrl(data.url),
         }),
     },
     invite: {
@@ -157,7 +177,7 @@ const handler = createAuthEmailHandler({
         React.createElement(InviteEmail, {
           siteName: SITE_NAME,
           siteUrl: SITE_URL,
-          confirmationUrl: data.url,
+          confirmationUrl: officialUrl(data.url),
         }),
     },
     magiclink: {
@@ -165,7 +185,7 @@ const handler = createAuthEmailHandler({
       render: (data) =>
         React.createElement(MagicLinkEmail, {
           siteName: SITE_NAME,
-          confirmationUrl: data.url,
+          confirmationUrl: officialUrl(data.url),
         }),
     },
     recovery: {
@@ -173,7 +193,7 @@ const handler = createAuthEmailHandler({
       render: async (data) =>
         React.createElement(RecoveryEmail, {
           siteName: SITE_NAME,
-          confirmationUrl: data.url,
+          confirmationUrl: officialUrl(data.url),
           context: await recoveryContext(data.email),
         }),
     },
@@ -185,7 +205,7 @@ const handler = createAuthEmailHandler({
           oldEmail: data.old_email ?? '',
           email: data.email,
           newEmail: data.new_email ?? '',
-          confirmationUrl: data.url,
+          confirmationUrl: officialUrl(data.url),
         }),
     },
     reauthentication: {
