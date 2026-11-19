@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Siren, CheckCircle2, AlertTriangle, LogIn, UserPlus } from 'lucide-react';
+import { Loader2, Siren, CheckCircle2, AlertTriangle, LogIn, UserPlus, Eye, EyeOff, MailCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -27,6 +27,8 @@ export default function AcceptInvitation() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const autoAcceptedRef = useRef(false);
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function AcceptInvitation() {
     if (!token || !preview) return;
     if (password.length < 6) { toast.error('La contraseña debe tener al menos 6 caracteres'); return; }
     setAuthBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: su, error } = await supabase.auth.signUp({
       email: preview.email,
       password,
       options: {
@@ -92,6 +94,16 @@ export default function AcceptInvitation() {
       }
       return;
     }
+    // Existing account: signUp returns a user without identities and sends nothing.
+    if (su?.user && (su.user.identities?.length ?? 0) === 0) {
+      toast.info('Ese correo ya tiene cuenta — inicia sesión con tu contraseña');
+      setMode('login');
+      return;
+    }
+    if (!su?.session) {
+      setAwaitingConfirm(true);
+      return;
+    }
     toast.success('Cuenta creada. Asociando a la organización…');
     // onAuthStateChange will set `user`, then the auto-accept effect runs
   };
@@ -102,7 +114,10 @@ export default function AcceptInvitation() {
     setAuthBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email: preview.email, password });
     setAuthBusy(false);
-    if (error) { toast.error('Credenciales incorrectas'); return; }
+    if (error) {
+      toast.error(/confirm/i.test(error.message) ? 'Primero confirma tu correo con el botón del email que te enviamos' : 'Contraseña incorrecta. Si no la recuerdas, usa "¿Olvidaste tu contraseña?"');
+      return;
+    }
   };
 
   if (loading || authLoading) {
@@ -183,7 +198,14 @@ export default function AcceptInvitation() {
                     </button>
                   </div>
 
-                  {mode === 'signup' ? (
+                  {awaitingConfirm ? (
+                    <div className="space-y-3 rounded-md border border-border p-4 text-center">
+                      <MailCheck className="mx-auto h-8 w-8 text-emergency" />
+                      <p className="text-sm font-semibold text-foreground">Revisa tu correo</p>
+                      <p className="text-xs text-muted-foreground">Te enviamos un email a <strong>{preview.email}</strong>. Presiona «Confirmar correo» y vuelve aquí a iniciar sesión con la contraseña que creaste. Revisa también Spam.</p>
+                      <Button type="button" variant="outline" className="w-full" onClick={() => { setAwaitingConfirm(false); setMode('login'); }}>Ya confirmé, iniciar sesión</Button>
+                    </div>
+                  ) : mode === 'signup' ? (
                     <form onSubmit={handleSignup} className="space-y-3">
                       <div>
                         <label className="mb-1 block text-xs text-muted-foreground">Tu nombre</label>
@@ -195,7 +217,7 @@ export default function AcceptInvitation() {
                       </div>
                       <div>
                         <label className="mb-1 block text-xs text-muted-foreground">Contraseña</label>
-                        <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required minLength={6} className="bg-muted/50" />
+                        <div className="relative"><Input type={showPwd ? 'text' : 'password'} autoCapitalize="none" autoCorrect="off" spellCheck={false} value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required minLength={6} className="bg-muted/50 pr-10" /><button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Ocultar contraseña' : 'Ver contraseña'} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground">{showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>
                       </div>
                       <Button type="submit" disabled={authBusy} className="w-full bg-emergency text-emergency-foreground hover:bg-emergency/90">
                         {authBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
@@ -210,12 +232,13 @@ export default function AcceptInvitation() {
                       </div>
                       <div>
                         <label className="mb-1 block text-xs text-muted-foreground">Contraseña</label>
-                        <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="bg-muted/50" />
+                        <div className="relative"><Input type={showPwd ? 'text' : 'password'} autoCapitalize="none" autoCorrect="off" spellCheck={false} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="bg-muted/50 pr-10" /><button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Ocultar contraseña' : 'Ver contraseña'} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground">{showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>
                       </div>
                       <Button type="submit" disabled={authBusy} className="w-full bg-emergency text-emergency-foreground hover:bg-emergency/90">
                         {authBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
                         Iniciar sesión y unirme
                       </Button>
+                      <Link to="/reset-password" className="block text-center text-xs text-muted-foreground underline">¿Olvidaste tu contraseña?</Link>
                     </form>
                   )}
                 </div>
