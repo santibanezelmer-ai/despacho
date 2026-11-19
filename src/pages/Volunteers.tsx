@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { lazy, Suspense } from 'react';
 const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
 import { useVolunteers } from '@/hooks/useVolunteers';
@@ -63,7 +64,7 @@ function VolunteersList() {
 
     await (supabase as any).from('volunteers').update({ invitation_sent_at: new Date().toISOString() }).eq('id', v.id);
 
-    const url = `${window.location.origin}/invite/${inv.token}`;
+    const url = `${publicAppOrigin()}/invite/${inv.token}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearNativeAuthSession, persistNativeAuthSession, restoreNativeAuthSession } from '@/services/nativeAuthStorage';
@@ -184,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
+      options: { data: { full_name: name }, emailRedirectTo: publicAppOrigin() },
     });
     return { error: error as Error | null };
   };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, LogIn, Siren, Eye, EyeOff } from 'lucide-react';
@@ -68,7 +69,7 @@ export default function VoluntarioLogin() {
 
   const handleReset = async () => {
     if (!email) { toast.error('Ingresa tu email primero'); return; }
-    const { error } = await supabase.functions.invoke('request-password-reset', { body: { email, redirect_to: `${window.location.origin}/reset-password` } });
+    const { error } = await supabase.functions.invoke('request-password-reset', { body: { email, redirect_to: `${publicAppOrigin()}/reset-password` } });
     if (error) toast.error(error.message);
     else toast.success('Revisa tu email para restablecer tu contraseña');
   };

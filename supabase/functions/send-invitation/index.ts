@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     }
 
     // Build redirect URL back to the invite acceptance page
-    const ALLOWED_ORIGINS = ['https://operixdispatch.com', 'https://www.operixdispatch.com', 'https://despacho.lovable.app'];
+    const ALLOWED_ORIGINS = ['https://operixdispatch.com', 'https://www.operixdispatch.com'];
     const reqOrigin = req.headers.get('origin') ?? '';
     const origin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://operixdispatch.com';
     const redirectTo = `${origin.replace(/\/$/, '')}/invite/${invitation.token}`;

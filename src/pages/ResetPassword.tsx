@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +82,7 @@ export default function ResetPassword() {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
-    const { error } = await supabase.functions.invoke('request-password-reset', { body: { email, redirect_to: `${window.location.origin}/reset-password` } });
+    const { error } = await supabase.functions.invoke('request-password-reset', { body: { email, redirect_to: `${publicAppOrigin()}/reset-password` } });
     setLoading(false);
     if (error) toast.error('No se pudo enviar. Intenta de nuevo.');
     else toast.success('Si el correo está registrado, te llegará un enlace nuevo.');

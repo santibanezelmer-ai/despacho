@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Bell, LogOut, Volume2, Loader2, Download, Play, RotateCcw, Upload, Info, BatteryWarning } from 'lucide-react';
@@ -131,7 +132,7 @@ export default function VoluntarioProfile({ organizationId, orgName }: Props) {
   const sendReset = async () => {
     if (!user?.email) return;
     const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${publicAppOrigin()}/reset-password`,
     });
     if (error) toast.error(error.message);
     else toast.success('Revisa tu email para cambiar tu contraseña');

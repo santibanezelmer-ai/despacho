@@ -1,3 +1,4 @@
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin, MessageCircle, Send, Copy, Loader2, Navigation, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ interface Props {
 }
 
 // Usa el origen actual para que el enlace funcione tanto en preview como en producción
-const shareBase = `${typeof window !== 'undefined' ? window.location.origin : 'https://operixdispatch.com'}/location`;
+const shareBase = `${publicAppOrigin()}/location`;
 
 type Status = 'idle' | 'waiting' | 'received' | 'expired' | 'error';
 

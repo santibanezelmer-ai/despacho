@@ -1,3 +1,4 @@
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Map, Monitor, Radio, Shield, Trash2, Tv } from 'lucide-react';
@@ -22,7 +23,7 @@ export default function ScreenLauncherDialog({ open, onOpenChange }: { open: boo
   const [name, setName] = useState('');
   const [view, setView] = useState<string>('central');
   const [busy, setBusy] = useState(false);
-  const tvUrl = `${window.location.origin}/tv`;
+  const tvUrl = `${publicAppOrigin()}/tv`;
 
   const { data: screens } = useQuery({
     queryKey: ['screen-pairings', orgId],

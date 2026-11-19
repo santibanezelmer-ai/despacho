@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -161,7 +162,7 @@ export default function InvitationsAdmin() {
   });
 
   const copyLink = (token: string) => {
-    const url = `${window.location.origin}/invite/${token}`;
+    const url = `${publicAppOrigin()}/invite/${token}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copiado');
   };
@@ -240,7 +241,7 @@ export default function InvitationsAdmin() {
           </p>
         </div>
         <Button variant="outline" onClick={() => {
-          const url = `${window.location.origin}/activar?org=${encodeURIComponent(currentOrg?.organization?.slug ?? '')}`;
+          const url = `${publicAppOrigin()}/activar?org=${encodeURIComponent(currentOrg?.organization?.slug ?? '')}`;
           const text = `Estimados voluntarios: activen su acceso a Operix Voluntario para recibir despachos, emergencias y guardias. Ingresen con su correo registrado.\n\nToquen este enlace (no la vista previa):\n${url}`;
           navigator.clipboard?.writeText(text).catch(() => {});
           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { publicAppOrigin } from '@/lib/publicOrigin';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -81,7 +82,7 @@ export default function AcceptInvitation() {
       password,
       options: {
         data: { full_name: name || preview.email, invitation_token: token },
-        emailRedirectTo: `${window.location.origin}/invite/${token}`,
+        emailRedirectTo: `${publicAppOrigin()}/invite/${token}`,
       },
     });
     setAuthBusy(false);
