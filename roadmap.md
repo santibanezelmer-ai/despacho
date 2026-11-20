@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Reporte mensual automático del mes anterior a oficiales y administradores activos, separado por organización y sin teléfonos personales: Resend autorizado y conectado; preparar y validar reporte, verificar reportes.operixdispatch.com (dominio aprobado) y activar programación segura. Sin envíos hasta verificar dominio.
+- [x] Preparar reporte mensual por organización con Resend: 5 pruebas aprobadas y función desplegada; simulación autenticada con datos reales de 3 organizaciones y 7 destinatarios, sin enviar correos; acceso sin autorización rechazado (401).
+- [ ] Activar reporte mensual: falta añadir y verificar los registros de reportes.operixdispatch.com en el proveedor del dominio; después programar día 1 a las 08:00 de Chile (dos horarios UTC candidatos, uno omitido según horario de verano), verificar callback programado y entrega real. No hay programación ni envíos activados.
 
 - [x] Portada Fase 2 en vista previa: 5 módulos oficiales, portada nueva, Entre Lagos, formulario único, botones unificados, teléfono sin superposiciones, banner limpio; 5 pruebas y envío real verificados.
 - [x] Cierre Fase 2 en vista previa: banner con logotipo oficial, consola más grande en computadora, asistente dentro de la barra inferior del teléfono, formulario con consentimiento obligatorio y campos ordenados; 7 pruebas y envío real en Android verificados.

@@ -1885,6 +1885,57 @@ export type Database = {
           },
         ]
       }
+      monthly_report_deliveries: {
+        Row: {
+          created_at: string
+          error_status: number | null
+          id: string
+          organization_id: string
+          period: string
+          provider_id: string | null
+          recipient_user_id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_status?: number | null
+          id?: string
+          organization_id: string
+          period: string
+          provider_id?: string | null
+          recipient_user_id: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_status?: number | null
+          id?: string
+          organization_id?: string
+          period?: string
+          provider_id?: string | null
+          recipient_user_id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_report_deliveries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_report_deliveries_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       notification_log: {
         Row: {
           created_at: string
