@@ -48,6 +48,16 @@ La plantilla preparada recibe los dos enlaces seguros del registro emitido y no 
 
 ## Antes de activar (requiere autorización específica)
 
+### Verificaciones realizadas en esta preparación
+
+- 25 pruebas Vitest aprobadas: token aleatorio/hash, válidos/expirados/revocados/inexistentes, rechazo de selectores ajenos, PDF sin sesión, revocación siguiente descarga, frontera exacta, no persistencia, POST sin Referer y correos bloqueados; incluyen 11 regresiones de cálculos.
+- 17 verificaciones PostgreSQL desechable: migración completa válida, 15 días calendario y cambio horario chileno, consumo real del RPC, organización ajena rechazada, admin de compañía rechazado, inmutabilidad, auditoría, revocación, expiración, ACL directas y límite concurrente. No se aplicó esta migración a Lovable Cloud.
+- Generador PDF ejecutado en Deno: 1 prueba aprobada, logotipo integrado y dos páginas con período 2026-10. Comprobación de tipos Deno del servicio aprobada.
+- Playwright: página sin sesión a 1280×1800 y 390×844, consulta, descarga, revocación y enlace inválido; sin errores de ejecución ni desbordamiento horizontal, fragmento eliminado y almacenamiento vacío. Respuestas interceptadas controladas, no equivalen a prueba del servicio instalado ni a datos operativos reales.
+- Compilación automática correcta.
+
+Las verificaciones reales de emisión autenticada, infraestructura de logs, cabecera de origen y enlaces enviados por correo quedan pendientes de autorización de instalación/despliegue. No se afirma ausencia de exposición en registros externos sin observar esa infraestructura.
+
 1. Revisar/aplicar SQL preparado mediante el mecanismo de migración autorizado, sin reescribirlo.
 2. Instalar la entrada del servicio y sus dependencias aisladas en el directorio de funciones, evitando reemplazar funciones de correo ajenas a reportes.
 3. Verificar origen del proxy, políticas efectivas, tiempo de servidor, cabeceras, registros de infraestructura y rendimiento del PDF.

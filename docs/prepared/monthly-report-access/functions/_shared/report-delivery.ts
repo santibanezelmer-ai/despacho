@@ -14,8 +14,8 @@ export async function deliverMonthlyReport(db: any, report: MonthlyReport, userI
   const { hashReportToken } = await import('./report-access.ts');
   const { data: matching, error: hashError } = await db.from('monthly_report_access_tokens').select('id').eq('id', access.id).eq('organization_id', report.organizationId).eq('token_hash', await hashReportToken(viewToken)).single();
   if (hashError || !matching) throw new Error('Enlaces no válidos');
-  const { data: recipient, error: memberError } = await db.from('organization_members').select('role').eq('organization_id', report.organizationId).eq('user_id', userId).eq('status', 'active').in('role', ['admin','oficial']);
-  if (memberError || !recipient?.length) throw new Error('Destinatario no autorizado');
+  const { data: recipient, error: memberError } = await db.from('organization_members').select('role,company_id').eq('organization_id', report.organizationId).eq('user_id', userId).eq('status', 'active').in('role', ['admin','oficial']);
+  if (memberError || !recipient?.some((m: { role: string; company_id: string | null }) => m.role === 'oficial' || m.company_id === null)) throw new Error('Destinatario no autorizado');
   const { data: profile, error: profileError } = await db.from('profiles').select('email').eq('user_id', userId).single();
   if (profileError || !profile.email) throw new Error('Sin correo');
   const email = profile.email.trim().toLowerCase();
