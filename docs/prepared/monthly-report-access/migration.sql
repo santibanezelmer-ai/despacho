@@ -40,6 +40,13 @@ GRANT ALL ON public.monthly_report_access_audit TO service_role;
 ALTER TABLE public.monthly_report_access_audit ENABLE ROW LEVEL SECURITY;
 CREATE POLICY audit_service ON public.monthly_report_access_audit FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+CREATE FUNCTION public.monthly_report_history_immutable() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+  RAISE EXCEPTION 'Immutable report history';
+END $$;
+CREATE TRIGGER monthly_report_snapshot_immutable BEFORE UPDATE OR DELETE ON public.monthly_report_snapshots FOR EACH ROW EXECUTE FUNCTION public.monthly_report_history_immutable();
+CREATE TRIGGER monthly_report_audit_immutable BEFORE UPDATE OR DELETE ON public.monthly_report_access_audit FOR EACH ROW EXECUTE FUNCTION public.monthly_report_history_immutable();
+
 CREATE FUNCTION public.monthly_report_token_dates() RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN

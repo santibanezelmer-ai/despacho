@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Preparar acceso temporal de reportes: tokens SHA-256 de 256 bits, consulta/PDF sin sesión, administración y auditoría; sin aplicar SQL ni desplegar.
-- [ ] Incorporar control propio compartido contra abuso, autorizado por Susana: límites por origen y enlace con bloqueo temporal.
-- [ ] Habilitar y verificar acceso real: requiere autorización específica de migración/despliegue y confirmación del control propio contra abuso.
+- [x] Preparar acceso temporal de reportes: tokens SHA-256 de 256 bits, consulta/PDF sin sesión, administración y auditoría; servicio y SQL aislados en docs/prepared, sin aplicar SQL al destino ni desplegar.
+- [x] Incorporar control propio compartido contra abuso, autorizado por Susana: límites por origen y enlace con bloqueo temporal, pruebas concurrentes locales.
+- [ ] Habilitar y verificar acceso real: requiere autorización específica de migración/despliegue; confirmar cabecera de origen normalizada y redacción de registros de infraestructura antes de habilitar.
 
 - [x] Rediseñar PDF ejecutivo y entregar vista previa de octubre 2026: dos páginas revisadas visualmente, descarga con sesión real de Entre Lagos y 16 pruebas aprobadas; sin escrituras, cron, envíos ni publicación.
 

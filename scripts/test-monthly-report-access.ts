@@ -32,6 +32,8 @@ try {
   const [revoked] = await db`SELECT monthly_report_revoke(${org},${id},${actor}) AS r`; assert.equal(revoked.r,true);
   const [blocked] = await db`SELECT monthly_report_consume(${hash},'download') AS r`; assert.deepEqual(blocked.r,{state:'revoked'}); pass('revocation immediately blocks downloads');
   const [history] = await db`SELECT count(*)::int AS n FROM monthly_report_snapshots`; assert.equal(history.n,1); pass('revocation preserves report history');
+  await assert.rejects(db`UPDATE monthly_report_snapshots SET period='2026-09' WHERE id=${snapshot}`, (e: any) => e.code === 'P0001'); pass('report snapshot cannot change month or data');
+  await assert.rejects(db`DELETE FROM monthly_report_access_audit WHERE access_id=${id}`, (e: any) => e.code === 'P0001'); pass('access and revocation audit immutable');
   const [expires] = await db`SELECT monthly_report_issue(${org},${snapshot},${recipient},${'e'.repeat(64)},${actor}) AS r`;
   // Fixture-only time travel; real trigger is enabled again before verification.
   await db.unsafe('ALTER TABLE monthly_report_access_tokens DISABLE TRIGGER monthly_report_token_dates');
