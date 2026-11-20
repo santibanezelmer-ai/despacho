@@ -14,6 +14,7 @@ import RegisterOrganization from "@/pages/RegisterOrganization";
 import PendingApproval from "@/pages/PendingApproval";
 import ResetPassword from "@/pages/ResetPassword";
 import AcceptInvitation from "@/pages/AcceptInvitation";
+import MonthlyReportSharedPage from "@/pages/MonthlyReportSharedPage";
 import ActivateVolunteer from "@/pages/ActivateVolunteer";
 import DispatchConsole from "@/pages/DispatchConsole";
 import ActiveEmergencies from "@/pages/ActiveEmergencies";
@@ -282,7 +283,9 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
+const App = () => window.location.pathname.startsWith('/reportes/consulta') ? (
+  <MonthlyReportSharedPage />
+) : (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
