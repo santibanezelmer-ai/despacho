@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Reporte mensual automático del mes anterior a oficiales y administradores activos, separado por organización y sin teléfonos personales: bloqueado hasta autorización y conexión de un servicio externo de correo; el correo integrado no admite envíos programados a listas de destinatarios. No se ha activado ningún envío.
+- [ ] Reporte mensual automático del mes anterior a oficiales y administradores activos, separado por organización y sin teléfonos personales: Resend autorizado y conectado; preparar y validar reporte, verificar reportes.operixdispatch.com (dominio aprobado) y activar programación segura. Sin envíos hasta verificar dominio.
 
 - [x] Portada Fase 2 en vista previa: 5 módulos oficiales, portada nueva, Entre Lagos, formulario único, botones unificados, teléfono sin superposiciones, banner limpio; 5 pruebas y envío real verificados.
 - [x] Cierre Fase 2 en vista previa: banner con logotipo oficial, consola más grande en computadora, asistente dentro de la barra inferior del teléfono, formulario con consentimiento obligatorio y campos ordenados; 7 pruebas y envío real en Android verificados.
