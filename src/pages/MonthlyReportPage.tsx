@@ -10,6 +10,7 @@ import { downloadMonthlyReportPdf } from '@/lib/monthlyReportPdf';
 import { reportHtml, communicationHtml } from '../../supabase/functions/_shared/report-template';
 import logo from '@/assets/operix-report-logo.png.asset.json';
 import localLogo from '@/assets/operix-logo.png';
+import MonthlyReportLinkAdmin from '@/components/reports/MonthlyReportLinkAdmin';
 
 export default function MonthlyReportPage() {
   const { orgId, memberships, setCurrentOrgId } = useOrganization();
@@ -35,5 +36,6 @@ export default function MonthlyReportPage() {
     <div className="flex flex-wrap gap-2">{[['report','Reporte completo'],['mail','Correo mensual'],['administrative','Administrativas'],['operational','Operativas'],['invitation','Invitaciones'],['system','Sistema']].map(([key,label]) => <Button key={key} variant={view===key?'default':'outline'} onClick={() => setView(key)}>{key==='mail'?<Mail/>:<FileText/>}{label}</Button>)}</div>
     {reportQuery.isPending && <p>Cargando reporte…</p>}{reportQuery.isError && <div role="alert" className="text-destructive">{reportQuery.error.message}</div>}
     {r && <iframe title="Vista previa del reporte mensual" sandbox="allow-same-origin" srcDoc={html} className="w-full border border-border min-h-[1400px]"/>}
+    {targetOrg && memberships.some(m => m.organization_id === targetOrg && m.role === 'admin' && m.company_id === null) && <MonthlyReportLinkAdmin orgId={targetOrg} period={period}/>}
   </div>;
 }

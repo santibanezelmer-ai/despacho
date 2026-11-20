@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Preparar acceso temporal de reportes: tokens SHA-256 de 256 bits, consulta/PDF sin sesión, administración y auditoría; servicio y SQL aislados en docs/prepared, sin aplicar SQL al destino ni desplegar.
+- [x] Incorporar control propio compartido contra abuso, autorizado por Susana: límites por origen y enlace con bloqueo temporal, pruebas concurrentes locales.
+- [ ] Habilitar y verificar acceso real: requiere autorización específica de migración/despliegue; confirmar cabecera de origen normalizada y redacción de registros de infraestructura antes de habilitar.
+
 - [x] Rediseñar PDF ejecutivo y entregar vista previa de octubre 2026: dos páginas revisadas visualmente, descarga con sesión real de Entre Lagos y 16 pruebas aprobadas; sin escrituras, cron, envíos ni publicación.
 
 - [x] Preparar reporte mensual por organización con Resend: 5 pruebas aprobadas y función desplegada; simulación autenticada con datos reales de 3 organizaciones y 7 destinatarios, sin enviar correos; acceso sin autorización rechazado (401).
