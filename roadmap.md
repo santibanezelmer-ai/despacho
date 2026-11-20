@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Rediseñar PDF ejecutivo y entregar vista previa de octubre 2026: dos páginas revisadas visualmente, descarga con sesión real de Entre Lagos y 16 pruebas aprobadas; sin escrituras, cron, envíos ni publicación.
+
 - [x] Preparar reporte mensual por organización con Resend: 5 pruebas aprobadas y función desplegada; simulación autenticada con datos reales de 3 organizaciones y 7 destinatarios, sin enviar correos; acceso sin autorización rechazado (401).
 - [ ] Activar reporte mensual: bloqueado hasta autorización expresa de Susana; dominio principal verificado, sin DNS nuevo, sin cron ni envíos.
 - [x] Preparar reporte ampliado, plantillas, vistas previas y PDF; campos reales verificados, pruebas y presentación revisadas; sin migraciones, despliegues ni envíos.

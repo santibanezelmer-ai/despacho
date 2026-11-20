@@ -6,6 +6,14 @@ import { deliverMonthlyReport } from '../../supabase/functions/_shared/report-de
 import { createMonthlyReportPdf } from '../lib/monthlyReportPdf';
 const emergency: ReportEmergency = { id: 'e', dispatched_at: '2026-11-10T10:00:00Z', finished_at: '2026-11-10T12:00:00Z', status: 'finalizada', emergency_key_id: 'k', emergency_vehicles: [] };
 describe('monthly report approved rules', () => {
+  it('distinguishes one dispatch from two mobile services without changing arrival metrics', () => {
+    const v = { vehicle_id: 'v1', on_scene_at: '2026-11-10T10:06:00Z', odometer_start: null, odometer_end: null };
+    const m = summarize([{ ...emergency, emergency_vehicles: [v, { ...v, vehicle_id: 'v2' }] }]);
+    expect(m.total).toBe(1);
+    expect(Object.values(m.fleet).reduce((n, f) => n + f.services, 0)).toBe(2);
+    expect(m.responseSamples).toBe(1);
+    expect(m.responseMinutes).toBe(6);
+  });
   it('blocks delivery before any database write', async () => { const db={from:vi.fn()}; await expect(deliverMonthlyReport(db,{} as any,'user',()=>undefined)).rejects.toThrow('desactivados'); expect(db.from).not.toHaveBeenCalled(); });
   it('generates a nonempty PDF for the requested real period', () => { const m=summarize([emergency]); const doc=createMonthlyReportPdf({organizationId:'org',organizationName:'Org',period:'2026-11',priorPeriod:'2026-10',generatedAt:'2026-11-20T02:00:00Z',current:m,prior:summarize([]),keys:{},vehicles:{},companies:{}}); expect(doc.output()).toContain('2026-11'); expect(doc.getNumberOfPages()).toBeGreaterThan(0); expect(doc.output('arraybuffer').byteLength).toBeGreaterThan(1000); });
   it('computes mean min max arrival coverage by emergency, not by vehicle', () => {
