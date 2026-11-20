@@ -2,7 +2,8 @@
 
 - [x] Preparar acceso temporal de reportes: tokens SHA-256 de 256 bits, consulta/PDF sin sesión, administración y auditoría; servicio y SQL aislados en docs/prepared, sin aplicar SQL al destino ni desplegar.
 - [x] Incorporar control propio compartido contra abuso, autorizado por Susana: límites por origen y enlace con bloqueo temporal, pruebas concurrentes locales.
-- [ ] Instalar y verificar acceso real autorizado por Susana: revisar SQL y confirmar respaldo recuperable antes de aplicar; pendiente evidencia de último respaldo y restauración disponible en Cloud. Después instalar SQL/función, comprobar origen normalizado y redacción de registros, publicar frontend y probar emisión/consulta/PDF/revocación; mantener correos y cron apagados.
+- [x] Instalar y probar acceso real autorizado: respaldo 20-nov-2026 13:13 UTC y opción de restauración confirmados por Susana; SQL y función instalados, permisos heredados de tablas nuevas retirados; una emisión/consulta/PDF/revocación real de Entre Lagos 2026-10 verificada desde vista previa, 30 pruebas y PDF Deno aprobados; enlace revocado, auditoría y 15 días comprobados, sin correo ni cron.
+- [ ] Publicar frontend del acceso seguro y comprobar dominio oficial: requiere pulsar Actualizar en publicación; no hay herramienta para publicar en esta sesión. Sitio oficial aún no incluye rutas nuevas. Alcance de registros externos no observable totalmente; no certificar ausencia de capturas de terceros.
 
 - [x] Rediseñar PDF ejecutivo y entregar vista previa de octubre 2026: dos páginas revisadas visualmente, descarga con sesión real de Entre Lagos y 16 pruebas aprobadas; sin escrituras, cron, envíos ni publicación.
 

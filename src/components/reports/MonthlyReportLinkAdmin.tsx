@@ -17,7 +17,7 @@ export default function MonthlyReportLinkAdmin({ orgId, period }: { orgId: strin
   const [confirmation, setConfirmation] = useState('');
   const invoke = async (body: Record<string, unknown>) => {
     const { data, error: callError } = await supabase.functions.invoke('monthly-report-access', { body });
-    if (callError) throw new Error('El acceso compartido aún no está disponible. La instalación y publicación requieren autorización.');
+    if (callError) throw new Error('No se pudo completar la solicitud. Revisa tus permisos o inténtalo nuevamente.');
     return data;
   };
   const refresh = async () => {

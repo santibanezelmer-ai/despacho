@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { webcrypto } from 'node:crypto';
-import { randomReportToken, hashReportToken, reportAccessLinks, reportAccessState } from '../../docs/prepared/monthly-report-access/functions/_shared/report-access';
-import { handleReportAccess } from '../../docs/prepared/monthly-report-access/functions/_shared/access-handler';
-import { sendResend } from '../../docs/prepared/monthly-report-access/functions/_shared/resend-service';
+import { randomReportToken, hashReportToken, reportAccessLinks, reportAccessState } from '../../supabase/functions/monthly-report-access/_shared/report-access';
+import { handleReportAccess } from '../../supabase/functions/monthly-report-access/_shared/access-handler';
+import { sendResend } from '../../supabase/functions/monthly-report-access/_shared/resend-service';
 import { captureReportSecret, requestReportAccess } from '../lib/monthlyReportAccessClient';
 
 beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('crypto', webcrypto); });
 const request = () => new Request('https://operixdispatch.com', { method: 'POST' });
 const deps = (state = 'active') => ({ db: { rpc: vi.fn().mockResolvedValue({ data: { state, report: { organizationId: 'org-a', period: '2026-10' }, expires_at: '2026-12-05T13:00:00Z' }, error: null }) }, userId: vi.fn().mockResolvedValue(null), abuseAllowed: vi.fn().mockResolvedValue(true), pdf: vi.fn().mockResolvedValue(new TextEncoder().encode('%PDF-1.4').buffer) });
-describe('prepared monthly report access security', () => {
+describe('installed monthly report access security', () => {
   it('uses 32 random bytes (256 bits) and a 64-character SHA-256 digest only', async () => {
     const token = randomReportToken(); expect(token).toMatch(/^[0-9a-f]{64}$/); const hash = await hashReportToken(token); expect(hash).toHaveLength(64); expect(hash).not.toBe(token); expect(randomReportToken()).not.toBe(token);
   });

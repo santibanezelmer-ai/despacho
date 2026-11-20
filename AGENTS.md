@@ -38,4 +38,4 @@
 - Landing commercial CTAs come only from src/components/landing/landingCtas.ts and the single demo form stores into the existing leads table via demoRequest.ts (extra fields packed into message) — one consistent funnel without schema changes.
 - Password-reset requests go through the request-password-reset function, which records network origin (password_reset_context + audit_log) before triggering the standard recovery email; auth-email-hook reads that context — keeps security trace without minting links server-side.
 - No app-shell SW: public/sw.js is a kill-switch; only /voluntario-sw.js (push) registers — cached HTML went stale.
-- Monthly report token design/staging: see docs/monthly-report-access.md.
+- Report access: isolated function-local helpers; docs/monthly-report-access.md.

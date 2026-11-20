@@ -1,10 +1,12 @@
-# Acceso temporal a reportes mensuales — preparación
+# Acceso temporal a reportes mensuales — instalación
 
 ## Estado de instalación
 
-El código del servicio y la migración están en `docs/prepared/monthly-report-access/`, fuera del directorio de despliegue automático. No están instalados en producción. No se cambió Storage, DNS, cron ni `EMAIL_SEND_ENABLED=false`.
+Instalación autorizada por Susana el 20 de noviembre de 2026. Respaldo diario previo informado por Susana: 20 de noviembre, 13:13 UTC, con «Restore to this backup» disponible. No se ejecutó una restauración de prueba ni se creó un respaldo adicional; la disponibilidad de restauración no equivale a ensayo de recuperación. Restaurar ese respaldo perdería los cambios posteriores y revertiría el esquema.
 
-La vista previa incluye `/reportes/consulta` y `/reportes/consulta/descargar`, independientes de proveedores de sesión, organización, consola y registro de notificaciones. Hasta instalar el servicio autorizado, un enlace no puede devolver datos reales.
+SQL preparado instalado como `drizzle/migrations/0028_install_monthly_report_secure_access.sql` (igual salvo salto de línea final). La inspección detectó GRANT de lectura heredados por las tablas nuevas: `0029_restrict_monthly_report_access_table_grants.sql` los retiró de anon/authenticated, sin tocar objetos ajenos. Las cuatro tablas tienen RLS y acceso directo solo del servicio.
+
+`supabase/functions/monthly-report-access/` está desplegada con dependencias propias en `_shared/`, sin reemplazar helpers de otros servicios. `/reportes/consulta` y `/reportes/consulta/descargar` funcionan con el servicio real desde la vista previa. El sitio oficial todavía sirve un paquete anterior que no incluye estas rutas: falta actualizar la publicación desde Lovable y verificar allí, sin modificar DNS. No se cambió Storage, DNS, cron ni `EMAIL_SEND_ENABLED=false`.
 
 ## Arquitectura
 
@@ -21,13 +23,13 @@ La vista previa incluye `/reportes/consulta` y `/reportes/consulta/descargar`, i
 
 Control propio transaccional en PostgreSQL, compartido entre instancias: 10 solicitudes por enlace/minuto, 30 por origen/minuto y techo global de 600/minuto. Exceso bloquea temporalmente 10 minutos. Orígenes se guardan como digest con sal secreta del servidor; jamás se guarda IP original. Los límites no sustituyen protección perimetral frente a DDoS.
 
-El servicio falla cerrado si el control o la identidad de origen no están disponibles. Antes de habilitar se debe comprobar qué cabecera de origen es normalizada por el proxy del alojamiento y que no puede suplantarse. La limpieza de contadores antiguos es acotada y oportunista; no utiliza cron ni elimina reportes.
+El servicio falla cerrado si el control o la identidad de origen no están disponibles. Dos cabeceras x-forwarded-for distintas enviadas por el cliente no crearon orígenes distintos: el recuento permaneció en un único contador de origen, sin registrar IP ni digest. Esto es evidencia puntual de normalización, no una garantía de todos los caminos del proxy. La limpieza de contadores antiguos es acotada y oportunista; no utiliza cron ni elimina reportes.
 
 ## Auditoría y límites honestos
 
 Se registran emisión, consulta, solicitud autorizada de PDF y revocación por ID interno. Un evento `download` significa solicitud autorizada al servidor, no prueba de que el dispositivo terminó de guardar el archivo. El visor de administración muestra hasta 100 accesos y el recuento de los últimos 500 eventos, rotulado explícitamente.
 
-Sin tokens originales en tablas, respuestas de error o consola; nunca registrar cuerpos HTTP de emisión/consumo ni HTML enviado a Resend. Cabeceras `no-store`, `no-referrer`, `nosniff` y `noindex` en respuestas. El fragmento evita Referer y logs HTTP de alojamiento. No es posible asegurar registros de terceros sin verificar su configuración: falta comprobar redacción de cuerpos de solicitudes/respuestas y ausencia de captura de fragmentos en la infraestructura real antes de habilitar.
+Sin tokens originales en tablas, respuestas de error o consola; nunca registrar cuerpos HTTP de emisión/consumo ni HTML enviado a Resend. Cabeceras `no-store`, `no-referrer`, `nosniff` y `noindex` en respuestas. El fragmento evita Referer y logs HTTP de alojamiento. Los registros de función disponibles tras la prueba no contienen tokens de 64 caracteres ni campos de cuerpo HTTP. No se puede certificar la configuración de todos los registros externos ni capturadores de navegador a partir de esos registros; esa limitación sigue explícita.
 
 **Un enlace es una credencial al portador:** está asociado al destinatario pero no verifica quién lo abre sin interacción adicional. Quien reenvíe el enlace concede ese acceso temporal; no equivale a autenticación de identidad. No se usan tokens de un solo uso, porque lectura, descarga y escáneres de correo necesitan accesos múltiples durante la vigencia.
 
@@ -38,15 +40,25 @@ Sin tokens originales en tablas, respuestas de error o consola; nunca registrar 
 - `src/lib/monthlyReportAccessClient.ts`: secreto solo en memoria, POST sin Referer/cookies/caché.
 - `src/components/reports/MonthlyReportLinkAdmin.tsx` y `src/pages/MonthlyReportPage.tsx`: selección de destinatario, emisión, consultas y confirmación de revocación.
 - `docs/prepared/monthly-report-access/migration.sql`: cuatro tablas privadas, privilegios explícitos y RPC de emisión, validación, auditoría, revocación y límites.
-- `docs/prepared/monthly-report-access/functions/monthly-report-access/index.ts`: entrada validada del servicio.
-- `docs/prepared/monthly-report-access/functions/_shared/`: lógica, copias congeladas del cálculo y HTML aprobados, renderer PDF adaptado para servidor, logotipo integrado y transporte Resend bloqueado.
+- `supabase/functions/monthly-report-access/index.ts`: entrada validada del servicio instalado.
+- `supabase/functions/monthly-report-access/_shared/`: dependencias aisladas del servicio, cálculo y HTML aprobados, renderer PDF para servidor, logotipo integrado y transporte Resend bloqueado. Las copias preparadas se conservan como referencia.
 - `src/test/monthlyReportAccess.test.ts` y `scripts/test-monthly-report-access.ts`: pruebas de reglas y PostgreSQL local, sin cuentas reales.
 
 ## Integración Resend preparada
 
 La plantilla preparada recibe los dos enlaces seguros del registro emitido y no utiliza la dirección interna que exige sesión. La entrega verifica destinatario, hash, organización, fotografía, revocación y vencimiento; conserva supresiones e idempotencia existentes. No se conecta a envíos automáticos: debe autorizarse una instalación y después una prueba explícita. `reportes@operixdispatch.com` permanece como remitente, mediante la conexión existente y `RESEND_API_KEY`; no se crean secretos ni conexiones nuevas.
 
-## Antes de activar (requiere autorización específica)
+## Verificación de instalación autorizada
+
+- 30 pruebas Vitest aprobadas; comprobación Deno y prueba PDF de dos páginas aprobadas; compilación automática correcta.
+- Sesión real del administrador de Entre Lagos: emisión desde el panel para sí mismo, período 2026-10; un único enlace, sin correo. Se conservó una fotografía agregada y su histórico auditado; no se modificaron emergencias, móviles ni personal.
+- Página sin sesión en escritorio 1280×1800 y teléfono 390×844: consulta HTTP 200, fragmento limpiado y almacenamiento vacío. PDF descargado y leído: dos páginas, Entre Lagos y 2026-10 correctos.
+- Manipulación de organization_id en consulta pública: HTTP 400; SELECT anónimo directo de snapshots: HTTP 401. Privilegios directos de las cuatro tablas y RPC inspeccionados y restringidos.
+- Revocación desde el panel, seguida de consulta y descarga: HTTP 410 con estado revoked; mensaje visible en teléfono. El enlace de prueba quedó revocado, no hay un acceso de prueba vigente.
+- Auditoría leída: una emisión, una consulta, una descarga autorizada y una revocación. Vencimiento almacenado comprobado: exactamente 15 días calendario locales; frontera y DST siguen cubiertos por pruebas previas, no por espera real de 15 días.
+- Límite real probado sin crear otro acceso: diez consultas de un token inexistente devuelven 404 y la undécima 429. Cabeceras no-store, no-referrer y nosniff presentes. Dos cabeceras de origen suplantadas no cambiaron el contador de origen.
+- No hay cron de reportes en el inventario consultado; solo tareas preexistentes ajenas, sin cambios. EMAIL_SEND_ENABLED sigue false. Ningún envío real.
+- Pendiente: actualización del frontend publicado y comprobación de la página en operixdispatch.com. La prueba real de servicio NO equivale a publicación del frontend. No se generó otro enlace ni se envió correo.
 
 ### Verificaciones realizadas en esta preparación
 
@@ -56,10 +68,8 @@ La plantilla preparada recibe los dos enlaces seguros del registro emitido y no 
 - Playwright: página sin sesión a 1280×1800 y 390×844, consulta, descarga, revocación y enlace inválido; sin errores de ejecución ni desbordamiento horizontal, fragmento eliminado y almacenamiento vacío. Respuestas interceptadas controladas, no equivalen a prueba del servicio instalado ni a datos operativos reales.
 - Compilación automática correcta.
 
-Las verificaciones reales de emisión autenticada, infraestructura de logs, cabecera de origen y enlaces enviados por correo quedan pendientes de autorización de instalación/despliegue. No se afirma ausencia de exposición en registros externos sin observar esa infraestructura.
+La emisión, consulta, descarga y revocación reales se verificaron en esta instalación. El envío por correo sigue fuera del alcance autorizado; no se afirma ausencia de exposición en registros externos no observables.
 
-1. Revisar/aplicar SQL preparado mediante el mecanismo de migración autorizado, sin reescribirlo.
-2. Instalar la entrada del servicio y sus dependencias aisladas en el directorio de funciones, evitando reemplazar funciones de correo ajenas a reportes.
-3. Verificar origen del proxy, políticas efectivas, tiempo de servidor, cabeceras, registros de infraestructura y rendimiento del PDF.
-4. Probar emisión/consulta/descarga/revocación con sesión real autorizada y otra organización; comprobar móviles.
-5. Solo después autorizar despliegue/publicación y, separadamente, una eventual prueba de correo; los envíos globales y cron siguen desactivados.
+1. Actualizar la publicación del frontend desde el diálogo de publicación de Lovable; no hay herramienta de publicación disponible en esta sesión.
+2. Verificar la página en el dominio oficial tras esa actualización, con un nuevo enlace controlado y revocación final.
+3. Autorizar por separado cualquier prueba de correo; los envíos globales y cron siguen desactivados.

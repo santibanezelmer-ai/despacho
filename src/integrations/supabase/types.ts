@@ -1885,6 +1885,127 @@ export type Database = {
           },
         ]
       }
+      monthly_report_access_audit: {
+        Row: {
+          access_id: string
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          access_id: string
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          access_id?: string
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_report_access_audit_access_id_fkey"
+            columns: ["access_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_report_access_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_report_access_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_report_access_limits: {
+        Row: {
+          attempts: number
+          blocked_until: string | null
+          key_hash: string
+          window_at: string
+        }
+        Insert: {
+          attempts?: number
+          blocked_until?: string | null
+          key_hash: string
+          window_at: string
+        }
+        Update: {
+          attempts?: number
+          blocked_until?: string | null
+          key_hash?: string
+          window_at?: string
+        }
+        Relationships: []
+      }
+      monthly_report_access_tokens: {
+        Row: {
+          expires_at: string
+          id: string
+          issued_at: string
+          organization_id: string
+          recipient_user_id: string
+          report_id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          token_hash: string
+        }
+        Insert: {
+          expires_at: string
+          id?: string
+          issued_at?: string
+          organization_id: string
+          recipient_user_id: string
+          report_id: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          token_hash: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          issued_at?: string
+          organization_id?: string
+          recipient_user_id?: string
+          report_id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_report_access_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_report_access_tokens_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "monthly_report_access_tokens_report_id_organization_id_fkey"
+            columns: ["report_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_report_snapshots"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
       monthly_report_deliveries: {
         Row: {
           created_at: string
@@ -1933,6 +2054,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      monthly_report_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          period: string
+          report: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          period: string
+          report: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          period?: string
+          report?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_report_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3938,6 +4091,28 @@ export type Database = {
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_org_volunteer: { Args: { _org_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      monthly_report_consume: {
+        Args: { _action: string; _hash: string }
+        Returns: Json
+      }
+      monthly_report_issue: {
+        Args: {
+          _actor: string
+          _hash: string
+          _org: string
+          _recipient: string
+          _report: string
+        }
+        Returns: Json
+      }
+      monthly_report_rate_gate: {
+        Args: { _link: string; _origin: string }
+        Returns: boolean
+      }
+      monthly_report_revoke: {
+        Args: { _actor: string; _id: string; _org: string }
+        Returns: boolean
+      }
       org_slug_from_name: {
         Args: { _exclude?: string; _name: string }
         Returns: string
