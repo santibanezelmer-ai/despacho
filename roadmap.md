@@ -1,7 +1,9 @@
 # Roadmap
 
 - [x] Preparar reporte mensual por organización con Resend: 5 pruebas aprobadas y función desplegada; simulación autenticada con datos reales de 3 organizaciones y 7 destinatarios, sin enviar correos; acceso sin autorización rechazado (401).
-- [ ] Activar reporte mensual: falta añadir y verificar los registros de reportes.operixdispatch.com en el proveedor del dominio; después programar día 1 a las 08:00 de Chile (dos horarios UTC candidatos, uno omitido según horario de verano), verificar callback programado y entrega real. No hay programación ni envíos activados.
+- [ ] Activar reporte mensual: bloqueado hasta autorización expresa de Susana; dominio principal verificado, sin DNS nuevo, sin cron ni envíos.
+- [x] Preparar reporte ampliado, plantillas, vistas previas y PDF; campos reales verificados, pruebas y presentación revisadas; sin migraciones, despliegues ni envíos.
+- [ ] Verificar reporte mensual con sesión propia y logotipo en dominio oficial: pendiente de iniciar sesión y autorización para desplegar; recepción de correo pendiente de autorización expresa de envío.
 
 - [x] Portada Fase 2 en vista previa: 5 módulos oficiales, portada nueva, Entre Lagos, formulario único, botones unificados, teléfono sin superposiciones, banner limpio; 5 pruebas y envío real verificados.
 - [x] Cierre Fase 2 en vista previa: banner con logotipo oficial, consola más grande en computadora, asistente dentro de la barra inferior del teléfono, formulario con consentimiento obligatorio y campos ordenados; 7 pruebas y envío real en Android verificados.

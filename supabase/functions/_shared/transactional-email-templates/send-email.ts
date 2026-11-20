@@ -1,19 +1,11 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { EmailAPIError, sendLovableEmail } from 'npm:@lovable.dev/email-js@0.1.0'
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import { sendResend } from '../resend-service.ts'
 import { TEMPLATES } from './registry.ts'
 
 // Server-only: reads LOVABLE_API_KEY. Import from edge functions only — never
 // expose sending to the browser.
-
-// Configuration baked in at scaffold time
-const SITE_NAME = "despacho"
-// SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
-// It MUST match the subdomain delegated to Lovable's nameservers. NEVER use the root domain.
-const SENDER_DOMAIN = "notify.operixdispatch.com"
-// FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
-// Can be the root domain when display_from_root is enabled — this is cosmetic only.
-const FROM_DOMAIN = "operixdispatch.com"
 
 export type SendTemplateEmailResult =
   | { sent: true }
@@ -27,21 +19,17 @@ export interface SendTemplateEmailOptions {
 }
 
 /**
- * Renders a registered template and sends it through Lovable's managed email
- * API. Suppression, retries, and rate limits are enforced by Lovable
- * server-side. A suppressed recipient is an expected outcome
- * ({ sent: false }); any other failure throws — EmailAPIError exposes
- * .code and .status for branching.
+ * Renders a registered template through the centralized, disabled Resend service.
+ * Preserves the existing suppression list; no production deployment in this stage.
  */
 export async function sendTemplateEmail(
   templateName: string,
   to: string,
   options: SendTemplateEmailOptions = {}
 ): Promise<SendTemplateEmailResult> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
-  if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured')
-  }
+  const url = Deno.env.get('SUPABASE_URL'), service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !service) throw new Error('Missing mail server configuration')
+  const db = createClient(url, service)
 
   const template = TEMPLATES[templateName]
   if (!template) {
@@ -56,6 +44,9 @@ export async function sendTemplateEmail(
   if (!recipient) {
     throw new Error('Recipient is required (the template defines no fixed recipient)')
   }
+  const { data: suppressed, error: suppressionError } = await db.from('suppressed_emails').select('id').eq('email', recipient.toLowerCase().trim()).limit(1)
+  if (suppressionError) throw suppressionError
+  if (suppressed?.length) return { sent: false, reason: 'recipient_suppressed' }
 
   const templateData = options.templateData ?? {}
   const element = React.createElement(template.component, templateData)
@@ -67,25 +58,8 @@ export async function sendTemplateEmail(
       : template.subject
 
   try {
-    await sendLovableEmail(
-      {
-        to: recipient,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: 'transactional',
-        label: templateName,
-        idempotency_key: options.idempotencyKey || crypto.randomUUID(),
-        reply_to: options.replyTo,
-      },
-      { apiKey, sendUrl: Deno.env.get('LOVABLE_SEND_URL') }
-    )
+    await sendResend({ channel: 'administrative', to: recipient, subject, html, text, eventKey: options.idempotencyKey || crypto.randomUUID() }, key => Deno.env.get(key))
   } catch (error) {
-    if (error instanceof EmailAPIError && error.code === 'recipient_suppressed') {
-      return { sent: false, reason: 'recipient_suppressed' }
-    }
     throw error
   }
 

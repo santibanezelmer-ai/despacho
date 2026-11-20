@@ -37,6 +37,7 @@ const SimulationPage = lazy(() => import("@/pages/SimulationPage"));
 const TrainingPage = lazy(() => import("@/pages/TrainingPage"));
 const CompanyDuty = lazy(() => import("@/pages/CompanyDuty"));
 const AuditPage = lazy(() => import("@/pages/AuditPage"));
+const MonthlyReportPage = lazy(() => import("@/pages/MonthlyReportPage"));
 const ExportsPage = lazy(() => import("@/pages/ExportsPage"));
 import NotificationsPage from "@/pages/NotificationsPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -263,6 +264,7 @@ function AppRoutes() {
         <Route path="/capacitaciones" element={<TrainingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/auditoria" element={<AuditPage />} />
+        <Route path="/reportes/mensual" element={<MonthlyReportPage />} />
         <Route path="/exportaciones" element={<ExportsPage />} />
         <Route path="/simulacion" element={<SimulationPage />} />
         <Route path="/alertas" element={<AlertsPage />} />
