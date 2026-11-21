@@ -19,8 +19,8 @@ export interface SendTemplateEmailOptions {
 }
 
 /**
- * Renders a registered template through the centralized, disabled Resend service.
- * Preserves the existing suppression list; no production deployment in this stage.
+ * Sends existing registered administrative templates independently of monthly reports.
+ * Preserves the existing suppression list; report delivery remains disabled.
  */
 export async function sendTemplateEmail(
   templateName: string,

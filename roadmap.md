@@ -1,5 +1,6 @@
 # Roadmap
 
+- [x] Corregir bloqueo confirmado de invitaciones y códigos de activación: canal administrativo existente separado del bloqueo de reportes; 36 pruebas aprobadas y tres funciones afectadas desplegadas, sin correo real de prueba. Recepción de un nuevo correo no verificada.
 - [x] Preparar acceso temporal de reportes: tokens SHA-256 de 256 bits, consulta/PDF sin sesión, administración y auditoría; servicio y SQL aislados en docs/prepared, sin aplicar SQL al destino ni desplegar.
 - [x] Incorporar control propio compartido contra abuso, autorizado por Susana: límites por origen y enlace con bloqueo temporal, pruebas concurrentes locales.
 - [x] Instalar y probar acceso real autorizado: respaldo 20-nov-2026 13:13 UTC y opción de restauración confirmados por Susana; SQL y función instalados, permisos heredados de tablas nuevas retirados; una emisión/consulta/PDF/revocación real de Entre Lagos 2026-10 verificada desde vista previa, 30 pruebas y PDF Deno aprobados; enlace revocado, auditoría y 15 días comprobados, sin correo ni cron.

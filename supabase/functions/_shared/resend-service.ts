@@ -2,8 +2,9 @@ export const EMAIL_SEND_ENABLED = false;
 export const SENDERS = { reports: 'reportes@operixdispatch.com', administrative: 'notificaciones@operixdispatch.com', operational: 'despacho@operixdispatch.com' } as const;
 type Message = { channel: keyof typeof SENDERS; to: string; subject: string; html: string; text?: string; eventKey: string };
 export async function sendResend(message: Message, env: (key: string) => string | undefined, transport: typeof fetch = fetch) {
-  // Deliberately impossible to activate via request body or environment in this stage.
-  if (!EMAIL_SEND_ENABLED) throw new Error('Envíos desactivados: requieren autorización expresa');
+  // Existing invitation/activation/health emails remain enabled independently.
+  // Monthly reports and operational sends still require explicit authorization.
+  if (!EMAIL_SEND_ENABLED && message.channel !== 'administrative') throw new Error('Envíos desactivados: requieren autorización expresa');
   const api = env('LOVABLE_API_KEY'), connection = env('RESEND_API_KEY');
   if (!api || !connection) throw new Error('Falta configuración de correo');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(message.to) || !message.eventKey) throw new Error('Destinatario o evento inválido');
