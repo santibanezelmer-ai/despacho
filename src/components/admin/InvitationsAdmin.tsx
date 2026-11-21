@@ -13,6 +13,7 @@ import { Copy, Trash2, Send, UserPlus, RefreshCw, Ban, Users, Loader2 } from 'lu
 import { z } from 'zod';
 import { useTimeFormat } from '@/hooks/useTimeFormat';
 import { useVolunteers } from '@/hooks/useVolunteers';
+import { invitationEmailSent } from '@/lib/invitationDelivery';
 
 type OrgRole = 'admin' | 'operador' | 'oficial' | 'visor' | 'voluntario';
 
@@ -77,7 +78,7 @@ export default function InvitationsAdmin() {
       queryClient.invalidateQueries({ queryKey: ['org-invitations', orgId] });
       const url = res?.invite_url;
       if (url) navigator.clipboard?.writeText(url).catch(() => {});
-      if (res?.email_sent) {
+      if (invitationEmailSent(res)) {
         toast.success(vars.resend ? 'Invitación reenviada · link copiado' : 'Invitación enviada · link copiado');
       } else {
         toast.warning(res?.warning ?? 'Invitación creada — envía el link manualmente');
@@ -116,7 +117,7 @@ export default function InvitationsAdmin() {
             resend: true,
           },
         });
-        if (error || data?.error) failed++;
+        if (error || !invitationEmailSent(data)) failed++;
         else ok++;
       } catch {
         failed++;

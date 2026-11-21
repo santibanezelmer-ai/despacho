@@ -1,5 +1,6 @@
 # Roadmap
 
+- [x] Revisar recorridos del correo por lectura: invitación individual/reenvío/lote, activación/WhatsApp, autenticación, alertas, RPCs y reportes; conteo de lote corregido, 39 pruebas aprobadas, sin modificar históricos ni configuración. Sin envío/recepción real; cambio de frontend pendiente de publicación.
 - [x] Corregir bloqueo confirmado de invitaciones y códigos de activación: canal administrativo existente separado del bloqueo de reportes; 36 pruebas aprobadas y tres funciones afectadas desplegadas, sin correo real de prueba. Recepción de un nuevo correo no verificada.
 - [x] Preparar acceso temporal de reportes: tokens SHA-256 de 256 bits, consulta/PDF sin sesión, administración y auditoría; servicio y SQL aislados en docs/prepared, sin aplicar SQL al destino ni desplegar.
 - [x] Incorporar control propio compartido contra abuso, autorizado por Susana: límites por origen y enlace con bloqueo temporal, pruebas concurrentes locales.
