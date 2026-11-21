@@ -19,7 +19,16 @@ export function isAuthorizedServiceKey(key: { code?: string | null; name?: strin
 }
 
 /** Roles de tripulación faltantes para cerrar un móvil. */
-export function missingCrewRoles(roles: (string | null)[], serviceKey: boolean): string[] {
+export function isFalseAlarm(key: { code?: string | null; name?: string | null } | null | undefined, flag = false): boolean {
+  if (flag) return true;
+  const code = (key?.code ?? '').replace(/\s/g, '');
+  const name = (key?.name ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return code === '6-16' || /\bfalsa\s+alarma\b/.test(name);
+}
+
+/** Falsa alarma exime ambos roles; los requisitos de retorno no cambian. */
+export function missingCrewRoles(roles: (string | null)[], serviceKey: boolean, falseAlarm = false): string[] {
+  if (falseAlarm) return [];
   const missing: string[] = [];
   if (!roles.includes('conductor')) missing.push('Conductor');
   if (!serviceKey && !roles.includes('oficial_a_cargo')) missing.push('Oficial a Cargo');

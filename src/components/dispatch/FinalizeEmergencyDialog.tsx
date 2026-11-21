@@ -14,6 +14,8 @@ interface Props {
   folio: string;
   /** Clave 10-9 / salida autorizada: basta el conductor. */
   serviceKey?: boolean;
+  /** Falsa alarma (6-16): conductor y oficial opcionales. */
+  falseAlarm?: boolean;
   authorizedBy?: string | null;
   onConfirm: () => void | Promise<void>;
   onClose: () => void;
@@ -23,10 +25,10 @@ const authorizerLabel = (v?: string | null) => v?.trim() || 'No registrado';
 
 /**
  * Valida el cierre de una emergencia: obliga a registrar conductor y oficial a
- * cargo en cada móvil y a enviar todos los móviles a cuartel (con kilometraje),
+ * cargo en cada móvil salvo falsa alarma, y a enviar todos los móviles a cuartel (con kilometraje),
  * reutilizando VehiclePersonnelManager y VehicleReturnManager.
  */
-export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, folio, serviceKey = false, authorizedBy, onConfirm, onClose }: Props) {
+export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, folio, serviceKey = false, falseAlarm = false, authorizedBy, onConfirm, onClose }: Props) {
   const { data: vehicles, isLoading } = useEmergencyReturnVehicles(emergencyId);
   const { data: crew, isLoading: crewLoading } = useEmergencyCrewRoles(emergencyId);
   const [saving, setSaving] = useState(false);
@@ -36,7 +38,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
   const missingCrew = (vehicles ?? [])
     .map(v => {
       const roles = (crew ?? []).filter(c => c.emergency_vehicle_id === v.id).map(c => c.role);
-      const missing = missingCrewRoles(roles, serviceKey);
+      const missing = missingCrewRoles(roles, serviceKey, falseAlarm);
       return { code: v.vehicles?.code ?? 'Móvil', missing };
     })
     .filter(v => v.missing.length > 0);
@@ -66,7 +68,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
               </p>
             ) : (
               <p className="mt-1 flex items-center gap-1.5 text-xs text-success">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Tripulación y móviles registrados correctamente.
+                <CheckCircle2 className="h-3.5 w-3.5" /> {falseAlarm ? 'Sin móviles pendientes de retorno.' : 'Tripulación y móviles registrados correctamente.'}
               </p>
             )}
           </div>
@@ -76,7 +78,10 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-          {serviceKey && (
+          {falseAlarm && (
+            <p className="text-xs text-muted-foreground">Falsa alarma (6-16): conductor y oficial a cargo opcionales.</p>
+          )}
+          {serviceKey && !falseAlarm && (
             <div className="rounded-md border border-border bg-secondary/40 p-3 text-xs text-foreground">
               Autorizado en despacho por: <span className="font-semibold">{authorizerLabel(authorizedBy)}</span>
               <p className="mt-1 text-muted-foreground">Salida autorizada: basta registrar el conductor; el oficial a cargo es opcional.</p>

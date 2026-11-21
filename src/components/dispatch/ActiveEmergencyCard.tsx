@@ -5,7 +5,7 @@ import { MapPin, Phone, Truck, Users, Clock, Settings, Shield, Megaphone, Cross,
 import EmergencyActionsPanel from './EmergencyActionsPanel';
 import EmergencyPdfDownload from './EmergencyPdfDownload';
 import FinalizeEmergencyDialog from './FinalizeEmergencyDialog';
-import { isAuthorizedServiceKey } from '@/lib/serviceKey';
+import { isAuthorizedServiceKey, isFalseAlarm } from '@/lib/serviceKey';
 import { useVehicleOperationalStatus } from '@/hooks/useVehicleOperationalStatus';
 import {
   SELECTABLE_VEHICLE_STATUSES,
@@ -365,6 +365,7 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
           emergencyStatus={emergency.status}
           folio={emergency.folio}
           serviceKey={isAuthorizedServiceKey(ek)}
+          falseAlarm={isFalseAlarm(ek, emergency.false_alarm)}
           authorizedBy={emergency.caller_name ?? null}
           onClose={() => setShowFinalize(false)}
           onConfirm={async () => {
