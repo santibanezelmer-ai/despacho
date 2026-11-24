@@ -19,6 +19,8 @@ import { canAccessPath, canDispatch } from '@/lib/rolePermissions';
 import OfflineDispatchBanner from '@/components/dispatch/OfflineDispatchBanner';
 import { useScreenTheme } from '@/hooks/useScreenTheme';
 import { useOnboardingChecklist } from '@/hooks/useOnboardingChecklist';
+import AppUpdateNotice from '@/components/shared/AppUpdateNotice';
+import VehicleStatusChangeNotice from '@/components/shared/VehicleStatusChangeNotice';
 import ScreenLauncherDialog from '@/components/screens/ScreenLauncherDialog';
 
 const navItems = [
@@ -282,6 +284,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <OfflineIndicator />
+        <AppUpdateNotice />
+        <VehicleStatusChangeNotice />
         <OfflineDispatchBanner />
         <DemoBanner />
         <main className="flex-1 overflow-y-auto flex flex-col">{children}</main>
