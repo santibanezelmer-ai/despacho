@@ -1,0 +1,3 @@
+ALTER TABLE public.emergency_vehicles DROP CONSTRAINT emergency_vehicles_operational_status_check;
+ALTER TABLE public.emergency_vehicles ADD CONSTRAINT emergency_vehicles_operational_status_check CHECK (operational_status = ANY (ARRAY['asignado','despachado','en_lugar','controlada','disponible_lugar','retirandose','en_cuartel']));
+ALTER TABLE public.emergency_vehicles ALTER COLUMN operational_status SET DEFAULT 'asignado';

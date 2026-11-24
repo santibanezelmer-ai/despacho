@@ -38,7 +38,7 @@ export default function FinalizeEmergencyDialog({ emergencyId, emergencyStatus, 
   const missingCrew = (vehicles ?? [])
     .map(v => {
       const roles = (crew ?? []).filter(c => c.emergency_vehicle_id === v.id).map(c => c.role);
-      const missing = missingCrewRoles(roles, serviceKey, falseAlarm);
+      const missing = missingCrewRoles(roles, serviceKey, falseAlarm, v.operational_status);
       return { code: v.vehicles?.code ?? 'Móvil', missing };
     })
     .filter(v => v.missing.length > 0);

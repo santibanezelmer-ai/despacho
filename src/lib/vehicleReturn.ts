@@ -32,12 +32,15 @@ export async function returnVehicleToQuarters(i: ReturnInput): Promise<void> {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('emergency_vehicles')
-    .update({ released_at: now, operational_status: 'en_cuartel', status_updated_at: now, odometer_end: i.odometerEnd })
+    .update({ released_at: now, status_updated_at: now, odometer_end: i.odometerEnd })
     .eq('id', i.evId)
     .is('released_at', null)
     .select('id');
   if (error) throw error;
   if (!data || data.length === 0) throw new Error('Ya estaba en cuartel o no se pudo guardar');
+  // Un móvil solo asignado (nunca salió) conserva 'asignado' para no exigir tripulación ni sumar servicio.
+  await supabase.from('emergency_vehicles').update({ operational_status: 'en_cuartel' })
+    .eq('id', i.evId).neq('operational_status', 'asignado');
 
   const { error: vErr } = await supabase
     .from('vehicles').update({ status: 'disponible', odometer: i.odometerEnd }).eq('id', i.vehicleId);

@@ -5,6 +5,7 @@
  * controlada / finalizada).
  */
 export type VehicleOperationalStatus =
+  | 'asignado'
   | 'despachado'
   | 'en_lugar'
   | 'controlada'
@@ -24,6 +25,14 @@ export interface VehicleStatusMeta {
 }
 
 export const VEHICLE_STATUS_META: Record<VehicleOperationalStatus, VehicleStatusMeta> = {
+  asignado: {
+    key: 'asignado',
+    code: 'ASIG',
+    label: 'Asignado',
+    description: 'Material mayor asignado / aún en cuartel',
+    chip: 'border-border bg-muted/60 text-muted-foreground',
+    timestampField: 'assigned_at',
+  },
   despachado: {
     key: 'despachado',
     code: '6-0',
@@ -76,6 +85,7 @@ export const VEHICLE_STATUS_META: Record<VehicleOperationalStatus, VehicleStatus
 
 /** Estados que el operador puede marcar directamente (6-10 exige kilometraje). */
 export const SELECTABLE_VEHICLE_STATUSES: VehicleOperationalStatus[] = [
+  'asignado',
   'despachado',
   'en_lugar',
   'controlada',
@@ -84,8 +94,8 @@ export const SELECTABLE_VEHICLE_STATUSES: VehicleOperationalStatus[] = [
 ];
 
 export function vehicleStatusMeta(status?: string | null): VehicleStatusMeta {
-  return VEHICLE_STATUS_META[(status as VehicleOperationalStatus) ?? 'despachado']
-    ?? VEHICLE_STATUS_META.despachado;
+  return VEHICLE_STATUS_META[(status as VehicleOperationalStatus) ?? 'asignado']
+    ?? VEHICLE_STATUS_META.asignado;
 }
 
 /** Clave radial reportada por Operix Móvil → estado operativo de la consola. */

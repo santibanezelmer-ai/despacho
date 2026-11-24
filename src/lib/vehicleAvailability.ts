@@ -57,7 +57,7 @@ async function fetchOpenAssignments(orgId: string, vehicleIds?: string[]): Promi
     vehicleId: r.vehicle_id,
     emergencyId: r.emergency_id,
     folio: r.emergencies?.folio ?? '',
-    operationalStatus: r.operational_status ?? 'despachado',
+    operationalStatus: r.operational_status ?? 'asignado',
     keyCode: r.emergencies?.emergency_keys?.code ?? '',
     keyName: r.emergencies?.emergency_keys?.name ?? '',
   }));

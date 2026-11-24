@@ -27,8 +27,9 @@ export function isFalseAlarm(key: { code?: string | null; name?: string | null }
 }
 
 /** Falsa alarma exime ambos roles; los requisitos de retorno no cambian. */
-export function missingCrewRoles(roles: (string | null)[], serviceKey: boolean, falseAlarm = false): string[] {
-  if (falseAlarm) return [];
+/** Móvil solo asignado (nunca salió del cuartel) tampoco exige tripulación. */
+export function missingCrewRoles(roles: (string | null)[], serviceKey: boolean, falseAlarm = false, operationalStatus?: string | null): string[] {
+  if (falseAlarm || operationalStatus === 'asignado') return [];
   const missing: string[] = [];
   if (!roles.includes('conductor')) missing.push('Conductor');
   if (!serviceKey && !roles.includes('oficial_a_cargo')) missing.push('Oficial a Cargo');

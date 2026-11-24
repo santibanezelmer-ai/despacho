@@ -102,7 +102,7 @@ function ActiveEmergencyCard({ emergency, onAdvanceStatus }: EmergencyCardProps)
         evId: '',
         vehicleId: emergency.vehicleIds?.[i] ?? '',
         code,
-        operationalStatus: 'despachado',
+        operationalStatus: 'asignado',
       }));
 
 

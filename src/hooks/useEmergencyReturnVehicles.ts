@@ -7,6 +7,7 @@ export type ReturnVehicleRow = {
   odometer_start: number | null;
   odometer_end: number | null;
   released_at: string | null;
+  operational_status?: string | null;
   vehicles: { code: string; type: string; status?: string; companies?: { name: string } | null } | null;
 };
 
@@ -20,7 +21,7 @@ export function useEmergencyReturnVehicles(emergencyId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('emergency_vehicles')
-        .select('id, vehicle_id, odometer_start, odometer_end, released_at, vehicles(code, type, status, companies(name))')
+        .select('id, vehicle_id, odometer_start, odometer_end, released_at, operational_status, vehicles(code, type, status, companies(name))')
         .eq('emergency_id', emergencyId);
       if (error) throw error;
       return (data ?? []) as unknown as ReturnVehicleRow[];

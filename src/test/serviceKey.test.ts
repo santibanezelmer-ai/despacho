@@ -16,6 +16,10 @@ describe('cierre de tripulación', () => {
   it('retirar falsa alarma restablece ambos requisitos', () => {
     expect(missingCrewRoles([], false, false)).toEqual(['Conductor', 'Oficial a Cargo']);
   });
+  it('móvil solo asignado se cierra sin conductor ni oficial', () => {
+    expect(missingCrewRoles([], false, false, 'asignado')).toEqual([]);
+    expect(missingCrewRoles([], false, false, 'despachado')).toEqual(['Conductor', 'Oficial a Cargo']);
+  });
   it('10-9 se cierra solo con conductor', () => {
     expect(isAuthorizedServiceKey({ code: '10-9', name: 'Otros servicios' })).toBe(true);
     expect(missingCrewRoles(['conductor'], true)).toEqual([]);

@@ -59,7 +59,7 @@ export function useActiveEmergencies() {
             evId: (ev as any).id as string,
             vehicleId: id,
             code: ((ev as any).vehicles?.code as string) ?? '—',
-            operationalStatus: ((ev as any).operational_status as string) ?? 'despachado',
+            operationalStatus: ((ev as any).operational_status as string) ?? 'asignado',
           });
         }
       }
