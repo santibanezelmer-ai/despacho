@@ -89,8 +89,8 @@ export const SELECTABLE_VEHICLE_STATUSES: VehicleOperationalStatus[] = [
   'despachado',
   'en_lugar',
   'controlada',
-  'disponible_lugar',
   'retirandose',
+  'disponible_lugar',
 ];
 
 export function vehicleStatusMeta(status?: string | null): VehicleStatusMeta {
